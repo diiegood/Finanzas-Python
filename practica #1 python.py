@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug 30 19:37:54 2024
+
+@author: creep
+"""
+"curso introductorio de python finanzas"
+"se puede correr todo el codigo con F5"
+"SE PUEDE CORRER UNA PARTE CON F9"
+"para limpiar se puede poner el comando RESET + y, se limpian todas las variables graficas y tablas "
+"para limpiar la consola se puede poner clear"
+
+#import matplotlib.pyplot as plt, sirve para graficas, se importa la libreria#
+
+import numpy as np
+import pandas as pd
+import matplotlib as mpl
+import scipy
+import matplotlib.pyplot as plt
+
+#el comando de degrees of freedom tambien puede ser abreviado a df#
+degrees_freedom = 5
+df=degrees_freedom
+size = 10**6
+
+random_variable_type = "normal"
+#nombres  o tipos de las variables / normal, student , uniform# 
+"random_variable_type = "
+#camel_case distribucion de camello como ondas #
+
+#f random_variable_type == "normal": # condicional
+
+x = np.random.standard_normal(size=10**6)
+x = np.s
+#else if = elif#
+#lif random_variable_type == "student": #
+
+x1 = np.random.standard_t(df=8, size=size)
+x2 = np.random.standard_normal(size=10**6)
+x3 = np.random.uniform(low=5.0, high=1.0, size=None) 
+
+"para generar la variable aleatoria normal estandar"
+#random.uniform(low=0.0, high=1.0, size=size#
+
+
+ #como hacer un histograma#
+#plot histogram#
+#los bins son las variables que se aceptan en un espacio#
+mpl.pyplot.figure()
+plt.hist(x,bins=100)
+plt.show()
+
+#para nombrar una grafica se le pone el siguiente comando#
+plt.title(random_variable_type)
