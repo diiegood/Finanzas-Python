@@ -20,7 +20,7 @@ canaca1.replace("cincuentamil", "veintemil")
 
 " y mis cincuenta mil pesos % " %(10) #para reposicionar un valor
 "este es un numero flotante %.6f" %(3.14162115)
-
+############################# CORREGIR LO DE ARRIBA #############################
 
 #Nociones basicas python# las listas siempre son con corchetes
 #listas []
@@ -73,6 +73,36 @@ carros #solo esta bmw, mini
 numeros_aburridos = 1,2,3
 numeros_aburridos 
 
+#####################  ARRAYS #######################
+import array
+
+# Crear un array de enteros
+array_pirata = array.array('i', [1, 2, 3, 4, 5])
+# Accediendo a los elementos
+print(array_pirata[0])  
+# Modificando un elemento
+array_pirata[2] = 10
+print(array_pirata)  
+
+############################ Numpy###########################
+
+import numpy as np
+numeritos = np.array([1,2,3,4,5])
+print(numeritos[3])
+numeritos[2] = 10
+print(numeritos)
+
+#evaluar al cuadrado la funcion
+numeritos_al_cuadrado = numeritos **2
+numeritos_al_cuadrado
+
+#calcular media con numpy
+media_numeritos = np.mean(numeritos)
+media_numeritos
+
+#hacer la sumatoria con numpy
+sumadevalores = np.sum(numeritos_al_cuadrado)
+sumadevalores
 
  ###Tuple###   va con parentesis ()
  
@@ -115,3 +145,106 @@ Tasas = {"Periodo1": 10.10, "Periodo2": 10.35, "Periodo3": 10.56}
 dict(CETES, **Tasas)
 
 {**CETES,**Tasas}
+
+#set conjuntos# 
+
+set([1,2,11,1])
+set([1,2,3]) ^ set ([2,3,4])
+
+#para hacer bucles con python# 
+
+#sirven para que implementen iteraciones, ejecuten un mismo bloque de codigo
+#dos o mas veces mientras se cumple la condicion declarada#
+
+for i in range(3): #recorre una cantidad especifica de veces#
+    print(i)        #observa que parte desde el elemento 0
+    
+for i in range (1, 200): #valores de 5 a 11, pero no incluye el 200.
+    print(i)
+    
+#else es pra determinar si el bucle sale con break o no#
+for i in [1,10,19]:
+    if i > 20:  #condicion del bucle
+        break #detiene el bucle antes de que haya recorrido todos los elementos
+else:  #y si no se cumple la condicion#
+  print("Aqui no sucede i>20!")
+
+for i in [1,10,19,21]:
+    if i>20:
+        break
+else:
+    print("no digas mamadas mary jane")
+
+i = 4
+while 1 < 3:
+    i += 1 
+print(i)
+
+
+i = 0 
+while i < 6:
+    i += 1
+    if i == 3:
+        continue  #detiene la iterecacion actual del bucle y continua la siguiente
+    print(i)
+
+gustos = ["dormir", "comer", "jugar"]
+niños = ["felipe", "gustavo", "mariana"]
+
+for x in gustos:
+    for y in niños:
+        print(x,y)
+        
+#operadores logicos # VALORES BOLEANOS
+#None
+#False
+#cero de cualquier numerico
+#cualquier matriz o conjunto vacio
+#clases definidas por el usuario, nonzero(), len()
+
+
+bool ([])  
+
+bool ([0])
+
+bool([0,])
+
+#se pueden usar or, not, and
+
+1<2 and 2<3 or 3<1 #la primera no es condicional , la 2 y 3 si solo una puede ser#
+#se cumple 1<2 , pero una de los siquientes se debe cumplir#
+
+1<2 and not 2>3 or 1<3
+
+(1,2,3) < (4,5,6)
+ 
+(1,2,3) < ( 0,1,2)
+
+camaron = [1,2,3]
+[2,3,4] > camaron 
+
+(1,2,3) < (5,2) #deben ser dos grupos para poder compararse
+
+"one" in [22,["dos", "mascota", "arriba"]]
+#one esta en esta lista de los elementos# falso
+
+"dos" in [22,["dos", "mascota", "arriba"]]
+#por que no esta dentro de la lista#
+
+"dos" in ["caracol", "dos" [ "mascota", "arriba"]]
+#se vuelve verdadero porque deja de ser elemento independiente y esta dentro
+
+# not in / no esta en 
+# in / esta en 
+
+"uno" in []
+
+x = "es un string"
+y = "es un string" 
+x is y 
+# a pesar de tener los mismos valores no son la misma funcion# 
+
+x=y= "este es un string" 
+id(x),id(y)   #identificador del codigo de python
+x is y #se cumplen por que son lo mismo 
+
