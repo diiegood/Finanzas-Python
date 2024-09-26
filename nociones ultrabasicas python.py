@@ -1,3 +1,8 @@
+"""
+Primera Tarea python conceptos basicos de clase 1:3
+Curso de Python para Economista
+@author: Jorge Diego Valdez Fonseca
+"""
 ######################Nociones basicas tipos de caracteres#####################
 
 base = 20 
@@ -9,17 +14,17 @@ area #tambien poner directamente la variable para el resultado
 int(1.3532) #valor entero del numero 1.3532 -> 1
 float(2)   #valor decimal del valor 2 ->  2.0
 #es la union de varios strings en una funcion
-canaca = "y" + "mis" +"cincuentamil" + "pesos" + "que"
-canaca*3 #se triplica la funcion 3 veces#
-canaca[0:5] #letras del cero a 5 de la funcion
-canaca[-5] #ultimas 5 letras de la funcion
+mi_nombre = "Hola" + "me" +"llamo" + "Diego"
+mi_nombre*2 #se triplica la funcion 2 veces#
+mi_nombre[0:3] #letras del cero a 3 de la funcion
+mi_nombre[-2] #ultimas 2 letras de la funcion
 
-canaca1 = "y mis cincuentamil pesos que"
-print(canaca1) #para arrojar el resultado de la funcion canaca1
-canaca1.replace("cincuentamil", "veintemil")
+mi_nombre = "Hola me llamo Gustavo"
+print(mi_nombre) #para arrojar el resultado de la funcion mi_nombre
+mi_nombre.replace("Gustavo", "Diego")
 
-" y mis cincuenta mil pesos % " %(10) #para reposicionar un valor
-"este es un numero flotante %.6f" %(3.14162115)
+'Este es el numero de pi %d' %(3.1416) #%d #para reposicionar un valor
+"Este es el numero de pi %.2f" %(3.1416)
 ############################# CORREGIR LO DE ARRIBA #############################
 
 #Nociones basicas python# las listas siempre son con corchetes
@@ -27,6 +32,9 @@ canaca1.replace("cincuentamil", "veintemil")
 numeros_enteros = [1,2,3,4,5] #lista de valores int
 numeros_decimales = [1.25, 35.2, 3.1416, 2.678] #lsita de valores float
 palabras = ["perro", "gato", "vibora", "tlacuache"] #lista de valores string
+numeros_enteros 
+numeros_decimales
+palabras
 
 #lista, conformado por diferentes variables#
 mix = [3, "pepe", 3.1416, [1,2,3,4]] 
@@ -133,7 +141,7 @@ x
 
 Cetes = {"Cete" : "Renta_fija", "valor_nominal":"diez_varos", "periodo": "noventa_y_uno_dias"}
 Cetes
-Cetes["propiedad"] = "DonPendejo"  #para agregar una nueva informacion, en este caso el dueño"
+Cetes["propiedad"] = "Julio"  #para agregar una nueva informacion, en este caso el dueño"
 Cetes
 
 del Cetes["propiedad"] #se le elimina su propiedad al dueño
@@ -159,7 +167,7 @@ set([1,2,3]) ^ set ([2,3,4])
 for i in range(3): #recorre una cantidad especifica de veces#
     print(i)        #observa que parte desde el elemento 0
     
-for i in range (1, 200): #valores de 5 a 11, pero no incluye el 200.
+for i in range (1, 25): #valores de 5 a 11, pero no incluye el 200.
     print(i)
     
 #else es pra determinar si el bucle sale con break o no#
@@ -173,7 +181,7 @@ for i in [1,10,19,21]:
     if i>20:
         break
 else:
-    print("no digas mamadas mary jane")
+    print("valor incorrecto")
 
 i = 4
 while 1 < 3:
@@ -231,8 +239,10 @@ camaron = [1,2,3]
 "dos" in [22,["dos", "mascota", "arriba"]]
 #por que no esta dentro de la lista#
 
-"dos" in ["caracol", "dos" [ "mascota", "arriba"]]
 #se vuelve verdadero porque deja de ser elemento independiente y esta dentro
+print("tres" in ["caracol", "tres", "ganso", ["perro"]])
+# Esto es verdadero porque "tres" es un elemento independiente en la lista
+
 
 # not in / no esta en 
 # in / esta en 
@@ -247,4 +257,5 @@ x is y
 x=y= "este es un string" 
 id(x),id(y)   #identificador del codigo de python
 x is y #se cumplen por que son lo mismo 
+
 
