@@ -1,0 +1,79 @@
+#practica python yahoo finance
+
+#yahoo finance api / matplotlib
+import yfinance as yf
+import matplotlib.pyplot as plt
+
+#create a ticker for the stock , would be Amazon/ AMZN, Meta/META, Google / GOOGL, Apple/ AAPL
+apple_Stock = yf.Ticker("AAPL")
+google_stock = yf.Ticker ("GOOGL")
+crude_oil = yf.Ticker("CL=F")
+SP500 =yf.Ticker("^GSPC")
+
+#periodos de precios#
+
+
+datos_apple = apple_Stock.history(period='1mo')
+datos_google = google_stock.history(period='1mo')
+datos_crude_oil = crude_oil.history(period='1mo')
+datos_SP500 = SP500.history(period='1mo')
+
+acciones = [datos_apple, datos_google, datos_crude_oil, datos_SP500 ]
+acciones
+
+#Se accede al último precio de cierre usando [-1], 
+#que representa el último registro de precios de cierre en el DataFrame
+"periodos en dias"
+"1d, 5d, 10d, 15d, 30d"
+
+"periodos en meses"
+"1mo, 3mo, 6mo"
+
+"periodos en años"
+"1y, 2y, 5y 10y"
+
+"se puede personalizar con la funcion"
+#data = ticker.history(start='2024-01-01', end='2024-09-27')
+
+precios = {
+    'Apple': datos_apple['Close'][-1],
+    'Google': datos_google['Close'][-1],
+    'Crude Oil': datos_crude_oil['Close'][-1],
+    'S&P 500': datos_SP500['Close'][-1]
+}
+
+# Crear el gráfico
+fig, ax = plt.subplots()
+
+
+# Crear el cuadro
+ax.bar(precios.keys(), precios.values(), color=['blue', 'green', 'orange', 'red'])
+
+# Añadir etiquetas y título
+ax.set_ylabel('Precio de Cierre')
+ax.set_title('Precios de Cierre de Acciones y Crudo (Último Mes)')
+
+# Mostrar el gráfico
+plt.show()
+
+plt.figure(figsize=(12, 6))
+
+
+###############################################################################
+"para la serie de tiempo"
+
+# Graficar cada activo
+plt.plot(datos_apple.index, datos_apple['Close'], label='Apple (AAPL)', color='blue')
+plt.plot(datos_google.index, datos_google['Close'], label='Google (GOOGL)', color='green')
+plt.plot(datos_crude_oil.index, datos_crude_oil['Close'], label='Crude Oil', color='orange')
+plt.plot(datos_SP500.index, datos_SP500['Close'], label='S&P 500', color='red')
+
+# Añadir etiquetas y título
+plt.title('Series de Tiempo de Precios de Cierre (Últimos 30 Días)')
+plt.xlabel('Fecha')
+plt.ylabel('Precio de Cierre')
+plt.legend()
+plt.grid()
+
+# Mostrar el gráfico
+plt.show()
