@@ -1,24 +1,27 @@
 import pandas as pd 
 import numpy as np
 
-df = pd.read_csv('C://Users/creep/.spyder-py3/practicas python')
-df = pd.read_csv('datos.csv')
+import os
+
+#formas de consultar informacion.
+#1 poniendo la dirreccion completa de donde se encuentra el archivo con la terminacion del tipo de archivo
+df = pd.read_csv('C://Users/creep/OneDrive/Escritorio/dataclear.txt')
+#2 poniendo solo el archivo, con su terminacion , pero deben alojarse en el mismo directorio para funcionar
+df = pd.read_csv('dataclear.txt') 
+df
+
 print(df.head())
 
 
-datos1 = pd.read_csv('dataclear.txt')
-datos1
-
 #para filtrar datos#
-new_df =datos1.dropna() #se filtran los datos quitando lso NA
+new_df =df.dropna() #se filtran los datos quitando lso NA
 new_df.to_string
-datos1.dropna(inplace = True) #borra los dropna / nos vuelve a lo anterior
+df.dropna(inplace = True) #borra los dropna / nos vuelve a lo anterior
 
-datos1.to_string()
-datos1.fillna(0, inplace = True) #remplaza todos los valores NA por valores 0
+df.to_string()
+df.fillna(0, inplace = True) #remplaza todos los valores NA por valores 0
 
-datos1 =pd.read_csv('dataclear.txt')
-datos1 ["Calores"].fillna(130,inplace = True)
-datos1.to_string()
 
-#falta mas queda pendiente...
+df ["Calories"].fillna(130,inplace = True)
+df.to_string()
+
