@@ -1,0 +1,24 @@
+import pandas as pd 
+import numpy as np
+
+df = pd.read_csv('C://Users/creep/.spyder-py3/practicas python')
+df = pd.read_csv('datos.csv')
+print(df.head())
+
+
+datos1 = pd.read_csv('dataclear.txt')
+datos1
+
+#para filtrar datos#
+new_df =datos1.dropna() #se filtran los datos quitando lso NA
+new_df.to_string
+datos1.dropna(inplace = True) #borra los dropna / nos vuelve a lo anterior
+
+datos1.to_string()
+datos1.fillna(0, inplace = True) #remplaza todos los valores NA por valores 0
+
+datos1 =pd.read_csv('dataclear.txt')
+datos1 ["Calores"].fillna(130,inplace = True)
+datos1.to_string()
+
+#falta mas queda pendiente...
