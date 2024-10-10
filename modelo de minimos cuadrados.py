@@ -1,0 +1,102 @@
+#################### modelo de minimos cuadrados ##################################
+#informacion general
+#len(T) #para ver los caracteres que conforman la lista
+
+#lista.append("final") #para agregar un valor a la lista
+#lista
+
+"practica de python datos homocedasticos"
+
+############################# Regresion lineal ################################
+
+import pandas as pd 
+import numpy as np 
+from random import random 
+from statsmodels.formula.api import ols  # Importar ols correctamente
+
+X = []
+Y = []
+for i in range(300):
+    x = random()
+    c = random() + 1 * random()
+    y = 5 * x + 3 * c
+    X.append(x)
+    Y.append(y)
+
+# Crear el DataFrame con los datos
+data = pd.DataFrame({"X": X, "Y": Y})  # Asignar correctamente las columnas
+
+# Ajustar el modelo
+model = ols("Y ~ X", data=data).fit()
+p = model.params
+
+# Graficar los datos
+ax = data.plot(kind="scatter", x="X", y="Y")
+ax.plot(X, p['Intercept'] + p['X'] * np.array(X), "r")  # Cambié p.Intercept a p['Intercept']
+ax.set_title('Regresión Lineal')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+
+###############################################################################
+#para crear datos heterocedasticos: #sedeben cargar archivos del excel para que carge el modelo
+    
+data = pd.read_excel("sample_heterocedasticity_data.xlsx") #cargo un archivo del excel
+X = data["var1"]
+Y = data["var2"]
+model = ols("Y~X", data =data).fit()
+p = model.params
+
+ax = data.plot(kind="scatter", x="var1", y="var2")
+ax.plot(X, p.Intercept + p.X*np.array(x),"r")
+
+
+
+###############################################################################
+###############################################################################
+#variables, inicio del Modelo de minimos cuadrados. 
+"modelo de minimos cuadrados"
+
+import math
+
+# Datos
+T = [800, 900, 1000, 1100]
+K = [0.00103, 0.0234, 0.29, 2.5]
+
+# Inicialización de listas
+x = []
+y = []
+
+# Calcular x y y
+for t in T:
+    x.append(1/t)
+    
+for k in K:
+    y.append(math.log(k))
+
+# Determinación del valor promedio
+xprom = sum(x) / len(x)
+yprom = sum(y) / len(y)
+
+print(f"El valor promedio de X es {xprom}")
+print(f"El valor promedio de Y es {yprom}")  # Cambiado a 'Y'
+
+# Cálculo de la pendiente
+num = []
+denom = []
+
+for i in range(len(x)):
+    num.append(x[i] * (y[i] - yprom))
+    denom.append(x[i] * (x[i] - xprom))  # Debe ser 'denom'
+
+# Calcular la pendiente
+m = sum(num) / sum(denom)
+
+print(f"La pendiente m es {m}")
+
+#calculo del intercepto
+b = yprom- m*xprom
+print(f"el valor del intercepto es: {b}") 
+#se genera una funcion con dentro un diccionario que diga una frase + el valor de la funcion
+print(f"la ecuacion ajustada es: ink = {m}*(1/T) + {b}")
+
+
