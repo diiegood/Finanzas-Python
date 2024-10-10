@@ -1,0 +1,53 @@
+#Data Frame convertir rendimientos en fechas para serie de tiempo
+#creacion de data frame con valores para crear el vector de rendimiento
+#pandas puede calcular vectores de las tablas, operaciones con tablas como si fueran matrices 
+
+################################   Librerias ##################################
+
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import scipy.stats as st
+import importlib 
+import os
+
+######################### Directoria + datos que jala #########################
+#inputs
+ric = 'AAPL'  #1
+
+# Definir el directorio donde se encuentran los archivos
+directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\' #2
+
+#la funcion directorio nos ayuda a poner en ruta una carpeta llena de datos de archivos.
+path = directorio + ric + '.csv'
+raw_data = pd.read_csv(path)  #entrada para leer csv, se puede leer xls (excel)
+
+###############################################################################
+# DATA FRAME Y VECTORES DE PRECIOS PARA EL RENDIMIENTO Y LA SERIE DE TIEMPO #
+
+t= pd.DataFrame() #se creo un nuevo data frame vacio.
+###############################################################################
+#los datos deben considerarse como tiempo para hacer una serie de tiempo de los
+#datos en python y se refleje bien una grafica, se debe definir como time stat y no string (caracter)
+
+#Proceso de datos para realizar los calculos
+t["date"] = pd.to_datetime(raw_data["Date"], dayfirst=True, errors='coerce')  # Convertir la columna "Date" a datetime para hacer la serie de tiempo
+t["close"] = raw_data["Close"]  # Asignar la columna "Close"
+t = t.sort_values(by="date", ascending=True) # Ordenar por fecha, organiza datos (doble check)
+#t ["close_minus"] = t["close"].shift(-1)
+#t ["close_plus"] = t["close"].shift(1)
+t["close_previous"] = t["close"].shift(1)  # Crear columna del cierre anterior
+
+t["return_close"] = t["close"] / t["close_previous"] - 1  # Calcular el rendimeinto del activo
+#se calcula el rendimiento del activo con respecto del dia anterior.
+
+t = t.dropna()  #elimina filas con valores Nan
+t = t.reset_index(drop=True) #Reinicia el indice para que empiece desde 0
+
+######################## Funcion del objeto simulador #########################
+"computations"
+
+#falta crear el sim y el simulate, inputs del modelo constructor, para realizar el vector
+
+
+
