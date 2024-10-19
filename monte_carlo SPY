@@ -1,0 +1,113 @@
+
+import yfinance as yf
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Descargar datos históricos del activo que elijamos
+data = yf.download('SPY', start='2020-01-01', end="2024-10-18")
+
+
+# Verificar los primeros y últimos valores para asegurarnos de que los datos están correctos
+print(data.head())
+print(data.tail())
+
+# Calcular retornos logarítmicos
+precios_ajustados = data['Adj Close']
+retornos = np.log(precios_ajustados / precios_ajustados.shift(1)).dropna()
+
+# Verificar los retornos calculados
+print("Primeros retornos calculados:")
+print(retornos.head())
+
+## ===================================================================
+
+# Calcular la tasa de retorno esperada (promedio de los rendimientos)
+mu = np.mean(retornos)
+
+#sigma = np.std(retornos) * np.sqrt(252) # VH diaria anualizada desde el 2000
+sigma = np.std(retornos[-1000:]) * np.sqrt(252)  # Volatilidad anualizada
+
+
+# Calcular la volatilidad usando una media móvil de los últimos 20 días
+#rolling_volatility = retornos.rolling(window=40).std() #VH DE 40 RUEDAS HISTÓRICA
+
+# Tomar la última volatilidad calculada con la media móvil
+#sigma = rolling_volatility.iloc[-1]
+
+# Verificar los valores de mu y sigma
+print(f"Retorno esperado (mu): {mu:.5f}")
+print(f"Volatilidad (sigma): {sigma:.5f}")
+
+
+## =====================================================
+# Parámetros de la simulación GBM
+S0 = data['Adj Close'].iloc[-1]
+  # Este me trae el último precio del DataFrame "data", también puedo ponerlo a mano
+T = 10 / 252
+  # n días, convertido a años (252 días de mercado en un año)
+n_steps = 100
+ # Número de pasos en la simulación, no puede ser muy grande si el periodo T es chico, incrementarlo no da precisión
+n_simulations = 30000  # Podemos incrementar el número de simulaciones para mayor precisión
+
+# Paso de tiempo en años
+dt = T / n_steps
+
+
+## ============================================================
+# Simulación de las trayectorias de precios
+price_paths = np.zeros((n_steps + 1, n_simulations))
+price_paths[0] = S0
+
+for i in range(1, n_steps + 1):
+    Z = np.random.standard_normal(n_simulations)  # Números aleatorios para la simulación
+    price_paths[i] = price_paths[i-1] * np.exp((mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
+
+# Cálculo del intervalo de confianza. En este caso elejimos 90%, usualmente se hace al 95%
+
+final_prices = price_paths[-1]  # Precios al final del periodo simulado
+ci_lower = np.percentile(final_prices, 1.0)  # Límite inferior del 95% de confianza
+ci_upper = np.percentile(final_prices, 99.0)  # Límite superior del 95% de confianza
+
+
+# Cálculo del precio probable (mediana y media)
+precio_median = np.median(final_prices)
+
+
+# Imprimir los resultados
+
+print(f"Precio probable (mediana): {precio_median:.2f}")
+
+
+
+## ============================================================
+
+# Cálculo de la probabilidad de alcanzar un precio objetivo
+precio_objetivo =540  # Ejemplo de precio objetivo
+probabilidad = np.mean(final_prices >= precio_objetivo)
+probabilidad2 = np.mean(1-(final_prices >= precio_objetivo))
+
+# Resultados
+print(f"Intervalo de confianza al 99%: [{ci_lower:.2f}, {ci_upper:.2f}]")
+
+
+
+
+## =======================================================================================
+
+
+# Gráfico de las trayectorias simuladas
+plt.style.use('dark_background')
+plt.figure(figsize=(20, 12))
+for i in range(1000):  # Mostrar solo n simulaciones para no saturar el gráfico
+    plt.plot(price_paths[:, i], lw=1.5, alpha=0.1)
+
+plt.axhline(ci_lower, color='red', linestyle='--', label='IC 95% Inferior')
+plt.axhline(ci_upper, color='green', linestyle='--', label='IC 95% Superior')
+plt.title('Simulación de Precios de GGAL con GBM (30 días)')
+plt.xlabel('Tiempo (días)')
+plt.ylabel('Precio del Activo')
+plt.legend()
+plt.grid(True)
+plt.show()
+
