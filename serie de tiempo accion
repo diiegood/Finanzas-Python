@@ -1,0 +1,82 @@
+"Practica de crear funciones"
+"primera funcion serie de tiempo"
+"segunda funcion volatilidad y rendimiento o retorno promedio"
+"tercera funcion graficar los resultados y rendimientos"
+
+###############################################################################
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+def load_timeseries(ric):
+    directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'
+    path = directorio + ric + ".csv"
+    
+    # Cargar los datos del CSV
+    raw_data = pd.read_csv(path)
+    
+    # Crear DataFrame para los datos
+    t = pd.DataFrame()
+    t["Date"] = pd.to_datetime(raw_data["Date"])  # Asegurarse de que la fecha sea del tipo datetime
+    t["close"] = raw_data["Close"]
+    
+    # Ordenar por fecha
+    t = t.sort_values(by="Date", ascending=True)
+    
+    # Calcular el cierre anterior y el retorno
+    t["close_previous"] = t["close"].shift(1)
+    t["return_close"] = t["close"] / t["close_previous"] - 1
+    
+    # Eliminar filas con NaN y resetear el índice
+    t = t.dropna().reset_index(drop=True)
+    return t
+
+def compute_average_return_and_volatility(ric):
+    # Cargar los datos de la serie temporal
+    data = load_timeseries(ric)
+    
+    # Calcular el retorno promedio y la volatilidad
+    average_return = data["return_close"].mean()
+    volatility = data["return_close"].std()
+    
+    # Redondear a 6 decimales
+    average_return = round(average_return, 6)
+    volatility = round(volatility, 6)
+    
+    return average_return, volatility
+
+def plot_timeseries(ric):
+    data = load_timeseries(ric)
+    
+    # Crear un gráfico para el precio de cierre
+    plt.figure(figsize=(15, 8))
+    
+    # Gráfico de precios de cierre
+    plt.subplot(2, 1, 1)
+    plt.plot(data["Date"], data["close"], label='Precio de Cierre', color='blue')
+    plt.title(f'Precio de Cierre de {ric}')
+    plt.xlabel('Fecha')
+    plt.ylabel('Precio')
+    plt.legend()
+    plt.grid()
+
+    # Gráfico de retornos
+    plt.subplot(2, 1, 2)
+    plt.plot(data["Date"], data["return_close"], label='Retorno Diario', color='orange')
+    plt.title(f'Retorno Diario de {ric}')
+    plt.xlabel('Fecha')
+    plt.ylabel('Retorno')
+    plt.legend()
+    plt.grid()
+
+    plt.tight_layout()
+    plt.show()
+
+# Ejemplo de uso
+ric = "AAPL"  # Reemplaza esto con el RIC que desees analizar
+average_return, volatility = compute_average_return_and_volatility(ric)
+print(f'Retorno Promedio: {average_return}, Volatilidad: {volatility}')
+
+# Graficar los datos
+plot_timeseries(ric)
