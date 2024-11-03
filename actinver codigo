@@ -1,0 +1,100 @@
+"Practica de Actinver"
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import quadprog
+
+
+#Se definen los tickers
+tickers = ["^MXX", "SPY", "SHV", "USDMXN=X"]
+
+#Se descarga los datos de Yahoo Finance / Ajustar los stock splits y los dividendos.
+data = yf.download(tickers, start="2020-01-01", end="2024-10-01") ["Adj Close"]
+
+#Se convierte en pesos mexicanos
+data["SPY_MXN"] = data["SPY"] * data["USDMXN=X"]
+data["SHV_MXN"] = data["SHV"] * data["USDMXN=X"]
+
+#mantener solo el IPC, SPY_MXN and SHV_MXN / dropna (es para limpiar los na)
+prices = data[["^MXX", "SPY_MXN", "SHV_MXN"]].dropna()
+
+#Para ver los ultimos valores 
+prices.tail()
+
+#Se calculan los retornos diarios / rendimientos diarios
+returns = prices.pct_change().dropna()
+
+#Se calculan la matriz de covarianza para los rendimientos diarios
+cov_matrix=returns.cov()
+
+#Para mostrar la matriz
+cov_matrix
+
+#Se calcula la desviacion estandar o volatilidad / anualizada
+volatility = returns.std() * (252**0.5)
+
+#Para mostrar los resultados de la volatilidad
+volatility
+
+#Para calcular los rendimientos historicos
+mean = returns.mean() * 252
+#Para mostrar el rendimiento historico
+mean #aqui se pueden poner pronosticos de mercado o de consenso
+#depende de mi estrategia lo que pondria aqui
+
+#librerias de optimizacion parecidas al solver en python.
+"quadprog" #quadratic programin es similar al solver
+
+#Rendimientos esperados 
+expected_returns = np.array([0.11, 0.16, 0.09])
+
+#Matriz de covarianzas 
+cov_matrix = returns.cov().values
+cov_matrix
+#Tasa libre de riesgo / risk free rate 
+rf = 0.06
+ 
+#Definir el problema de Optimizacion
+def optimize_portfolio(expected_returns, cov_mmatrix, rf):
+    n = len(expected_returns)
+    
+    #Definir  QP matrices 
+    P = 2 ** cov_matrix #objetivo de las matrices simetricas positivas 
+    q = np.zeros(n) #parte linear del objetivo
+    G = -np.eye(n)  # restriccion de  desigualdad de la matriz (para nos pesos no negativos)
+    h = np.zeros(n) #restriccion de desigualdad del vector (weights >=0)
+    A = np.ones((1,n)) #restriccion de igualdad suma de los pesos = 1 (1 x n array)
+    b = np.array([1.0]) #restriccion de igualdad valor (suma de los pesos debe ser igual a 1) , 1D array 
+    
+    #Resolver el problema de programacion cuadratica
+    result = quadprog.solve_qp(P, q, G, h, A.T, b)
+    
+    #pesos optimos
+    weights = result[0]
+    
+    #Compute portfolio return and risk
+    portfolio_return = np.dot(weights, expected_returns)
+    
+    portfolio_risk = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+    sharpe_ratio = (portfolio_return - rf) /portfolio_risk
+    
+    return weights, portfolio_return, portfolio_risk, sharpe_ratio
+
+#Llmar la funcion
+weights, portfolio_return, portfolio_risk, sharpe_ratio = optimize_portfolio(expected_returns, cov_matrix, rf)
+    
+# Mostrar resultados
+print("Pesos:", weights)
+print("Retorno del portafolio:", portfolio_return)
+print("Riesgo del portafolio:", portfolio_risk)
+print("Sharpe Ratio:", sharpe_ratio)
+
+    
+    
+    
+    
+    
+    
+    
+    
