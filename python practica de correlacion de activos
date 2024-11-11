@@ -1,0 +1,130 @@
+"practica de  Finanzas en Python"
+#parte 1 nociones ultrabasicas
+###############################################################################
+#NUMEROS 
+var1= 10  #int
+var2 = 1000.5 #float
+
+#strings / secuencia de caracteres siempre lleva comillas
+str1 = "Balanz"
+str2 = "Capital"
+
+#listas
+lista1 = ["abcd",1234,5.5, "Balanz"]
+
+
+#Diccionarios
+dict1 ={}
+dict2 = {"Juan":10, "Maria":20, "Matias":5}
+
+###############################################################################
+
+#Calculo Iterativo / se calcula una VPN de un Cash flow
+
+Tasa = 0.1
+Cash_flows = [-200, 50,50, 50,50,50]
+
+"Calcule Net Present Value form the next values"
+#Calcular dependiendo de los momentos 
+VPN = 0
+VPN += (Cash_flows[0]/ ((1+Tasa)**0)) #Momento 0
+VPN += (Cash_flows[1]/ ((1+Tasa)**1)) #Momento 0
+VPN += (Cash_flows[2]/ ((1+Tasa)**2)) #Momento 0
+VPN += (Cash_flows[3]/ ((1+Tasa)**3)) #Momento 0
+VPN += (Cash_flows[4]/ ((1+Tasa)**4)) #Momento 0
+VPN += (Cash_flows[5]/ ((1+Tasa)**5)) #Momento 0
+print("El valor presente neto es", VPN)
+
+#iterativo
+VPN_i = 0 #Se define los ciclos para que se cambie el ciclo segun la variable definida
+for i in range(len(Cash_flows)): #se crean una serie de valores de una longitud (len) , siendo los Cash_flows
+    VPN_i += Cash_flows[i] / ((1+Tasa)**i) 
+print("El valor presente neto iterativo es:", VPN_i)
+
+#Se calculo un valor presente neto / libreria de numpy
+import numpy as np
+import numpy_financial as npf
+
+NPV_np = npf.npv(Tasa, Cash_flows)
+print("el valor presente neto de npf es :", NPV_np)
+
+###############################################################################
+
+#Ejemplo de correlacion
+import yfinance as yf
+import pandas as pd
+
+#se generan los inputs, donde uno es una lista de los activos (tickers) / 
+#otro es un diccionario donde se van a guardar los preciosde cierre de los activos /
+#se va evaluar la correlacion entre estos activos de los ultimos 10 años
+
+tickers =  ["SPY", "GLD", "QQQ", "VWO","XLV", "VNQ", "XLE", "SOXL", "^VIX"]
+precios ={}
+i=1
+
+#descarga los valores y los guarda en un diccionario de precios
+for ticker in tickers:
+    print(f"Descargando los datos de : {ticker}/ Numero_{i}/{len(tickers)}")
+    precios[ticker] = yf.download(ticker, period= "5y" )
+    i+=1
+
+
+#ejemplo de datos / es para llamar las variables que contienen los datos de los precios
+print(precios[tickers[0]])
+precios[tickers[0]]
+
+#si solo quiero los precios de cierre en un mismo DataFrame / creo un indice de los datos.
+fechas = precios[tickers[0]].index #se genera un indice dentro de eñ diccionario ya creado 
+dataframe_cierre = pd.DataFrame(index=fechas) #se pone las fechas como indice
+for ticker in tickers: 
+    dataframe_cierre[ticker] = precios[ticker]["Close"] #nos muestra que llama los precios de cierre de ticker
+
+#Calculo de correlaciones / se genera una matriz de correlaciones como la de Markowitz
+correlaciones = dataframe_cierre.corr(method="pearson") #se calcula la correlacion con el metodo de pearson
+correlaciones
+
+"Prueba de pearson mide la relacion entre dos variables continuas, busca trazar una linea a traves de los datos"
+"de ambas variables, mostrando su relacion lineal, puede ser negativa o positiva."
+
+###############################################################################
+"Graficas de calor de la matriz de correlaciones"
+
+#para graficar el calor de los activos
+import matplotlib.pyplot as plt #libreria para graficar 
+import numpy as np
+
+fig, ax = plt.subplots ()
+im = ax.imshow(correlaciones)
+
+#para mostrar los tickers
+ax.set_xticks(np.arange(len(tickers)))
+ax.set_yticks(np.arange(len(tickers)))
+
+#y en la etiqueta con sus respectiva entradas de lista
+ax.set_xticklabels(tickers)
+ax.set_yticklabels(tickers)
+#par rotar la etiqueta de los activos
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right", 
+         rotation_mode="anchor")
+
+for i in range(len(tickers)):
+    for j in range(len(tickers)):
+        text = ax.text(j, i, round(correlaciones.loc[tickers[i]][tickers[j]],2),
+                       ha="center", va="center", color="black")
+ax.set_title("Mapa de calor de correlaciones")
+fig.tight_layout()
+plt.show()
+
+###############################################################################
+#otra grafica de correlaciones
+
+import seaborn as sns
+import numpy as np
+
+# Suponiendo que 'correlaciones' ya esté definida como una matriz de correlaciones
+# Si no está definida, deberías crearla primero. Ejemplo:
+# correlaciones = np.random.rand(5, 5)  # Ejemplo de datos de correlación
+
+mask = np.triu(np.ones_like(correlaciones, dtype=bool))  
+heatmap = sns.heatmap(correlaciones, mask=mask, vmin=-1, vmax=1, annot=True)
+
