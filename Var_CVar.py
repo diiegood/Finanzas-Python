@@ -6,34 +6,16 @@ import importlib
 import matplotlib.pyplot as plt
 from scipy.stats import skew, kurtosis, chi2
 
-#VaR Valor en Riesgo /  Exxpected Shortfall CVaR
-
-"Objetivo crear un test de normalidad jarque bera"
-
-#Serie de pasos
-"1ero generar un vector de variables aleatorias"
-"2do visualizar un histograma de variables aleatorias"
-"3ro definir que es el p-value"
-"4to generar un test de jarque bera"
-"5to una distribucion normal puede fallar el su test de normalidad"
-
-"Para correr el codigo con el test de normalidad para fallar"
-
-#contador de simulaciones
-is_normal = True
-counter = 0 
-while is_normal:
-
 #inputs para generar el vector de variables aleatorias 
-    x_size = 10**6
-    degrees_freedom = 2 
-    type_random_variable = "normal"
-
+x_size = 10**6
+degrees_freedom = 2 
+type_random_variable = "normal"
+        
 #se genera las funciones condicionales por si es de diferente distribucion
-
+        
 if type_random_variable == "normal":
-    x = np.random.standard_normal(size=x_size)
-    x_str = type_random_variable
+   x = np.random.standard_normal(size=x_size)
+   x_str = type_random_variable
 elif type_random_variable == "exponential":
     x = np.random.standard_exponential(size = x_size)
     x_str = type_random_variable
@@ -43,17 +25,33 @@ elif type_random_variable == "student":
 elif type_random_variable == "chi-squared":
     x = np.random.chisquare( size=x_size, df=degrees_freedom)
     x_str = type_random_variable + '(df= ' + str(degrees_freedom) + ')'
-    
-#compute "risk metrics" / inputs para medir el riesgo
+                        
+#compute "risk metrics" / inputs para medir el riesgo / en mexico se usa VaR 99.5%
+round_digits = 4
 x_mean = np.mean(x)
 x_stdev = np.std(x)
 x_skew = skew(x)
 x_kurt = kurtosis(x)  #exceso de curtosis
-x_var_95 = np.percentile(x, 5) #la division de los datos 
+x_var_95 = np.percentile(x, 5) #mayor perdida esperada en el percentil
+x_Cvar_95 = np.mean(x[x<= x_var_95]) #deficit esperado en promedio de la izquierda  
+#CVaR teniendo el vector x se queda solo con los valores mas pequeños que el valor en riesgo (VaR) 
+x_sharpe = x_mean / x_stdev * np.sqrt(252)                     #metrica de riesgo
 jb = x_size/6*(x_skew**2 + 1/4*x_kurt**2)
 p_value = 1 - chi2.cdf(jb, df=2)
 is_normal = (p_value > 0.05)  #equivalently jb < 6
 #para que sea una variable normal aleatoria el p-value debe ser mayor a 0.05
+                    
+#jarque_bera_str = 'mean' + str(np.round(x_mean,round_digits))\
+#        + '/desv stand ' + str(np.round(x_stdev,round_digits))\
+#        + '/skewness ' + str(np.round(x_skew,round_digits))\
+#        + '/kurtosis ' + str(np.round(x_kurt,round_digits))\
+#        + '/Sharpe ratio ' + str(np.round(x_sharpe,round_digits))
+#plot_str = '/VaR 95% ' + str(np.round(x_var_95,round_digits))\
+#        + '/CVaR 95% ' + str(np.round(x_Cvar_95,round_digits))\
+#        + '/jarque_bera ' + str(np.round(jb,round_digits))\
+#        + '/p_value ' + str(np.round(p_value,round_digits))\
+#        + '/is_normal ' + str(is_normal)
+
 
 #print metrics | se muestran los resultaos obtenidos 
 print(x_str) #para mostrar que distribucion estamos viendo
@@ -61,65 +59,21 @@ print("mean " + str(x_mean))
 print("std " + str(x_stdev))
 print("skewness " + str(x_skew))
 print("kurtosis " + str(x_kurt))
-print("VaR 95% " + str(x_var_95)) #intervalo de confianza del 95% , se habla con un error del 5%
+print("VaR 95% " + str(x_var_95)) #intervalo de confianza del 95% , se habla con un error del 5%, perdida en percentil de 5% 
+print("CVaR 95% " + str(x_Cvar_95)) #promedio del intervalo de perdida a la izquierda del 5%
 print("Jarque_Bera " + str(jb))
 print("p-value " + str(p_value))  #el p value debe ser mayor a 0.05 osea mayor del 5%
 print("is normal " + str(is_normal))
-
-
+                    
+                    
 #Al calcular la estadistica de Jarque bera siginifica que esta en .78
-
+                    
 #Se grafica el histograma 
+                    
+#plot histogram
 plt.figure()
 plt.hist(x, bins=100)
 plt.title("Histogram " + x_str)
 plt.show()
-
-#para hacer una prueeba de simulaciones
-print("counter "+ str(counter))
-counter +=1
-print("-----")
-
-###############################################################################
-###############################"Observaciones"#################################
-###############################################################################
-
-"El p-value (0.05), significa que hay que encontrar el punto T, donde valores mas extremos del punto p "
-"El area bajo la curva o la probabilidad va ser de 0.05 "
-
-#0.05 es el umbral de  decision, donde el p-value no debe ser menor de 0.05
-#en la normal el p-value > 0.05
-
-"Si el punto rojo es 0.05 (p-value),si cae mas a la derecha osea es menor de 0.05, va contradecir la hipotesis "
-"de que la variable aleatoria es normal, y de que el test de jarque bera es una chi-square"
-
-# p>0.05 se satisface el test de normalidad / jarque bera debe ser 6 
-#tradicionalmente se usa un intervalo de confianza de 95%, considerando el valor extremo 
-
-"lo que esta fuera de la cola es el intervalo de confianza, se busca que el p-value caiga dentro del"
-"intervalo de confianza" 
-
-#si el intervalo de confianza es del 95%, se rechaza el test de normalidad si p-value es menor a 0.01 / 
-#en este caso el error seria del 5% si el intervalo es de 95%.
-
-"En conclusion se rechaza la hipotesis nula solo si el valor o el dato cae fuera del intervalo de confianza"
-
-#notas
-"P value se parece a la distribucion chi-square, teniendo una forma parecida a la expoenencial"
-"P-value, si tiene la formal normal y al hacer la prueba de jarque bera, es una variable aleatoria no negativa"
-"empieza en 0 y termina en infinito positivo"
-
-#Donde valores mas extremos del P-value, mas a la derecha, de T minuscula, el area bajo la curva va tener 
-#la probabilidad va ser de 0.05, siendo el punto T el punto de observacion estando en el eje de x del valor P
-#Suponiendo el test de la hipotesis nula , es que la distribucion viene de la chi-square (jarque bera)
-#o que se esta construyendo una chi-square a partir de la skweness y curtosis del vector aleatoro original
-#Se asume que el vector aleatorio viene de una distribucion normal, apartir del punto se calcula la probabilidad de tener valores mas extremos
-
-
-
-"12:35"
-
-
-
-
+            
 
