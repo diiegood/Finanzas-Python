@@ -1,0 +1,80 @@
+import yfinance as yf
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Descargar datos históricos del activo que elijamos
+data = yf.download('CHDRAUIB', start='2023-11-6', end='2024-11-6')  # Cambié 'APPLE' a 'AAPL'
+
+# Verificar los primeros y últimos valores para asegurarnos de que los datos están correctos
+print(data.head())
+print(data.tail())
+
+# Calcular retornos logarítmicos
+precios_ajustados = data['Adj Close']
+retornos = np.log(precios_ajustados / precios_ajustados.shift(1)).dropna()
+
+# Verificar los retornos calculados
+print("Primeros retornos calculados:")
+print(retornos.head())
+
+# Calcular la tasa de retorno esperada (promedio de los rendimientos)
+mu = np.mean(retornos)
+
+# Volatilidad anualizada
+sigma = np.std(retornos[-1000:]) * np.sqrt(252)
+
+# Verificar los valores de mu y sigma /  se imprimen los valores a 5 decimales en flotantes.
+print(f"Retorno esperado (mu): {mu:.5f}")
+print(f"Volatilidad (sigma): {sigma:.5f}")
+
+# Parámetros de la simulación GBM
+S0 = data['Adj Close'].iloc[-1]  # Último precio ajustado
+T = 10 / 252  # n días, convertido a años
+n_steps = 100  # Número de pasos en la simulación
+n_simulations = 1000  # Número de simulaciones
+
+# Paso de tiempo en años
+dt = T / n_steps
+
+# Simulación de las trayectorias de precios
+price_paths = np.zeros((n_steps + 1, n_simulations))
+price_paths[0] = S0
+
+for i in range(1, n_steps + 1):
+    Z = np.random.standard_normal(n_simulations)  # Números aleatorios para la simulación
+    price_paths[i] = price_paths[i - 1] * np.exp((mu - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * Z)
+
+# Cálculo del intervalo de confianza
+final_prices = price_paths[-1]  # Precios al final del periodo simulado
+ci_lower = np.percentile(final_prices, 2.0)  # Límite inferior del 10%
+ci_upper = np.percentile(final_prices, 95.0)  # Límite superior del 90%
+
+# Cálculo del precio probable (mediana)
+precio_median = np.median(final_prices)
+
+# Imprimir los resultados
+print(f"Precio probable (mediana): {precio_median:.2f}")
+
+# Cálculo de la probabilidad de alcanzar un precio objetivo
+precio_objetivo = 540  # Ejemplo de precio objetivo
+probabilidad = np.mean(final_prices >= precio_objetivo)
+
+# Resultados
+print(f"Intervalo de confianza al 99%: [{ci_lower:.2f}, {ci_upper:.2f}]")
+print(f"Probabilidad de alcanzar el precio objetivo de {precio_objetivo}: {probabilidad:.2%}")
+
+# Gráfico de las trayectorias simuladas
+plt.style.use('dark_background')
+plt.figure(figsize=(20, 12))
+for i in range(1000):  # Mostrar solo n simulaciones para no saturar el gráfico
+    plt.plot(price_paths[:, i], lw=1.5, alpha=0.1)
+
+plt.axhline(ci_lower, color='red', linestyle='--', label='IC 1% Inferior')
+plt.axhline(ci_upper, color='green', linestyle='--', label='IC 1% Superior')
+plt.title('Simulación de Precios de AAPL con GBM (10 días)')
+plt.xlabel('Tiempo (días)')
+plt.ylabel('Precio del Activo')
+plt.legend()
+plt.grid(True)
+plt.show()
