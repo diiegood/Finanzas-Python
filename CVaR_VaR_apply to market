@@ -1,0 +1,102 @@
+
+#librerias que se usaran
+import numpy as np
+import pandas as pd
+import matplotlib as mplt
+import scipy
+import yfinance as yf
+import importlib
+import matplotlib.pyplot as plt
+from scipy.stats import skew, kurtosis, chi2
+import quadprog
+import plotly.express as px  #para abrir una grafica en el navegador
+
+#para importar un modulo creado
+#import static_functions
+#importlib.reload(static_functions)
+
+
+#inputs
+ric = 'SPY' #aqui van los indicadores bursatiles que se usaran.
+#Se definen los tickers
+#tickers = ["^MXX", "SPY", "SHV", "USDMXN=X"]
+
+
+#Se descarga los datos de Yahoo Finance / Ajustar los stock splits y los dividendos.
+data = yf.download(ric, start="2020-01-01", end="2024-10-01").reset_index()
+data2 = data [ ["Date", "Open", "High", "Low", "Close", "Adj Close"]]
+data2
+data3 = data2
+data3
+
+#se separan por componenetes en vectores
+vec_close = data2["Close"].values
+vec_close_previous = data2["Close"].shift(1).values
+vec_close_next = data2["Close"].shift(-1).values
+
+#se crea un data frame vacio el cual va ser manipulado
+d = pd.DataFrame()
+d["date"] = data2["Date"]
+d["close"] = vec_close
+d["close_previous"] = vec_close_previous
+d["close_next"] = vec_close_next
+d["return_close"] = vec_close/vec_close_previous - 1
+d = d.dropna()
+d = d.reset_index(drop =True)
+
+#inputs para el test Jarque Bera
+x = d["return_close"].values
+x_str = "Real Returns" + ric
+x_size = d.shape[0]
+
+#Jaeque Bera test programacion.
+round_digits = 4
+x_mean = np.mean(x)
+x_stdev = np.std(x)
+x_skew = skew(x)
+x_kurt = kurtosis(x)  #exceso de curtosis
+x_var_95 = np.percentile(x, 5) #la division de los datos 
+x_cvar_95 = np.mean(x[x <= x_var_95])
+x_sharpe = x_mean / x_stdev * np.sqrt(252)
+jb = x_size/6*(x_skew**2 + 1/4*x_kurt**2)
+p_value = 1 - chi2.cdf(jb, df=2)
+is_normal = (p_value > 0.05)  #equivalently jb < 6
+#para que sea una variable normal aleatoria el p-value debe ser mayor a 0.05
+
+jarque_bera_str = 'mean' + str(np.round(x_mean,round_digits))\
+      + '/desv stand ' + str(np.round(x_stdev,round_digits))\
+      + '/skewness ' + str(np.round(x_skew,round_digits))\
+      + '/kurtosis ' + str(np.round(x_kurt,round_digits))\
+      + '/Sharpe ratio ' + str(np.round(x_sharpe,round_digits))
+plot_str = '/VaR 95% ' + str(np.round(x_var_95,round_digits))\
+      + '/CVaR 95% ' + str(np.round(x_cvar_95,round_digits))\
+      + '/jarque_bera ' + str(np.round(jb,round_digits))\
+      + '/p_value ' + str(np.round(p_value,round_digits))\
+      + '/is_normal ' + str(is_normal)
+
+#descibcion de los parametros:
+print(x_str) #para mostrar que distribucion estamos viendo
+print("mean " + str(x_mean))
+print("std " + str(x_stdev))
+print("skewness " + str(x_skew))
+print("kurtosis " + str(x_kurt))
+print("VaR 95% " + str(x_var_95)) #intervalo de confianza del 95% , se habla con un error del 5%, perdida en percentil de 5% 
+print("CvaR 95% " + str(x_cvar_95)) #promedio del intervalo de perdida a la izquierda del 5%
+print("Sharpe " + str(x_sharpe))
+print("Jarque_Bera " + str(jb))
+print("p-value " + str(p_value))  #el p value debe ser mayor a 0.05 osea mayor del 5%
+print("is normal " + str(is_normal))
+
+plt.figure(figsize=(12,6))
+
+#plot histogram
+plt.figure()
+plt.hist(x,bins=100)
+plt.title ("Histogram " + x_str)
+plt.xlabel(plot_str)
+plt.show()
+
+#print stats in console
+print(x_str)
+print(jarque_bera_str)
+print(plot_str)
