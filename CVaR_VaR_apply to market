@@ -64,15 +64,15 @@ is_normal = (p_value > 0.05)  #equivalently jb < 6
 #para que sea una variable normal aleatoria el p-value debe ser mayor a 0.05
 
 jarque_bera_str = 'mean' + str(np.round(x_mean,round_digits))\
-      + '/desv stand ' + str(np.round(x_stdev,round_digits))\
-      + '/skewness ' + str(np.round(x_skew,round_digits))\
-      + '/kurtosis ' + str(np.round(x_kurt,round_digits))\
-      + '/Sharpe ratio ' + str(np.round(x_sharpe,round_digits))
-plot_str = '/VaR 95% ' + str(np.round(x_var_95,round_digits))\
-      + '/CVaR 95% ' + str(np.round(x_cvar_95,round_digits))\
-      + '/jarque_bera ' + str(np.round(jb,round_digits))\
-      + '/p_value ' + str(np.round(p_value,round_digits))\
-      + '/is_normal ' + str(is_normal)
+      + ' / desv stand ' + str(np.round(x_stdev,round_digits))\
+      + ' / skewness ' + str(np.round(x_skew,round_digits))\
+      + ' / kurtosis ' + str(np.round(x_kurt,round_digits))\
+      + ' / Sharpe ratio ' + str(np.round(x_sharpe,round_digits))
+plot_str = ' / VaR 95% ' + str(np.round(x_var_95,round_digits))\
+      + ' / CVaR 95% ' + str(np.round(x_cvar_95,round_digits))\
+      + ' / jarque_bera ' + str(np.round(jb,round_digits))\
+      + ' / p_value ' + str(np.round(p_value,round_digits))\
+      + ' / is_normal ' + str(is_normal)
 
 #descibcion de los parametros:
 print(x_str) #para mostrar que distribucion estamos viendo
