@@ -1,0 +1,199 @@
+"Introduccion a python y Regresion lineal"
+
+a = "Python" < "python"
+print(a)
+type(a)
+
+
+b = "Estoy escribiendo un string"
+#variable =  valor
+print(a)
+
+x = (10, "miercoles", 2022, "marzo")     #tupla
+type(x)
+
+x1 = [22, "miercoles", 2022, "febrero"]   #lista
+type (x)
+
+x.append("Econometria II") #syntaxis para agregar elementos
+
+#la tupla es fija (ya no se puede cambiar), la lista se puede modificar.
+
+x[0]
+
+[1,2,3,4,5] + [6,7,8,9,10]  #se agregan los valores que se suman a la lista
+
+[1,3,5,7] * 3   #Se triplica la lista
+
+Sesiones = {"semana 1" : "Repaso parte 1", "Semana 2": "Repaso parte 2", "Semana 3" :"Introduccion a Python"}
+
+Sesiones  #se genera un diccionario
+
+###############################################################################
+
+lista = [1,2,3,4,5,6,7,8,9,10] 
+
+max(lista)
+type(lista) #muestra de que tipo es 
+lista.append(11)  #para agregar un nuevo valor a la lista
+lista
+
+lista._class_
+
+###############################################################################
+"Funciones"
+
+def saludar_alumno():
+    alumno = input("Hola, ¿cual es tu nombre?")
+    mensaje = str ("Buenos dias," + str(alumno) + ". Espero que disfrutes este curso.")
+    return mensaje
+
+
+saludar_alumno()
+
+def pregunta_zoomestre():
+    respuesta = input("Extrañas las clases en linea?  (SI/NO)" )
+    respuesta = respuesta.upper()
+    respuesta = respuesta.replace("I", "I")
+    if respuesta == "SI":
+        msj = "Nostros tambien. Pero te aguantas y tomas la clase presencial"
+    elif respuesta == "NO":
+        msj = "Te entiendo, eran tiempos dificiles"
+    else: 
+        msj = "Lo siento, no estabamos preparados para esa respuesta"
+    return msj
+    
+pregunta_zoomestre()
+
+
+###############################################################################
+"While"
+
+x = 10
+
+while x>0:
+    print(str(x)+  " es un numero positivo" )
+    x = x-1
+  
+    
+  
+
+numbers = range (10)
+for num in numbers:
+    if num>5:
+        print(str(num) + " mayor a 5")
+    elif num== 5:
+        print(str(num) + " es igual a 5")
+    else:
+        print(str(num) +" es menor a 5")
+        
+
+###############################################################################
+
+import numpy as np
+import pandas as pd
+
+normal_dist = np.random.normal(2,1,100)
+np.log(normal_dist)
+
+###############################################################################
+#para correr los datos de un archivo segun una pagina con el url
+
+url = "https://josephsalmon.eu/enseignement/TELECOM/MDI720/datasets/Galton.txt"
+df= pd.read_csv(url, sep="\t")
+df.head(n=10)  #muestra los primeros 10 datos
+df.tail(n=20)  #muestra los ultimos 10 datos
+
+#si se busca hacer la regresion.
+type(df)
+
+#se hace la conversion de los datos de pulgadas a centimetros.
+#iguala la funcion original a la nueva que le da la indicacion de convertirla
+#se multiplica la altura de cada vector de columnas por 2.54 que 1 inch = 2.54 cm
+df[['Father', 'Mother', 'Height']] = df [['Father', 'Mother', 'Height']] * 2.54
+df.head
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+###############################################################################
+
+"Manipulacion de datos, individuales"
+
+papa= df['Father']  #muestra la columna del padre de la variable df
+niños = df['Kids']  #muestra los datos de los niños de la variable df
+
+df.Kids #entra al objeto df y me trae el atributo kids
+
+df.iloc[2:6]  #se localiza los indices de la funcion del 2:6
+
+#para graficar los generos en una grafica
+sns.pairplot(df, hue='Gender') 
+#se indica que se configure las graficas distintas asignando el color a un genero
+plt.show()
+
+###############################################################################
+"Arreglos matriciales"
+
+#se generan 2 matrices con el comando numpy:
+#se toma la funcion array, con las columnas padre y madre volviendolas matriz
+x = np.array (df[["Father", "Mother"]])  #matriz X
+
+#se toma la columna de estatura
+y= df["Height"] #Matriz Y
+
+Unos = np.ones(len(y))  #se genera un vector de puros 1
+Unos
+X_m = np.array([Unos, x[:,0], x[:,1]]).T  
+
+X_m
+
+beta  = np.linalg.inv(X_m.T.dot(X_m)).dot(X_m.T).dot(y) #se calculan los betas
+X_m.T.dot(y) #
+
+beta
+#predict se predice cuanto miden
+
+#en promedio mide 1.4393329 cm + 0.3798 (padre) * 1.72 + 0.283214 * 1.60
+predict = .4393322954 + 0.3798 * 1.72 + 0.283214 * 1.60
+predict  #es el valor esperado de la pareja con esa combinacion, se estima que en promedio mida 1.54 metros
+
+"para calcular los individuales "
+#para obtener los residuales / multiplacamos matriz X *  beta = y estimado
+# y estimado - y real = error (que tanto se aleja del real)
+beta_y = X_m.dot(beta)
+e_beta = beta_y - y
+e_beta.sum() #suma del error
+
+#variables: 
+beta_y
+e_beta
+
+#calculo de sigma al cuadrado
+sigma_2= np.dot(np.transpose(e_beta), e_beta)/(len(e_beta)-len(beta))
+sigma_2
+
+# calcular la inversa de la matriz / para obtener los errores estandar de las betas
+Var_beta = np.diag(sigma_2 * np.linalg.inv(X_m.T.dot(X_m))) ** 0.5 
+Var_beta
+
+#se divide beta entre los errores estandar y se obtiene T estadistico.
+beta / Var_beta
+
+#T estadistico sirve para ver si es significativo o no / en este caso es significativo por que es muy alto
+#se rechaza la hipotesis nula / que refiere a que el valor de la Beta es 0 
+#la estatura del padre si tiene un efecto sobre la estatura del hijo y viceversa con la madre.
+
+###############################################################################
+
+"Minimos cuadrados ordinarios"          "43:29"
+
+import statsmodels.api as sm  
+
+X_m = sm.add_constant(x)
+
+estimacion = sm.OLS(y ,X_m)
+estimacion
+est2 = estimacion.fit()
+print(est2.summary())
+
