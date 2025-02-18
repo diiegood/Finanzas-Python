@@ -1,0 +1,67 @@
+#programar un bono 
+
+import math
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot
+
+print("Inicia la simulacion de una calculadora financiera de un Bono")
+print("-"*80)
+print("\n")
+
+Valor_nominal = float(input("Ingresar el Valor Nominal: ")) #valor nominal , valor bono
+convencion_dias = float(input("Ingrese la convencion dias: ")) #base de calculo de interes devengado 
+tasa_cupon = float(input("Ingrese la tasa cupon: ")) # dice el crecimiento
+dias_vencimiento = int(input("Ingrese los Dias Por Vencer: ")) 
+#para ver cuantos dias tenemos desde la compra del cupon hasta la fecha de vencimiento 1,2,3 años
+tasa_yield = float(input("Ingrese la Tasa del yield: ")) 
+#tasa de rendimiento que nos va generar el bono.
+
+#Tasa desanualizada del cupon (se convierte la tasa cupon)
+tasa_cupon_des =  tasa_cupon / 36000 * convencion_dias
+#Pago por el cupon  (valor del cupon multiplicando el nominal * tasa cupon convertida)
+cupon_pago = tasa_cupon_des * Valor_nominal
+#tasa de yield (se convierte la tasa yield al peridoo deseado)
+tasa_yield_convertida = tasa_yield  / 36000 * convencion_dias
+#numero de cupones (cantidad de cupones de caracter semestral seran otorgados durante el lapso de los dias)
+cupones = round(dias_vencimiento / convencion_dias)
+#dias por cobrar el cupon 
+dias_por_cobrar_cupon = dias_vencimiento - cupones * convencion_dias
+#dias transcurridos del cupon
+dtcpn = convencion_dias - dias_por_cobrar_cupon
+#intereses devengados
+intereses_dev = Valor_nominal * tasa_cupon / 36000 * dtcpn
+
+print("-"*80)
+print("\n") #linea para separar los datos de los imputs y del calculo 
+
+print("Numero de Cupones: ", cupones)
+print("Pago por el Cupon:$ ",cupon_pago)
+print("dias por cobrar el cupon", dias_por_cobrar_cupon)
+print("dias transcurridos del cupon: ", dtcpn)
+
+#factor de anualidad / anualidad asignado a unas variables
+factor_a = (1-(1+tasa_yield)**(-cupones))/(tasa_yield)
+
+#producto 
+product = cupones * factor_a
+
+#Valor presente 
+vp_nominal = (Valor_nominal) / ( 1 + tasa_yield_convertida ) ** ( cupones )
+
+#suma
+sma = product + vp_nominal + cupon_pago
+
+#precio sucio 
+precio_sucio = sma / ( pow ((1 + tasa_yield_convertida), (dias_por_cobrar_cupon / convencion_dias )))
+
+#Precio limpio
+precio_limpio = precio_sucio - intereses_dev
+
+print("-" * 80)
+print("\n")
+
+print ("el precio sucio es:$ ", precio_sucio)
+print ("El precio limpio es: $ ", precio_limpio)
+
+
