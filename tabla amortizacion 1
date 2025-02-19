@@ -1,0 +1,42 @@
+"Tabla de amortizacion"
+
+import pandas as pd 
+
+numero_pagos = 50
+tasa_interes = 0.95
+Monto = 100000
+Periodo_gracia = 3
+
+Tabla_amortizacion = pd.DataFrame(columns=["Capital", "Interes", "Pago_Capital", "Pago_Proporcional"], 
+                                  index=range(numero_pagos))
+
+Tabla_amortizacion.loc[list(range(Periodo_gracia)),"Capital"]= Monto
+Tabla_amortizacion.loc[list(range(Periodo_gracia)),"Interes"]= Monto * (tasa_interes/12)
+Tabla_amortizacion.loc[list(range(Periodo_gracia)),"Pago_Capital"]= 0
+Tabla_amortizacion.loc[list(range(Periodo_gracia)),"Pago_Proporcional"]=(
+    Tabla_amortizacion.loc[list(range(Periodo_gracia)),"Pago_Capital"] + 
+    Tabla_amortizacion.loc[list(range(Periodo_gracia)),"Interes"])
+
+#generamos una funcion
+def Pago_proporcional(Capital, Plazo, Tasa):
+    pago = ((Capital/(1-(1+Tasa)**(-Plazo))/Tasa))
+    return pago
+
+Tabla_amortizacion.loc[Periodo_gracia, "Capital"]=Monto
+Tabla_amortizacion.loc[Periodo_gracia,"Interes"]=Monto
+Tabla_amortizacion.loc[Periodo_gracia, "Pago_Proporcional"]=Pago_proporcional(
+    Monto,(numero_pagos - Periodo_gracia),(tasa_interes/12))
+
+Tabla_amortizacion.loc[Periodo_gracia,"Pago_Capital"]=(Tabla_amortizacion.loc[Periodo_gracia,"Pago_Proporcional"]-
+                                                       Tabla_amortizacion.loc[Periodo_gracia,"Interes"])
+
+for i in range(Periodo_gracia+1,numero_pagos):
+    Tabla_amortizacion.loc[i,"Capital"]=(Tabla_amortizacion.loc[i-1,"Capital"]-Tabla_amortizacion.loc[i-1,"Pago_Capital"])
+    Tabla_amortizacion.loc[i,"Interes"]=Monto*(tasa_interes/12)
+    Tabla_amortizacion.loc[i,"Pago_Proporcional"]=Pago_proporcional(Monto,
+                                                                    (numero_pagos-Periodo_gracia),
+                                                                    (tasa_interes/12))
+    Tabla_amortizacion.loc[i, "Pago_Capital"]=(Tabla_amortizacion.loc[i,"Pago_Proporcional"]-
+                                               Tabla_amortizacion.loc[i,"Interes"])
+    
+    
