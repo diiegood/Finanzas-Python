@@ -1,0 +1,48 @@
+"Tabla de Amortizacion 2"
+
+import numpy_financial as npf  #libreria de numpy que funciona como las funciones de excel
+import numpy as np
+import pandas as pd
+import tabulate as tb
+
+#Ejemplo de las formulas de numpy financial
+tasa_interes = 0.01 #tasa de interes
+valor_presente = 1000000 #capital se puede ajustar
+saldo = valor_presente  
+periodo = 36 #meses  #se le pueden ajustar los periodos
+
+cuota = npf.pmt(tasa_interes,periodo,-valor_presente)
+print("El valor de la cuota es: ", cuota)
+
+#para hacer una tabla de amortizacion
+tabla=[] #se crea un array vacio
+
+"Tabla de amortizacion"  #calculo de tabla de amortizacion
+#a un mes de vencimiento el calculo queda
+for i in range(1, periodo +1): #si se vence un mes o se anticipa se resta o se suma dependiendo
+    interes = saldo * tasa_interes
+    abono_capital = cuota - interes
+    saldo-= abono_capital #se hace el acumulado de la resta del saldo al abono a capital
+    tabla.append([i, cuota, interes, abono_capital, np.round(saldo,2)])
+
+print(tb.tabulate(tabla,headers=["Periodo", "Cuota", "Interes", "Abono Capital", "Saldo"]))
+
+
+#formula para conocer cuanto se ha abonado a capital en un periodo especifico
+cuota3 = npf.ppmt(tasa_interes,3,periodo, -valor_presente) 
+#el valor presente debe estar negativo / se cambia el numero dependiendo del periodo deseado
+cuota3
+#nos dice cuanto se abono a capital (tasa, numero periodo, valor presente, valor futuro, anualidad anticipada o vencida )
+print("El valor de cuota pagado en el periodo 3 es: ", cuota3)
+
+#formula para conocer el interes pagado en el periodo señalado 
+interes_calculado = npf.ipmt(tasa_interes, 2 ,periodo, -valor_presente) 
+interes_calculado = interes_calculado/1000
+#nos dice cuanto pago de tasa de interes en el periodo (numero que va antes de periodo)
+print("El valor de la tasa de intres pagado en el periodo 12 es: ", interes_calculado,"%" )
+
+
+
+
+
+
