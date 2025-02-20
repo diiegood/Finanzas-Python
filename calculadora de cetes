@@ -1,0 +1,116 @@
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+
+"Valuacion de Bonos (Cetes)"
+
+#Cetes son bonos cupon cero, no devengan intereses, se pagana descuento y a su 
+#valor nominal al vencimiento del plazo.
+
+#El banco de mexico hace subastas de estos instrumentos para obtener estos recursos
+#o obtener liquidez.
+
+#Banco de Mexico lleva a cabo operaciones en el mercado de valores con el objetivo
+#de regular la liquidez en el sistema financiero, como agente financiero del gobierno
+#federal, y de otras entidades al publico el banco de mexico realiza subastas de titulos de deuda
+#entre otros CETES
+
+#Cetes se calcula usando una formula a descuento al final de periodo se pagan a su
+#valor nominal, teniendo un valor nominal de $10 pesos.
+
+#la tasa de Cetes diaria es el resultado de las subastas de valores gubernamentales
+#diaria, dependiendo la necesidad de liquidez diaria
+
+"Cetes en mercado primario, se colocan mediante subastas estos titulos, donde los participantes"
+"presentan posturas por el monto deseado a adquirir, casas de bolsa y bancos, insituciones de credito"
+"sociedades de inversion especializadas en fondos de retiro y fianciera rural, mediante la necesidad de liquidez diaria"
+"por parte de banco de mexico"
+
+#funetes de consulta
+pagina_calculo_cetes = "https://www.banxico.org.mx/mercados/d/%7B0DE0044F-662D-09D2-C8B3-4F1A8E43655F%7D.pdf"
+
+cetes_pagina = 'https://www.banxico.org.mx/tipcamb/llenarTasasInteresAction.do?idioma=sp'
+
+calculadora_cetes_web = "https://www.cetesdirecto.com/calculadoras/cetes?method=init"
+
+"Calculadora de Cetes"
+
+#Calculadora de Cetes
+#Cetes se calcula contando 7 decimales
+#tie de fondeo a 18/02/25
+
+#imputs
+Valor_Nominal = 10
+r_yield = 0.0925  #tasa yield.
+t = 182 # dias
+Capital = 450000.00 #expresado en mxp
+
+#funcion
+def calculo_cete(Valor_Nominal, r_yield, t):
+    calculo_cete = Valor_Nominal / (1 + (r_yield * t / 360 ))
+    return round( calculo_cete, 8 )
+
+#funcion de calculo de cete
+#funcion expresada en (Valor Nominal, Tasa Yield, plazo)
+calculo_cete(Valor_Nominal, r_yield, t)
+resultado_cete = calculo_cete(Valor_Nominal, r_yield, t)
+resultado_cete
+print("El valor del cete a descuento es de ", "$",resultado_cete)
+
+#titulos comprados al valor a descuento
+titulos = Capital / resultado_cete
+titulos = round(titulos,0)
+titulos
+print("El numero comprado es de",titulos,"titulos")
+
+#valor de ganancia por titulo
+remanente = float(10.0 - resultado_cete)
+remanente = round(remanente,3)
+remanente
+print("La ganancia por titulo es de ",remanente,"mxp de cada uno")
+
+#ganancia total por titulos
+total_ganancia = titulos * remanente
+total_ganancia 
+print("La ganancia total es de ", "$", total_ganancia, "pesos mexicanos")
+
+#monto total obtenido
+monto_final = Capital + total_ganancia #no teniendo en cuenta el impuesto
+monto_final
+print("Monto final obtenido es de ", "$",monto_final,"pesos mexicanos")
+
+#calcular el rendimiento total de la inversion
+porcentaje  = ((monto_final - Capital ) / Capital  ) * 100
+porcentaje  = round(porcentaje,2)
+porcentaje
+print("El porcentaje de ganancia es de ",porcentaje,"%")
+
+###############################################################################
+
+"Conversacion con el cliente"
+print("Bienvenido a Cetes directo, por favor ingrese su nombre")
+nombre = str(input())
+print("Un gusto",nombre, "Desea invertir en bonos gubernamentales, respaldados por Banxico") 
+respuesta = str(input())
+if respuesta == "que es banxico":
+    print("Nose preocupe le podemos aclarar su duda", "Banco de Mexico es la insitucion encargada de manera autonoma por parte del gobierno federal que funge como el banco central")
+    respuesta2 = str(input())
+    if respuesta2 == "si":
+        print("Podria invertir para poder cumplir cualquier proyecto que desee")
+        print("Bien decido", "¿De cuanto es su capital?")
+        Capital = float(input())
+        print("¿Que tiempo desea invertir")
+        print("Hay plazos de 28 dias, 91 dias, 182 dias, 350 dias ")
+        t = round(input())
+        print("Dado ese plazo tenemos la tasa de ", r_yield, "%")
+        print("Excelente, en seguida le damos su informacion completa")
+        print("Segun nuestros calculos podemos ver que el resultado es el siguiente")
+        print("El valor de cete a descuento es de", resultado_cete)
+        print("El numero de titulos comprado con su capital es de ", titulos)
+        print("Por lo que la ganancia de cada titulo es de", remanente)
+        print("Su ganancia total incluido el capital es de", total_ganancia)
+        print("el monto final obtenido es de ", monto_final)
+        print("el porcentaje de ganancia o rendimiento es de" , porcentaje)
+        
+        
+    
