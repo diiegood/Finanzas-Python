@@ -119,6 +119,40 @@ if respuesta == "que es banxico":
         print("Su ganancia total incluido el capital es de", total_ganancia)
         print("el monto final obtenido es de ", monto_final)
         print("el porcentaje de ganancia o rendimiento es de" , porcentaje)
-        
-        
-    
+
+##########################################################################################################
+
+"Metodo ultra_simple"
+
+#Pparametros
+VN = 10
+r_yield = 0.0941
+t = 1
+price = 9.14
+
+#calculo simple 
+cete = 10 / (1 + r_yield) ** t 
+cete 
+print("El valor del cete es de  ", cete "pesos mexicanos")
+
+
+#calculo de Bono simple
+
+#bono paga cupon periodico cada 6 meses, por lo que se debe traer a valor presente , todos los cupones y el valor nominal
+#al vencimiento
+
+import numpyfinancial as npf
+
+#parametros
+VN = 100
+r_yield = 0.04
+t = 3 #expresado en años
+coupon_yield = 0.03
+coupon = 3
+price = 97.2
+
+Bono = -npf.pv(rate = r_yield, nper= t, pmt= t, fv= VN)
+Bono
+Print("El precio del Bono es: " , Bono, "pesos mexicanos")
+
+
