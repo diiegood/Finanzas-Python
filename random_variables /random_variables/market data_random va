@@ -12,7 +12,7 @@ import os
 
 ######################### Directorio + datos que jala #########################
 # Inputs #activos que pueden usarse (AMZN, APPL, DAI-USD, BAC, BTC-USD, (FAS), BLK,CHFUSD=X, )
-ric = 'CHDRAUIB''  # 1
+ric = 'CHDRAUIB'  # 1
 
 # Definir el directorio donde se encuentran los archivos
 directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'  
