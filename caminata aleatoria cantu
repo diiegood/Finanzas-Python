@@ -1,0 +1,88 @@
+
+###############################################################################
+###############################################################################
+"practica del movimiento browniano"
+
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+import seaborn as sns
+#%config InlineBackend.figure_format='retina'
+
+import random #libreria para variables aleatorias
+
+np.random.choice((-10,10),1000) #se genera un vector de 20 datos aleatorios
+random.seed(18) #se genera la semilla para que se reproduzca
+
+datos = np.random.choice((-10,10),1000) #rango de variable -10,10 / frecuencia de datos 1000
+datos
+
+caminata = np.cumsum(datos) #se llama el vector creado con la funcion de suma acumulada
+caminata
+
+#generar una funcion def para las variables de datos
+
+datos=np.random.choice((-10,10),1000)
+print("Resultado de cada tiro:")
+print(datos)
+
+caminata=np.cumsum(datos)
+print("Resultado acumulado de los tiros:")
+print(caminata)
+
+# Graficar la caminata aleatoria se grafica la funcion con la relacion de la grafica 10:6
+plt.figure(figsize=(10,6))
+# Establecer los ticks del eje X para mostrar del 1 al 10
+plt.xticks(range(10, len(caminata) + 12))
+
+# Agregar etiquetas y título / opciones para graficar
+plt.xlabel('Paso')
+plt.ylabel('Posición')
+plt.title('Caminata Aleatoria')
+
+#color de la linea de punto donde se vera el comportamiento de la variable aleatoria
+plt.plot(caminata, color='red')
+
+grid = np.linspace(0,1, 1001)
+grid
+
+len(grid) #devuelve el numero de valores de un elemento iterable vuelve una lista una funcion.
+
+###############################################################################
+########################### ALMACENAMIENTO CON np.append ######################
+
+"np.append(0, np.random.choice((-10,10), 1001).cumsum())"
+#Con esta funcion se genera un array de 1001 valores alatorios
+#cada uno de los cuales puede ser -10, 10
+
+"np.append(0, ...)"
+#agrega un cero de la secuencia de suma acumulada. El resultado es un array que comienza en 0 y luego
+#sigue con la suma acumulada de valores -10, 10, representa una posicion inicial de la caminata aleatoria
+
+
+S =np.append(0, np.random.choice((-10,10),1001).cumsum())
+S
+
+len(S)
+
+plt.figure(figsize=(10,6)) #tamaño de la grafica 
+# Establecer los ticks del eje X para mostrar del 1 al 10
+#plt.xticks(range(1, len(S) + 1))
+S = np.append(0, np.random.choice((-10,10),10000).cumsum()) #rango de variables y numero de datos
+# Agregar etiquetas y título
+plt.xlabel('Paso')
+plt.ylabel('Posición')
+plt.title('Caminata Aleatoria para 1000 pasos comenzando en 0')
+
+plt.plot(S, color="green")
+
+###############################################################################
+"Particion del tiempo con la raiz cuadrada"
+ 
+ 
+ 
+ 
+ 
+ 
+ 
