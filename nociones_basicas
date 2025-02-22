@@ -1,0 +1,139 @@
+rango=range(10,10,10)
+for x in rango:
+    print(x)
+
+numero=1
+while numero<10:
+    print("El valor es:" + str(numero))
+
+numero = 1
+while numero<10:
+    print("El valor es:" + str(numero))
+    numero=numero+1
+    
+    
+#ciclo for repite la secuencia el numero de veces que sea hasta que termines lo que
+#tienes que analizar, vector, tabla.
+
+#ciclo while, es un condicional, especifica donde se detiene, si no se sigue al infinito 
+#(para deterner).
+
+numero_usuario = int(input("Ingrese un numero mayor que 50:"))
+while numero_usuario<=50:
+    numero_usuario=int(input("Numero errado, favor de ingresar otro numero:"))
+else:
+    print("Gracias, su numero ha sido almacenado")
+
+
+#Funciones:
+
+def y_x2(numero):  #aplica la funcion y a x 
+    valor_funcion=numero**2
+    return valor_funcion
+
+y_x2(6)
+
+def DemandaAgregada(consumo, inversion, Gob, X):
+    DemandaAgregada=(consumo+inversion+Gob+X)
+    return DemandaAgregada
+    
+DemandaAgregada(10, 15, 20, 3)
+
+
+#tarea codigo, algoritmo condicional de pasar la materia si sacas arriba de 6 o reprobaste la materia abajo de 6
+#pueden sacar int, o un 
+
+
+calificacion =float(input("Ingrese su califiacion:"))
+if calificacion <=5.9:
+    calificacion =float(input("Eres un burro"))
+elif  calificacion > 6:
+    print("Felicidades lograste pasar la materia")
+ 
+###############################################################################
+
+calificacion =float(input("Ingrese su califiacion:"))
+while calificacion <=5.9:
+     calificacion =float(input("Eres un burro"))
+else:  
+     print("Felicidades lograste pasar la materia")
+
+################################################################################
+###############################################################################
+
+"Yahoo Finance funciones de llamamiento"
+
+import pandas as pd 
+import yfinance as yf
+import random_variables
+
+print(random_variables)
+
+#equity americano / tickers 
+"AMZN, META, GOOGL, AAPL, ^GSPC, CL=F "
+
+#activo = yf.Ticker("AAPL")
+#activo2 = yf.Ticker("GOOGL")
+#activo3 = yf.Ticker("AMZN")
+#activo4 = yf.Ticker("^GSPC")
+
+#acciones = [activo, activo2, activo3, activo4 ]
+#acciones
+
+#activo_apple = activo.history(period= "1mo")
+#activo_google =  activo2.history(period = "1mo")
+#activo_amazon =  activo3.history(period = "1mo")
+#activo_SP500 = activo4.history(period = "1mo")
+
+#activo_inversionistas = activo.major_holders
+#activo_inversionistas
+#activo_cashflow = activo.balance_sheet
+#activo_cashflow
+################################ Equity Mexicano ##############################
+#periodos de los tickers precios del DataFrame
+#para llamar los tickers, se slecceiona el periodo.
+
+#en minutos “5m” y “5d” pero solo en periodo de 5 dias / 1d” y “5y” intervalor diario en 5 años
+#en dias "1d, 5d, 10d, 15d, 30d"
+#en meses "1mo, 3mo, 6mo"
+#en años "1y, 2y, 5y, 10y"
+
+
+GAPB = yf.Ticker("GAPB.MX")
+activo_GAPB = GAPB.history(period="3mo")
+activo_GAPB
+
+Grupo_Carso = yf.Ticker("GCARSOA1.MX")
+grupo_carso = Grupo_Carso.history(period = "3mo")
+grupo_carso
+
+Inbursa = yf.Ticker("4FY.SG")
+GFI = Inbursa.history(period = "3mo")
+GFI
+
+#######################°Para hacer un Data Frame del ticker°######################
+
+#librerias
+import yfinance as yf 
+import pandas as pd 
+import numpy as np 
+import matplotlib.pyplot as plt  # Cambiado para importar el módulo correcto
+
+#se genera el ticker al que se va consultar
+ticker_symbol = "^SPY"
+data = yf.download(ticker_symbol, start="2020-01-01", end="2024-10-22") #el periodo de consulta
+
+close_prices = data["Close"] #los datos de consulta
+close = np.log(close_prices / close_prices.shift(1)) #se hace una conversion logartimica de los precios
+
+df = pd.DataFrame(close_prices)  # No es necesario crear un DataFrame solo con precios de cierre
+
+plt.figure(figsize=(12, 6))  # Opcional: ajustar el tamaño de la figura
+plt.plot(df.index, df['Close'], label='Precios de Cierre', color='blue')  # Añadir etiquetas y color
+plt.title('Precios de Cierre de SPY')  # Título del gráfico
+plt.xlabel('Fecha')  # Etiqueta del eje x
+plt.ylabel('Precio de Cierre')  # Etiqueta del eje y
+plt.legend()  # Mostrar leyenda
+plt.grid()  # Mostrar cuadrícula
+plt.show()
+
