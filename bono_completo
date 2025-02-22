@@ -1,0 +1,71 @@
+"Calculo de Bono completo"
+
+import pandas as  pd
+
+import tabulate as tb
+
+#imputs
+VN = 100 #valor nominal
+yield_rate = 0.085 #tasa yield
+cupon = 0.075 #tasa cupon
+spread_shock = 1.000 #expresado en tasa
+frecuencia = 182
+pagos = 40 #total de pagos
+amortizacion = 0
+
+#data frame vacio de la tabla de amortizacion
+
+tabla_bono = []
+
+#funciones de asignacion para los calculos
+#def calculo_cupon(VN, cupon, frecuencia ):
+ #   calculo_cupon = VN * cupon * (frecuencia / 360)
+  #  return round(calculo_cupon, 5)
+
+#calculo_cupon(VN, cupon, frecuencia)
+
+
+def discount_factor(yield_rate, frecuencia , dias_en_cupon):
+    discount_factor = 1 /((1+ yield_rate * (frecuencia / 360 )) ** (dias_en_cupon / frecuencia))
+    return round(discount_factor, 8)
+
+
+#generador de la tabla de amortizacion
+#tabla calculo
+for  i in range (0, pagos + 1):
+    dias_cupon = frecuencia 
+    dias_en_cupon = i * dias_cupon
+        
+    if i < pagos:
+        amortizacion = 0 
+        
+    elif i < 1 :
+        frecuencia = ""
+        calculo_cupon = ""
+        full_flow = ""
+    
+    else: 
+        amortizacion = VN
+    calculo_cupon =  VN * cupon * (frecuencia / 360) 
+    round(calculo_cupon,8)
+    full_flow = calculo_cupon + amortizacion
+    factor_descuento = discount_factor(yield_rate, frecuencia, dias_en_cupon)
+    
+    tabla_bono.append([i, frecuencia, dias_en_cupon, calculo_cupon, amortizacion, full_flow, factor_descuento])
+    
+print(tb.tabulate(tabla_bono, headers=["Periodo", "Dias Cupon", "Acumulado dias", "Cupon", "Amortizacion", "Full flow",
+                                      "Factor Descuento"]))
+
+
+columnas = ["Periodo", "Dias Cupon", "Acumulado dias", "Cupon", "Amortizacion", "Full flow",
+                                      "Factor Descuento"]
+tabla_bono = pd.DataFrame(tabla_bono, columns= columnas)
+
+###############################################################################
+
+#calcular convexidad
+#calcular duracion 
+#calcular spread
+#poner fechas 
+#calcular net present value de full flow y discount factor
+#graficar convexidad y el valor del bono por periodos
