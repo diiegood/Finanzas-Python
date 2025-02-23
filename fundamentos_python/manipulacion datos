@@ -1,0 +1,32 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import importlib
+
+#nombre del activo que se va consultar
+ric = "datos_spy.csv"
+
+#direccion donde se va consultar
+directorio_activos = "C:\\Users\\creep\\.spyder-py3\\activos.csv"
+
+df = pd.read_csv("C:\\Users\\creep\\OneDrive\\Escritorio\\bitcoin.csv")
+
+#para ver los primeros datos 
+print(df.head())
+
+#para filtrar datos#
+new_df =df.dropna() #se filtran los datos quitando lso NA
+new_df.to_string
+df.dropna(inplace = True) #borra los dropna / nos vuelve a lo anterior
+
+df.to_string()
+df.fillna(0, inplace = True) #remplaza todos los valores NA por valores 0
+
+
+#se asigna un lugar donde se va consultar el nombre del archivo y el formato
+path = directorio_activos + ric + ".csv"
+raw_data = pd.read_csv(path)
+#se crea un data frame vacio
+t = pd.DataFrame()
+
