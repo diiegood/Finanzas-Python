@@ -1,0 +1,17 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import importlib
+import os
+
+#se importan modulos ya creados
+import calculos
+importlib.reload(calculos)
+
+#inputs
+directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'
+ric = "^MXN"
+
+dist = calculos.
+"5:29"
