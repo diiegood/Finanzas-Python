@@ -1,0 +1,63 @@
+#tarea 1.1 python # 
+
+import numpy as np
+import scipy.stats as st 
+
+def  test_jarque_bera(x):
+
+    skewness = st.skew(x)
+    kurtosis = st.kurtosis(x)
+    size = len(x)
+    jb_stat = size/6 * (skewness**2 + 1/4*kurtosis**2)
+    p_value = 1 - st.chi2.cdf(jb_stat, df=2)
+    is_normal = (p_value>0.035)
+    return jb_stat, p_value, is_normal
+
+np.random.seed(seed=6)
+x1 = np.random.standart_normal(size=10**6)
+np.random.seed(seed=7)
+x2 = np.random.standard_normal(size=10**6)
+
+
+import numpy as np
+import scipy.stats as st
+
+def test_jarque_bera(x):
+    # Calcular la asimetría (skewness) y la curtosis (kurtosis)
+    skewness = st.skew(x)
+    kurtosis = st.kurtosis(x)
+    size = len(x)
+    
+    # Calcular la estadística de Jarque-Bera
+    jb_stat = size / 6 * (skewness**2 + kurtosis**2 / 4)
+    
+    # Calcular el valor p basado en la distribución chi-cuadrado con 2 grados de libertad
+    p_value = 1 - st.chi2.cdf(jb_stat, df=2)
+    
+    # Determinar si la distribución es normal
+    is_normal = p_value > 0.05
+    
+    return jb_stat, p_value, is_normal
+
+
+#codigo corregido#
+# Generar dos conjuntos de datos
+np.random.seed(seed=6)
+x1 = np.random.standard_normal(size=10**6)
+np.random.seed(seed=7)
+x2 = np.random.standard_normal(size=10**6)
+
+# Aplicar la prueba de Jarque-Bera a ambos conjuntos de datos
+jb_stat1, p_value1, is_normal1 = test_jarque_bera(x1)
+jb_stat2, p_value2, is_normal2 = test_jarque_bera(x2)
+
+# Imprimir resultados
+print("Conjunto de datos 1:")
+print(f"Estadística de Jarque-Bera: {jb_stat1}")
+print(f"Valor p: {p_value1}")
+print(f"¿Es normal? {'Sí' if is_normal1 else 'No'}")
+
+print("\nConjunto de datos 2:")
+print(f"Estadística de Jarque-Bera: {jb_stat2}")
+print(f"Valor p: {p_value2}")
+print(f"¿Es normal? {'Sí' if is_normal2 else 'No'}")
