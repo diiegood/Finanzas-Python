@@ -1,0 +1,126 @@
+#practica de real time stocks 
+import matplotlib.pyplot as plt 
+import yfinance as yf
+# create ticker for Apple Stock
+ticker = yf.Ticker('AAPL')
+# get data of the most recent date
+todays_data = ticker.history(period='1d')
+
+print(todays_data)
+
+ticker = yf.Ticker('AAPL')
+# get data of the most recent date
+aapl_df = ticker.history(period='1y')
+# plot the close price 
+aapl_df['Close'].plot(title="APPLE's stock")
+
+import datetime
+ 
+# startDate , as per our convenience we can modify
+startDate = datetime.datetime(2023, 1, 1)
+ 
+# endDate , as per our convenience we can modify
+endDate = datetime.datetime(2023, 12, 31)
+apple_data = yf.Ticker('AAPL')
+# pass the parameters as the taken dates for start and end
+aapl_df = apple_data.history(start=startDate, end=endDate)
+# plot the close price 
+aapl_df['Close'].plot(title="APPLE's stock")
+
+
+# Define the ticker list
+import pandas as pd
+tickers_list = ['AAPL', 'WMT', 'IBM', 'MU', 'BA', 'AXP']
+
+# Fetch the data
+import yfinance as yf
+data = yf.download(tickers_list,'2023-1-1')['Adj Close']
+
+# Plot all the close prices
+((data.pct_change()+1).cumprod()).plot(figsize=(10, 7))
+plt.legend()
+plt.title("Close Value", fontsize=16)
+
+# Define the labels
+plt.ylabel('Cumulative Close Value', fontsize=14)
+plt.xlabel('Time', fontsize=14)
+
+# Plot the grid lines
+plt.grid(which="major", color='k', linestyle='-.', linewidth=0.5)
+plt.show()
+
+
+try:
+    df = yf.download('AAPL')
+except Exception as e:
+    print(f"Error: {e}")
+    
+    
+try:
+    df = yf.download('INVALID_SYMBOL')
+except Exception as e:
+    print(f"Error: {e}")
+    
+###############################################################################
+############################### Codigo nuevo corregido ########################
+
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+import datetime
+
+# Create ticker for Apple Stock
+ticker = yf.Ticker('AAPL')
+
+# Get data of the most recent date
+todays_data = ticker.history(period='1d')
+print(todays_data)
+
+# Get data for the last year
+aapl_df = ticker.history(period='1y')
+# Plot the close price 
+aapl_df['Close'].plot(title="Apple's Stock - Last Year")
+plt.show()
+
+# Define start and end dates for the historical data
+startDate = datetime.datetime(2023, 1, 1)
+endDate = datetime.datetime(2023, 12, 31)
+
+# Fetch Apple data for the defined date range
+apple_data = yf.Ticker('AAPL')
+aapl_df = apple_data.history(start=startDate, end=endDate)
+
+# Plot the close price
+aapl_df['Close'].plot(title="Apple's Stock - 2023")
+plt.show()
+
+# Define the ticker list
+tickers_list = ['AAPL', 'WMT', 'IBM', 'MU', 'BA', 'AXP']
+
+# Fetch the data
+data = yf.download(tickers_list, start='2023-01-01')['Adj Close']
+
+# Plot all the close prices
+((data.pct_change() + 1).cumprod()).plot(figsize=(10, 7))
+plt.legend()
+plt.title("Cumulative Close Value", fontsize=16)
+
+# Define the labels
+plt.ylabel('Cumulative Close Value', fontsize=14)
+plt.xlabel('Time', fontsize=14)
+
+# Plot the grid lines
+plt.grid(which="major", color='k', linestyle='-.', linewidth=0.5)
+plt.show()
+
+# Download data for AAPL and handle errors
+try:
+    df = yf.download('AAPL')
+except Exception as e:
+    print(f"Error: {e}")
+
+# Attempt to download invalid symbol and handle errors
+try:
+    df = yf.download('INVALID_SYMBOL')
+except Exception as e:
+    print(f"Error: {e}")
