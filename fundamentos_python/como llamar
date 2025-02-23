@@ -1,0 +1,206 @@
+#practica de importacion de modulos python:  
+#primero se debe correr el otro codigo para hacer el llamamiento de este.
+# Asegúrate de que el archivo `yahoo_finance.py` esté en tu directorio de trabajo o en el PYTHONPATH.
+import sys
+import os
+    
+from yahoo_finance import decir_hola
+sys.path.append("C:\\Users\\creep\\.spyder-py3\\python.practicas\\trabajos2\\yahoo_finance.py")
+decir_hola()   
+
+print(os.getcwd())
+
+import sys
+sys.path.append(r"C:\ruta\al\directorio\del\módulo")
+from nombre_del_modulo import funcion
+
+###############################################################################
+
+from yahoo_finance import * #importa todas las funciones del modulo de yahoofinance
+
+decir_hola()
+saludar()
+funcion_yahoo()
+
+###############################################################################
+#otra formula de llamar es con el modulo
+
+from yahoo_finance import decir_hola, funcion_lista 
+#Se importa del modulo de yahoo finance la lista de "funcion_yahoo.
+
+#se llama la funcion
+lista1 = funcion_lista
+print(lista1)
+
+###############################################################################
+#llamar solo con las funciones mas simples
+import yahoo_finance
+
+yahoo_finance.decir_hola()
+yahoo_finance.saludar()
+
+p = yahoo_finance.Punto() #modelo innit o constructor
+
+#tambien se puede acceder a las clases:
+
+###############################################################################
+from yahoo_finance import decir_hola
+
+decir_hola()
+
+###############################################################################
+#como renombrar una funcion o ponerle un alias
+
+from  yahoo_finance import decir_hola as dh #el decir hola lo abrevio a dh
+dh()
+
+###############################################################################
+"Programacion orientada a objetos"
+
+#Es una forma de ver la programacion, es un paradigma de la programacion, se 
+#trata de trasladar objetos de la vida real a codigo de programacion.
+
+#Estos objetos tienen atributos o propiedades y funcionalidades, que tienen un
+#comportamiento (funciones y metodos) 
+
+
+class Persona():
+    #propiedades, caracteristicas o atributos:
+        apellidos = ""
+        nombres = "" 
+        edad = (21)
+        estado_de_animo = ""
+        despierta = False 
+        
+        #Funcionalidades: 
+        def despertar(self): #palabra hace referencia a la propia clase se llama asi mismo
+          self.despierta = True #Self es un parametro o palabra reservada clave que hace referencia a la instancia u objeto.
+          #hacen referencia a un ejemplar creado a partir de una clase
+          print("buen dia")#no se implementa nada de momento
+          
+        def hacerse_wey(self):
+            self.hacerse_wey = True
+            print("Hoy no chambeo carnal")
+            
+         
+##################se crea una instancia en la clase para cerrarla##############
+#un objeto es un elemento individual creado a partir de una plantilla (una plantilla es una clase)
+
+#Ejemplo 1
+persona1 = Persona()
+persona1.apellidos = "Garcia Fuentes"
+print(persona1.apellidos)
+persona1.despertar()
+print(persona1.despierta)
+print(persona1.edad)
+
+#Ejemplo 2 
+persona2 = Persona()
+persona2.nombres = "Javier Felipe"
+edad = "veinte años" 
+estado_de_animo = "tristeza"
+persona2.hacerse_wey()
+print(persona2.nombres)
+print(persona2.edad)
+
+###############################################################################
+"Constructores de clase"
+
+class Curso():
+    #nombre = "Macroeconomia"
+    #creditos = 6 
+    #profesion = "Economia"
+    
+ #el constructor sirve para darle un estado incial al objeto
+ #Al crear un objeto o instancia de una clase, se pude dar un valor inicial a un atributo
+ 
+ #init es para definir el constructor osea la plantilla base
+ #con la cual se va insanstiar un o
+    def __init__(self, nom, cre, pro): #se deben agregar los parametrs establecidos al innit
+  #hace referencia a la propia clase
+        self.nombre = nom
+        self.creditos = cre
+        self.profesion = pro
+    
+    
+curso1 = Curso("Macroeconomia", 8, "Economia")
+print(curso1.nombre)
+    
+curso2 = Curso("Estadistica", 10, "Economia")
+print(curso2.creditos)
+    
+###############################################################################
+"Encapsulamiento de variables"
+
+class Curso3():
+
+  def __init__(self, a, c, d, ca): #se deben agregar los parametrs establecidos al innit
+#hace referencia a la propia clase
+      self.asignatura = a
+      self.carrera = c
+      self.dificultad = d
+      self.calificacion = ca
+      self.__imparticion = "Presencial" 
+#esta variable esta encapsulada no es accesible cuando pones las variables en el codigo
+      
+curso3 = Curso3("Teoria Marixsta del desarrollo", "Economia", "ultrafacil", 10)
+print(curso3.asignatura)
+curso3.imparticion = "Virtual"
+print(curso3.imparticion)
+
+###############################################################################
+"propiedad encapsulada"
+
+class Curso3():
+
+  def __init__(self, a, c, d, ca): #se deben agregar los parametrs establecidos al innit
+#hace referencia a la propia clase
+      self.asignatura = a
+      self.carrera = c
+      self.dificultad = d
+      self.calificacion = ca
+      self.__imparticion = "Presencial" 
+#esta variable esta encapsulada no es accesible cuando pones las variables en el codigo
+      
+#Se accede desde dentro de la clase y nos deja seleccionar la clase oculta "__imparticion"
+def mostrarDatos(self):
+    datos = "asignatura:{0} /  carrera: {1} / dificultad: {2}"
+    print(datos.fornat(self.asignatura, self.carrera, self.dificultad, self.__imparticion))
+
+curso_nuevo = Curso3("Español", "primaria", "facil", 10)
+print(curso_nuevo.carrera)
+
+###############################################################################
+"modelo de simulacion de caminos "
+"Procesos estocasticos"
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+mu = 1
+n = 50
+dt = 0.1
+x0 = 100
+np.random.seed(1)
+
+sigma = np.arange(0.8, 2, 0.2)
+
+x = np.exp(
+    (mu - sigma ** 2 / 2) * dt
+    + sigma * np.random.normal(0, np.sqrt(dt), size=(len(sigma), n)).T
+)
+x = np.vstack([np.ones(len(sigma)), x])
+x = x0 * x.cumprod(axis=0)
+
+plt.plot(x)
+plt.legend(np.round(sigma, 2))
+plt.xlabel("$t$")
+plt.ylabel("$x$")
+plt.title(
+    "Realizations of Geometric Brownian Motion with different variances\n $\mu=1$"
+)
+plt.show()
+
+
+
+
