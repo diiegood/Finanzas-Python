@@ -1,0 +1,79 @@
+"Variables aleatorias"
+
+"calculo de todas las distribuciones"
+
+import numpy as np
+import pandas as pd
+import matplotlib as mpl
+import scipy 
+import importlib
+import matplotlib.pyplot as plt
+from scipy.stats import skew, kurtosis, chi2 
+
+size = 10**6
+grados_libertad = 9
+distribucion = 'normal' #tipo de distribucion
+dist_type = 'simulated RV' #real cuystom
+
+#calculo de distribuciones con condicionales.
+if distribucion == 'normal':
+    x = np.random.standard_normal(size)
+    x_description = dist_type + ' ' + distribucion
+elif distribucion == 'exponential':
+    x = np.random.standard_exponential(size)
+    x_description = dist_type + ' ' + distribucion
+elif distribucion == 'uniform':
+    x = np.random.uniform(0,1,size)
+    x_description = dist_type + ' ' + distribucion
+elif distribucion == 'student':
+    x = np.random.standard_t(df= grados_libertad , size = size  )
+    x_description = dist_type + ' ' + distribucion + '| grados de libertad = ' + str(grados_libertad) 
+elif distribucion == 'chi-square':
+    x = np.random.chisquare(df= grados_libertad, size=size)
+    x_description = dist_type + ' ' + distribucion + '| grados de libertad = ' + str(grados_libertad) 
+    
+"Meta crear un test de normalidad de Jaeque Bera"
+
+#calculo de metricas estadisticas
+media_x = np.mean(x) #momento 1
+desviacion_estandar_x = np.std(x) #momento 2
+skewness_x = skew(x) #momento 3
+curtosis_x = kurtosis(x) #momento 4
+test_jarque_bera = size/6*(skewness_x ** 2 + 1/4 * curtosis_x ** 2) #test de normalidad
+p_value_x = 1 - chi2.cdf(test_jarque_bera, df = 2) #p value
+normal_X =(p_value_x > 0.05) #debe ser un jarque bera > 6 
+
+"El p-value es "
+
+
+#analisis de datos 
+print(x_description)
+print("la media de la variable es" , media_x)
+print("la desviacion estandar es ", desviacion_estandar_x)
+print("la skewness es ", skewness_x)
+print("la curtosis es ", curtosis_x)
+print("el valor arrojado del test de normalidad es ", test_jarque_bera)
+print("el p value es ", p_value_x)
+print("es una normal? " , normal_X)
+
+
+#analisis de datos 2 / otra forma de escribirlos es: 
+print(x_description)
+print("la media de la variable es" + str(media_x))
+print("la desviacion estandar es " + str(desviacion_estandar_x))
+print("la skewness es " + str(skewness_x))
+print("la curtosis es " + str(curtosis_x))
+print("el valor arrojado del test de normalidad es " + str(test_jarque_bera))
+print("el p value es " + str(p_value_x))
+print("es una normal? "  + str(normal_X))
+
+
+#graficacion del histograma
+plt.figure()
+plt.hist(x, bins=100)
+plt.title(x_description)
+plt.show()
+
+
+
+
