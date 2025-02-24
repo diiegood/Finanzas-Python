@@ -43,8 +43,11 @@ test_jarque_bera = size/6*(skewness_x ** 2 + 1/4 * curtosis_x ** 2) #test de nor
 p_value_x = 1 - chi2.cdf(test_jarque_bera, df = 2) #p value
 normal_X =(p_value_x > 0.05) #debe ser un jarque bera > 6 
 
-"El p-value es "
-
+"El p-value es un parametro que sirve para descartar o no la hipotesis nula"
+"por lo que mide la consistencia de los datos con respecto a la prueba"
+"Si p-value > 0.05 hipotesis alternativa, se rechaza la hipotesis nula, por lo que hay diferencia significativa"
+"Si p-value < 0.05 hipotesis nula aceptada, no se puede concluir que hay una diferencia significativa"
+"superior a 0.05 no significativo / inferior a 0.05 significativo"
 
 #analisis de datos 
 print(x_description)
@@ -73,6 +76,7 @@ plt.figure()
 plt.hist(x, bins=100)
 plt.title(x_description)
 plt.show()
+
 
 
 
