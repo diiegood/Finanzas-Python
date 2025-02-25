@@ -1,0 +1,59 @@
+"Crear clase de CAPM, con funciones"
+#crear una clase que cumpla las siguientes tareas.
+#tenga sincronizacion de series de tiempo de 2 variables
+#tenga serie de tiempo
+#regresion lineal del activo
+#que contenga graficas 
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import importlib
+
+class capm:
+    
+    def __init__(self, benchmark, security, decimals= 5):
+        self.benchmark = benchmark
+        self.security = security
+        self.timeseries = None
+    
+    def sincronizacion_seriest(self):
+        self.timeseries = capm.sincronizacion_seriest(self.benchmark, self.security)
+        
+    def series_tiempo(self):
+        plt.figure(figsize=(12,5))
+        plt.title('Serie de Tiempo de cierre de precios')
+        plt.xlabel('Tiempo')
+        plt.ylabel('Precios')
+        ax = plt.gca()
+        ax1 = self.series_tiempo.plot(kind='line', x='fecha', y='cierre_X', ax=ax, grid=True, \
+                                      color='blue', label=self.benchmark)
+        ax2 = self.series_tiempo.plot(kind='line', x='fecha', y='cierre_y', ax=ax, grid=True,\
+                                      color='red', secondary_y = True, label=self.security)
+        ax1.legend(loc=2)
+        ax2.legend(loc=1)
+        plt.show()
+        
+    def grafica_regresionlineal(self):
+        self.x = self.series_de_tiempo ['rendimiento_x'].values
+        self.y = self.series_de_tiempo['rendimiento_y'].values
+        titulo_grafica = 'Regresión lineal del activo ' + self.security  \
+           + ' | benchmark ' + self.benchmark + '\n' \
+           + ' alfa (intercepto) ' + str(self.alpha)  \
+           + ' | beta (pendiente) ' + str(self.beta) + '\n'  \
+           + ' p-value ' + str(self.p_value) + \
+           ' | hipótesis nula ' + str(self.hipotesis_nula) + '\n'  \
+           + ' r-cuadrada ' + str(self.r_cuadrada)  \
+           + ' | correlación ' + str(self.correlacion)
+        plt.figure()
+        plt.title("regresion del activo " + self.security)
+        plt.scatter(self.x, self.y)
+        plt.plot(self.x, self.prediccion_regresion_lineal, color='black') 
+        plt.ylabel(self.security)
+        plt.xlabel(self.benchmark)
+        plt.grid()
+        plt.show()
+
+            
