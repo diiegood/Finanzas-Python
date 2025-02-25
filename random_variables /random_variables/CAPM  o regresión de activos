@@ -204,18 +204,18 @@ print("El valor tiene una hipotesis nula ", hipotesis_nula)
 x = series_de_tiempo ['rendimiento_x'].values
 y = series_de_tiempo['rendimiento_y'].values
 
-#asignacion de los nombres de la grafica / corregir
-titulo_grafica = 'Regresión lineal del activo | security ' + security + \
-    ' |benchmark ' + benchmark + '\n' + \
-    ' alfa (intercepto) ' + str(alpha) + \
-    ' | beta (pendiente) ' + str(beta) + '\n' + \
-    ' p-value ' + str(p_value) + \
-    ' | hipótesis nula ' + str(hipotesis_nula) + '\n' + \
-    ' r-cuadrada ' + str(r_cuadrada) + \
-    ' | correlación ' + str(correlacion)
+#asignacion de los nombres de la grafica / corregir grafica.
+titulo_grafica = 'Regresión lineal del activo ' + security  \
+   + ' | benchmark ' + benchmark + '\n' \
+   + ' alfa (intercepto) ' + str(alpha)  \
+   + ' | beta (pendiente) ' + str(beta) + '\n'  \
+   + ' p-value ' + str(p_value) + \
+   ' | hipótesis nula ' + str(hipotesis_nula) + '\n'  \
+   + ' r-cuadrada ' + str(r_cuadrada)  \
+   + ' | correlación ' + str(correlacion)
+
     
 #codigo de la grafica     
-str_title = 'Scatterplot of returns ' + '\n' + titulo_grafica
 plt.figure()
 plt.title("regresion del activo " + security)
 plt.scatter(x, y)
@@ -225,8 +225,15 @@ plt.xlabel(benchmark)
 plt.grid()
 plt.show()
 
-
-
+#segunda grafica con detalles en la parte superior
+plt.figure()
+plt.title(titulo_grafica)
+plt.scatter(x, y)
+plt.plot(x, prediccion_regresion_lineal, color='black') 
+plt.ylabel(security)
+plt.xlabel(benchmark)
+plt.grid()
+plt.show()
 
 
 
