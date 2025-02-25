@@ -28,11 +28,11 @@
 
 ###############################################################################
 
-#librerias
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import scipy.stats as st
+#librerias importantes  #scikitt / tensorflow (IA google) , pytortch (IA)
+import numpy as np  #conocer bien la libreria
+import pandas as pd #conocer bien la libereria
+import matplotlib.pyplot as plt #conocer bien la libreria
+import scipy.stats as st #conocer bien la libereria
 import importlib
 
 
@@ -43,7 +43,7 @@ import importlib
 "Comparacion de activos" ## Definir los activos (ric) y el benchmark
 
 #security = '^MXN' (benchmark)
-security = "EWW" #variable y #activo
+security = "AMZN" #variable y #activo
 benchmark = "SPY" #variable x #indice de referencia
 
 ###############################################################################
@@ -166,10 +166,67 @@ slope, intercept, r_value, p_value, std_err = st.linregress(x, y)
 #R^2 dice que tanto la recta explica, mayor R^2 el error va ser menor, menos R^2 va a ver mas dispersion del error
 #la parte que no explica la R^2 es el error ideosincratico de la regresion, en el calculo del CAPM
 
-Beta =  slope #pendiente
-alpha = intercept  #oredenada al origen 
-correlacion =  r_value #R^2 / coeficiente de determinacion, la proporcion de la variacion en la variable dependiente(y), que el modelo predice por parte de x 
-p = p_value #hipotesis nula, si la pendiente (Beta) es 0 / con jarque bera la Ho es que la distribucion es normal
-error_Estandar = std_err #el error de la pendiente (no se va usar mucho)
 
-"Minuto 20:27"
+#asignacion de valores de la regresion / se busca redondear a 5 decimales con la libreria numpy
+decimales = 5
+beta =  np.round(slope, decimales) #pendiente / el riesgo sisitematico, exposicion al mercado del activo que no puede ser diversificado
+alpha = np.round(intercept, decimales)  #oredenada al origen / retorno absoluto la fraccion del total del retorno que no puede ser explicada por el mercado
+correlacion = np.round( r_value, decimales) #R^2 / coeficiente de determinacion, la proporcion de la variacion en la variable dependiente(y), que el modelo predice por parte de x 
+p = np.round(p_value, decimales) #hipotesis nula, si la pendiente (Beta) es 0 / con jarque bera la Ho es que la distribucion es normal
+error_Estandar = np.round(std_err, decimales) #el error de la pendiente (no se va usar mucho) / riesgo ideosincratico, puede ser eliminado con diversificacion
+r_cuadrada = np.round(r_value**2 , decimales) #que tanto explica el modelo de regresion, relacionado al CAPM
+
+#para predecir la regresion lineal
+prediccion_regresion_lineal = alpha + beta * x
+hipotesis_nula = p_value > 0.05 #si el p_value es inferior a 0.05 se rechaza la hipotesis nula / se acepta la alternativa
+
+###############################################################################
+
+"Con la hipotesis nula se puede decir con un 95% de confianza que el Beta no es 0, por lo que es estadisticamente significativo"
+"El valor alfa es muy pequeño"
+"Satisface la teoria de mercados eficientes donde alfa tiene que ser 0 porque no puede vencer sistematicamente al mercado"
+
+
+#Analisis de resultados: beta correlacion con la volatilidad del mercado / correlacion es la correlacion entre activos
+print("La pendiente de la beta es de ", beta, ("volatilidad con respecto del mercado"))
+print("La correlacion entre ambos es de ", correlacion)
+print("EL modelo se explica en un ", r_cuadrada, "con respecto a la volatilidad del valor de la r-cuadrada")
+print("El valor de el p-value es de", p_value)
+print("El error estandar es", error_Estandar)
+#el activo que tiene mayor alfa puede ganar mas porque es el rendimiento independiente de la ordenada al origen
+print("El valor alfa es de ", alpha) 
+print("El valor tiene una hipotesis nula ", hipotesis_nula)
+
+"Si la hipotesis nula es verdadera significa que el valor de beta no es estadisticamente significativo "
+
+#grafica de la regresion lineal
+
+x = series_de_tiempo ['rendimiento_x'].values
+y = series_de_tiempo['rendimiento_y'].values
+
+#asignacion de los nombres de la grafica
+titulo_grafica = 'Regresión lineal del activo | security ' + security + \
+    ' |benchmark ' + benchmark + '\n' + \
+    ' alfa (intercepto) ' + str(alpha) + \
+    ' | beta (pendiente) ' + str(beta) + '\n' + \
+    ' p-value ' + str(p_value) + \
+    ' | hipótesis nula ' + str(hipotesis_nula) + '\n' + \
+    ' r-cuadrada ' + str(r_cuadrada) + \
+    ' | correlación ' + str(correlacion)
+    
+#codigo de la grafica     
+str_title = 'Scatterplot of returns ' + '\n' + titulo_grafica
+plt.figure()
+plt.title("regresion del activo " + security)
+plt.scatter(x, y)
+plt.plot(x, prediccion_regresion_lineal, color='black') 
+plt.ylabel(security)
+plt.xlabel(benchmark)
+plt.grid()
+plt.show()
+
+
+
+
+
+
