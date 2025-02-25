@@ -204,7 +204,7 @@ print("El valor tiene una hipotesis nula ", hipotesis_nula)
 x = series_de_tiempo ['rendimiento_x'].values
 y = series_de_tiempo['rendimiento_y'].values
 
-#asignacion de los nombres de la grafica
+#asignacion de los nombres de la grafica / corregir
 titulo_grafica = 'Regresión lineal del activo | security ' + security + \
     ' |benchmark ' + benchmark + '\n' + \
     ' alfa (intercepto) ' + str(alpha) + \
