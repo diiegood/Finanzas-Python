@@ -1,0 +1,447 @@
+"Coberturas usando el CAPM"
+
+#librerias
+import yfinance as yf
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import scipy.stats as st
+import os
+
+#analisis de la distribucion del activo y calculo de momentos.
+
+ric = 'SPY' # activo 
+
+###############################################################################
+#para cargar directamente de yahoo finance
+#ticker_symbol = "AMZN"
+#data = yf.download(ticker_symbol, start="2020-01-01", end="2025-2-20")
+###############################################################################
+
+# Definir el directorio donde se encuentran los archivos
+directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'  
+path = directorio + ric + ".csv" # Leer el archivo CSV
+raw_data = pd.read_csv(path)  # Entrada para leer csv
+
+
+
+#mu */- 1.64 * sigma para  90% confiaza
+#mu +/- 1.96 * sigma para  95% confianza
+
+###############################################################################
+#creacion de la serie de tiempo 
+#creacion del data frame y los vectores de precios para el rendimiento
+t = pd.DataFrame()  # Crear un data frame vacio
+
+# Proceso de datos para los calculos
+#si voy a meter una accion americana o extrangera cambiar Fecha a / Date  y Cierre a / Close
+"Si es accion mexicana usar"
+#t["date"] = pd.to_datetime(raw_data["Fecha"], dayfirst=True )  # Convertir la columna "Date" a serie de tiempo
+"Si es accion extranjera usar"
+t["date"] = pd.to_datetime(raw_data["Date"], dayfirst=False ) #Convertir la columna "Date" a serie de tiempo
+#t["close"] = raw_data["Cierre"]  # Asignar la columna "Close" , si es accion mexicana
+t["close"] = raw_data["Close"]  # Asignar la columna "Close", si es accion extranjera
+t = t.sort_values(by="date", ascending=True)  # Ordenar por fecha
+t["close_previous"] = t["close"].shift(1)  # Crear columna del cierre anterior
+
+# Calcular el rendimiento del activo
+t["return_close"] = t["close"] / t["close_previous"] - 1
+t = t.dropna()  # Eliminar filas con valores NaN
+t = t.reset_index(drop=True)  # Reiniciar el i­ndice
+
+
+
+######################## Funcion del objeto simulador #########################
+
+class SimulationInputs:
+    def __init__(self):
+        self.df = None
+        self.scale = None
+        self.mean = None
+        self.std = None
+        self.rv_type = None
+        self.Var_95 = None
+        self.size = None
+        self.decimals = None
+
+class Simulator:
+    # Constructor
+    def __init__(self, inputs):
+        self.inputs = inputs
+        self.str_title = None
+        self.vector = None
+        self.mean = None
+        self.volatility = None
+        self.skewness = None
+        self.kurtosis = None
+        self.var_95 = None
+        self.jb_stat = None
+        self.p_value = None
+        self.is_normal = None
+        
+    def generate_vector(self):
+        self.str_title = self.inputs.rv_type
+        if self.inputs.rv_type == 'standard_normal':
+            self.vector = np.random.standard_normal(self.inputs.size)
+        elif self.inputs.rv_type == 'normal':
+            self.vector = np.random.normal(self.inputs.mean, self.inputs.std, self.inputs.size)
+        elif self.inputs.rv_type == 'student':
+            self.vector = np.random.standard_t(df=self.inputs.df, size=self.inputs.size)
+            self.str_title += f' df={self.inputs.df}'
+        elif self.inputs.rv_type == 'uniform':
+            self.vector = np.random.uniform(size=self.inputs.size)
+        elif self.inputs.rv_type == 'exponential':
+            self.vector = np.random.exponential(scale=self.inputs.scale, size=self.inputs.size)
+            self.str_title += f' scale={self.inputs.scale}'
+        elif self.inputs.rv_type == 'chi-squared':
+            self.vector = np.random.chisquare(df=self.inputs.df, size=self.inputs.size)
+            self.str_title += f' df={self.inputs.df}'
+            
+    def compute_stats(self):
+        self.mean = st.tmean(self.vector)
+        self.volatility = st.tstd(self.vector)
+        self.skewness = st.skew(self.vector)
+        self.Var_95 = np.percentile(self.vector,5) #es el 5% de decimales esta al 95%
+        self.kurtosis = st.kurtosis(self.vector)
+        self.jb_stat = self.inputs.size / 6 * (self.skewness**2 + 1/4 * self.kurtosis**2)
+        self.p_value = 1 - st.chi2.cdf(self.jb_stat, df=2)
+        self.is_normal = (self.p_value > 0.05)  # Equivalente a jb < 6
+        
+    def plot(self):
+        self.str_title += f'\nmean={np.round(self.mean, self.inputs.decimals)} | volatility={np.round(self.volatility, self.inputs.decimals)}' \
+                          f'\nskewness={np.round(self.skewness, self.inputs.decimals)} | kurtosis={np.round(self.kurtosis, self.inputs.decimals)}' \
+                          f'\nJB stat={np.round(self.jb_stat, self.inputs.decimals)} | p-value={np.round(self.p_value, self.inputs.decimals)}' \
+                          f'\nis_normal={self.is_normal} | Var_95 = {np.round(self.Var_95, self.inputs.decimals)} '
+        plt.figure()
+        plt.hist(self.vector, bins=100)
+        plt.title(self.str_title)
+        plt.show()
+
+################################ Inputs para simulacion #######################
+inputs = SimulationInputs()
+inputs.rv_type = ric + '| real time '
+inputs.decimals = 5  # Decimales a mostrar
+
+# Calculos y simulacion.
+sim = Simulator(inputs)
+sim.vector = t['return_close'].values # Generar vector
+sim.inputs.size = len(sim.vector)
+sim.str_title = sim.inputs.rv_type
+sim.compute_stats()  # Calcular estadisticas
+sim.plot()  # Graficar
+
+#valores calculados / todos expresados en un porcentaje de 100%
+rendimiento_diario = sim.mean #calculo de la media
+rendimiento_diario = rendimiento_diario * 100
+rendimiento_anual = sim.mean * 252 #se calcula de la media anualizada (se multiplica por los dias de mercado 252)
+rendimiento_anual = rendimiento_anual * 100
+volatilidad_diaria =sim.volatility #calculo de volatilidad
+volatilidad_diaria = volatilidad_diaria * 100
+volatilidad_anual = sim.volatility * np.sqrt(252)  #calculo de la volatilidad anualizada
+volatilidad_anual = volatilidad_anual * 100
+#volatilidad * raiz (T) o  tambien (volatilidad * 16 (raiz cuadrada de 256 = 16))
+VaR_95 = sim.Var_95 #es el 5% de decimales esta al 95%
+VaR_95 = VaR_95 * 100
+"para el calculo sharpe" #el cociente debe ser 2 o mayor en una estrategia de inversion.
+#se pide que sea mayor a 2 porque entonces, los rendimientos que se obtienen, van a ser positivos.
+#ya que en 2 todo el intervalo de confianza va ser positivo 
+#( sharpe =  mu / sigma )
+#sharpe mayor a 2 es suponer que los rendimientos son normales 
+#por lo tanto el intervalo de confianza es totalmente positivo
+
+#Segun el despeje:
+
+"mu / sigma >2 "
+"mu > 2 * sigma "
+"mu - 2 sigma > 0 "  #mu - 2 sigma es positivo
+
+#Por lo tanto con el sharpe > 2 ,  el rendimiento que se ofrece es positivo en un 95% de los casos (intervalo de confianza)
+#siendo diferente al calculado anteriormente, que es el de mean * 252 (media anaulizada) , siendo mas la media aproximada
+#sharpe ratio, se usa como parametro para tener mayor precision sobre el rendimiento real, teniendo en cuenta los intervalos de confianza
+#suponiendo que los rendimientos son normales o siguen un movimiento browniano
+
+
+
+#se calcula media anualizada /  volatilidad anualizada
+sharpe_ratio = sim.mean *252 / (sim.volatility*np.sqrt(252))
+sharpe_ratio
+
+#analisis de metricas
+print("Se tiene un rendimiento diario de " , rendimiento_diario, "%")
+print("Se tiene una volatilidad diaria de ", volatilidad_diaria,"%")
+print("Tenemos un rendimiento esperado anual aproximado de ", rendimiento_anual ,"%" )
+print("Dada la volatilidad anual del activo en", volatilidad_anual, "%")
+print("Tenemos un sharpe ratio de ", sharpe_ratio, "%")
+print("Tiene skewness positiva por que la gran mayoria de los dias son positivos")
+print("Tiene media positiva porque las ganancias suelen ser positivas")
+print("La curtosis en exceso es positiva, tiene colas muy largas tiene muchas anomalias en cuanto a los precios mas positivos ")
+#este parametro sirve para ver que tan significativa es la media comparada con la volatilidad
+print("EL valor en Riesgo con un 95% de confianza es de ", VaR_95, "%")
+print("En el 95% de los casos los rendimientos van a se mayores que esto ",VaR_95, "%", "siendo este la peor perdida diaria") #si se desea tener el VaR de cada 3 meses o 5 meses se tiene que cambiar el percentil
+#95% de los casos es 1 dia de 20 (1/20), 1 dia al mes / pudiendo tener la peor perdida diaria en el valor del VaR_95
+#nos dice cual es la peor perdida diaria que se puede tener en 1 mes
+
+sharpe = sharpe_ratio *100
+
+print("Se interpreta por cada unidada de riesgo que se aumenta 1% de volatilidad extra o riesgo, se va ganar un", sharpe_ratio ,"% de rendimiento extra")
+
+
+#se busca que sea mayor a 1 para poder tener un rendimiento arriba del punto de riesgo, justificando el riesgo
+
+#Sharpe de mas de 2 / sea 5 o 10 es excelente entre mayor mejor.
+#porque el intervalo de confianza es mas pequeño por lo que hay mayor certeza sobre la media a largo plazo
+
+#Parametros importantes
+
+#media como parametro de media aproxiamada
+#sharpe ratio como parametro de media real , teniendo en cuenta el intervalo de confianza
+#volatilidad
+
+###############################################################################
+
+#para construir la serie de tiempo , es para el comportamiento del activo de su precio a lo largo del tiempo, no del rendimiento
+# / x =  tiempo (fecha) , y = precio (precio cierre) , grid = para que se vean rallitas en la grafica (True)
+
+plt.figure()
+
+#funcionalidad de dataframe .plot, para graficar diferentes tipos de graficas:
+    #kind = "line", "bar", "hist", "area", "pie", "scatter", "hexbin", "box", "density", "kde"
+t.plot(kind='line', x='date', y='close', grid=True, color='orange',
+       label=ric, title='Serie de tiempo de precio cierre ' + ric)
+
+plt.show()
+
+################################################################################
+################################################################################
+################################################################################
+
+"Modelo CAPM , series de tiempo y analisis de regresion entre indice y activo."
+"(sincornizacion de variables para comparar)"
+
+#analisis del activo en cuestion a las series de tiempo y la correlacion entre dos activos
+
+###############################################################################
+"Sectores de los ETFs"   #Tracker del S&P500 "SPY"
+
+#S&P500  Technology Sector - XLK
+#S&P500  Financial Sector - XLF
+#S&P500  Health Care Sector - XLV
+#S&P500  Energy Sector - XLE
+#S&P500  Communication - XLC
+#S&P500  Consumer Discretionary Sector -  XLY
+#S&P500  Consumer Staples Sector - XLP
+#S&P500  Industrial Sector - XLI
+#S&P500  Materials Sector - XLB
+#S&P500  Real State Sector - XLRE
+#S&P500  Utilities Sector - XLU
+
+##############################################################################
+"Empresas tecnologicas mas representativas"
+
+#Apple - AAPL
+#Microsoft - MSFT
+#Nvidia - NVDA
+#Amazon - AMZN
+#Alphabet - GOOG
+
+###############################################################################
+
+#librerias importantes  #scikitt / tensorflow (IA google) , pytortch (IA)
+import numpy as np  #conocer bien la libreria
+import pandas as pd #conocer bien la libereria
+import matplotlib.pyplot as plt #conocer bien la libreria
+import scipy.stats as st #conocer bien la libereria
+import importlib
+
+
+#Para el Capm se necesita 2 series de tiempo y una sincronizacion de las mismas
+#tambien se usa para la matriz de covarianza y varianza.
+
+###############################################################################
+"Comparacion de activos" ## Definir los activos (ric) y el benchmark
+
+#security = '^MXN' (benchmark)
+security = "NVDA" #variable y #activo
+benchmark = "SPY" #variable x #indice de referencia
+
+###############################################################################
+
+# Definir el directorio donde se encuentran los archivos CSV
+directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'
+
+# Iterar sobre cada activo (ric) y procesarlo
+
+def series_tiempo(ric):
+    directorio ='C:\\Users\\creep\\.spyder-py3\\stocks\\'   #ruta de consulta donde se alojan los datos
+    path = directorio + ric + '.csv' #se genera una funcion dond esta la ruta, el nombre del archivo y su fomrato
+    raw_data = pd.read_csv(path) #carga un data frame, tipo csv asignado en la funcion path
+    t = pd.DataFrame()
+    t['fecha']  = pd.to_datetime(raw_data['Date'], dayfirst = False ) 
+    t['cierre'] = raw_data['Close']
+    t = t.sort_values(by='fecha', ascending=True)
+    t['close_previous'] = t['cierre'].shift(1)
+    t ['rendimiento'] = t['cierre']/t['close_previous'] - 1
+    t = t.dropna()
+    t = t.reset_index(drop=True)
+    return t
+
+# Llamar a la función para obtener las series temporales de los activos
+benchmark_performance = series_tiempo(benchmark)  # Rendimiento del benchmark
+security_performance = series_tiempo(security)  # Rendimiento de la seguridad
+
+#para reflejar los datos en dataframes
+print("Benchmark Performance ", benchmark)
+benchmark_performance.head()
+
+print("Security Performance ", security)
+security_performance.head()
+
+###############################################################################
+
+#serie de tiempo de benchmark
+benchmark_performance.plot(kind='line', x='fecha', y='cierre', grid=True, color='blue',
+       label=benchmark, title='Serie de tiempo de precio cierre de ' + benchmark)
+plt.show()
+
+#serie de tiempo de security
+security_performance.plot(kind='line', x='fecha', y='cierre', grid=True, color='green',
+       label=security, title='Serie de tiempo de precio cierre de ' + security)
+plt.show()
+
+###############################################################################
+#para ver los valores especificos de una variable
+
+benchmark_values=list(benchmark_performance['fecha'].values)
+securities_values=list(security_performance['fecha'].values)
+
+###############################################################################
+#para filtrar datos en pandas / igualar las variables con los mismos valores
+
+series_de_tiempo = list(set(benchmark_values)& set(securities_values))
+
+serie_x = benchmark_performance[benchmark_performance['fecha'].isin(benchmark_values)]
+serie_x = serie_x.sort_values(by='fecha', ascending=True)
+serie_x =serie_x.reset_index(drop=True)
+
+
+serie_y = security_performance[security_performance['fecha'].isin(securities_values)]
+serie_y = serie_y.sort_values(by='fecha', ascending=True)
+serie_y =serie_y.reset_index(drop=True)
+
+#se crea un data frame del las series de tiempo / los dataframes de pandas se llaman con el nombre de la columna
+series_de_tiempo = pd.DataFrame() #se crea un data frame vacio 
+#donde se le agregan las variables de los otros cuadros previamente creados
+series_de_tiempo ['fecha'] = serie_x['fecha']
+series_de_tiempo['cierre_x'] = serie_x['cierre']
+series_de_tiempo['cierre_y'] = serie_y['cierre']
+series_de_tiempo['rendimiento_x'] = serie_x['rendimiento']
+series_de_tiempo['rendimiento_y'] = serie_y['rendimiento']
+
+#hacer una time series sincronizadas, con las columnas cierre, retornos, fecha
+#para hacer el plot de las variables unidas en un solo grafico
+
+#grafica de la serie de tiempo conjunta
+plt.figure(figsize=(12,5))
+plt.title('serie de tiempo de precios de cierre')
+plt.xlabel('tiempo')
+plt.ylabel('precios')
+ax = plt.gca()
+
+#se definen los ejes ax1 para el benchmark / ax2 para el activo a comparar
+ax1 = series_de_tiempo.plot(kind='line', x='fecha', y='cierre_x', ax=ax, grid= True, \
+                            color= 'red', label=benchmark)
+     
+ax2 = series_de_tiempo.plot(kind='line', x='fecha', y='cierre_y', ax=ax, grid= True, \
+                            color= 'black', secondary_y=True, label=security)
+#se grafican
+ax.legend(loc=2)
+ax2.legend(loc=1)
+plt.show()
+
+#S&P500 comparado con su indice de volatilidad (^SPX) / VIX (volatilidad con volatilidad es enorme, correlacion es negativa), por lo que el beta es muy grande
+#volatilidad del VIX es mucho mas grande que el S&P500
+#comparar IPC-BMV / MSCI tracker MXN / NAFTRAC / indice manufacutrero. (EWW)
+#comparar divisas USD-MXN /  EUR/USD con MXN/USD , paridad cambiaria.
+
+"VIX es el indice de volatilidad de las opciones del S&P500, cuando los activos suben las opciones se encarecen"
+"pero al depreciarse, el valor de las opciones, la gente compra puts como proteccion, haciendo un incremento de volatilidad "
+"la volatilidad es inversamente proporcional a los precios"
+"Cuando los precios caen aumenta enormentemente la volatilidad (crisis financiera)"
+"Cuando los precios suben la volatilidad no sube mucho porque crecen como una recta, solo si es una noticia que afecta mucho el precio "
+"S&P precios suben no hay grandes caidas, pero cuando caen hay mucha mas inestabilidad con grades caidas y recuperaciones"
+
+###############################################################################
+"Regresion lineal"
+
+x = series_de_tiempo['rendimiento_x'].values
+y = series_de_tiempo['rendimiento_y'].values
+slope, intercept, r_value, p_value, std_err = st.linregress(x, y)
+
+###############################################################################
+
+#la variacion es la volatilidad / 
+#R^2 dice que tanta volatilidad del activo Ra puede explicar el modelo de regresion, con CAPM
+#R^2 dice que tanto la recta explica, mayor R^2 el error va ser menor, menos R^2 va a ver mas dispersion del error
+#la parte que no explica la R^2 es el error ideosincratico de la regresion, en el calculo del CAPM
+
+
+#asignacion de valores de la regresion / se busca redondear a 5 decimales con la libreria numpy
+decimales = 5
+beta =  np.round(slope, decimales) #pendiente / el riesgo sisitematico, exposicion al mercado del activo que no puede ser diversificado
+alpha = np.round(intercept, decimales)  #oredenada al origen / retorno absoluto la fraccion del total del retorno que no puede ser explicada por el mercado
+correlacion = np.round( r_value, decimales) #R^2 / coeficiente de determinacion, la proporcion de la variacion en la variable dependiente(y), que el modelo predice por parte de x 
+p = np.round(p_value, decimales) #hipotesis nula, si la pendiente (Beta) es 0 / con jarque bera la Ho es que la distribucion es normal
+error_Estandar = np.round(std_err, decimales) #el error de la pendiente (no se va usar mucho) / riesgo ideosincratico, puede ser eliminado con diversificacion
+r_cuadrada = np.round(r_value**2 , decimales) #que tanto explica el modelo de regresion, relacionado al CAPM
+
+#para predecir la regresion lineal
+prediccion_regresion_lineal = alpha + beta * x
+hipotesis_nula = p_value > 0.05 #si el p_value es inferior a 0.05 se rechaza la hipotesis nula / se acepta la alternativa
+
+###############################################################################
+
+"Con la hipotesis nula se puede decir con un 95% de confianza que el Beta no es 0, por lo que es estadisticamente significativo"
+"El valor alfa es muy pequeño"
+"Satisface la teoria de mercados eficientes donde alfa tiene que ser 0 porque no puede vencer sistematicamente al mercado"
+
+
+#Analisis de resultados: beta correlacion con la volatilidad del mercado / correlacion es la correlacion entre activos
+print("La pendiente de la beta es de ", beta, ("volatilidad con respecto del mercado"))
+print("La correlacion entre ambos es de ", correlacion)
+print("EL modelo se explica en un ", r_cuadrada, "con respecto a la volatilidad del valor de la r-cuadrada")
+print("El valor de el p-value es de", p_value)
+print("El error estandar es", error_Estandar)
+#el activo que tiene mayor alfa puede ganar mas porque es el rendimiento independiente de la ordenada al origen
+print("El valor alfa es de ", alpha) 
+print("El valor tiene una hipotesis nula ", hipotesis_nula)
+
+"Si la hipotesis nula es verdadera significa que el valor de beta no es estadisticamente significativo "
+
+#grafica de la regresion lineal
+
+x = series_de_tiempo ['rendimiento_x'].values
+y = series_de_tiempo['rendimiento_y'].values
+
+#asignacion de los nombres de la grafica / corregir grafica.
+titulo_grafica = 'Regresión lineal del activo ' + security  \
+   + ' | benchmark ' + benchmark + '\n' \
+   + ' alfa (intercepto) ' + str(alpha)  \
+   + ' | beta (pendiente) ' + str(beta) + '\n'  \
+   + ' p-value ' + str(p_value) + \
+   ' | hipótesis nula ' + str(hipotesis_nula) + '\n'  \
+   + ' r-cuadrada ' + str(r_cuadrada)  \
+   + ' | correlación ' + str(correlacion)
+
+    
+
+#segunda grafica con detalles en la parte superior
+plt.figure()
+plt.title(titulo_grafica)
+plt.scatter(x, y)
+plt.plot(x, prediccion_regresion_lineal, color='black') 
+plt.ylabel(security)
+plt.xlabel(benchmark)
+plt.grid()
+plt.show()
+
+
