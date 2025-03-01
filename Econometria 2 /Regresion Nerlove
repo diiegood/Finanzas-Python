@@ -1,0 +1,210 @@
+"Modelo de regresion lineal Nerlove "
+
+#librerias para importar
+import pyreadstat #para leer formato.dta
+import pandas as pd #libreria para manipulacion de datos
+import matplotlib #libreria para graficar 
+from matplotlib import pyplot as plt #para graficar
+import statsmodels.api as sm  #para analisis estadistico
+from IPython.display import Image  #para leer imagenes
+import numpy as np #funciones matematicas
+from statsmodels.formula.api import ols  #para las pruebaas de hipotesis
+
+#Variables :
+#costos totales, 
+#precios de los factores (salarios, precios de combustibles, renta o precio de capital)
+#producto
+
+#infomracion proveniente de la Federal Power Commision (1956)
+
+"Coeficientes usados en el modelo para poder explicar el modelo"  #(variables independientes X)
+#Datos del Modelo 145 observaciones:
+    #totcost: costo expresado en dolares de 1970 (MM USD)
+    #output_ produccion expresada en billones de kilowats por hora  (KwH)
+    #plabor : precio de trabajo (dolares)
+    #pkfuel : precio del combustible 
+    #pkap : precio del capital
+    
+
+###############################################################################
+
+#para leer los datos
+datafile = 'nerlove63.dta' 
+dataframe_meta = pyreadstat.read_dta(datafile)
+
+dataframe_meta.columns #muestra las columnas del dataframe
+
+dataframe_meta.head(5) #muestra los primeros 5 valores del 0 al 4
+ 
+dataframe_meta.describe().round(2) #ver los paneles completos del dataframe
+dataframe_meta.dtypes  #ver que tipo de datos son cada variable del data frame
+dataframe_meta.isnull().values.any() #se le pregunta si alguna columna tiene nulo
+
+#generar varias variables  / manipulacion de columnas
+dataframe_meta['Ltotcost'] = np.log(dataframe_meta['totcost'])
+dataframe_meta['Loucost'] = np.log(dataframe_meta['output'])
+dataframe_meta['Lplabor'] = np.log(dataframe_meta['plabor'])
+dataframe_meta['Lpfuel'] = np.log(dataframe_meta['pfuel'])
+dataframe_meta['Lpkap'] = np.log(dataframe_meta['pkap'])
+dataframe_meta['avgcost'] = np.log(dataframe_meta['totcost']/dataframe_meta['output'])
+
+dataframe_meta['One'] = 1
+dataframe_meta.head()
+
+#muestra los estilos de los graficos disponibles
+print(plt.style.aviable) #colocar un estilo para las graficas de python
+
+#graficar histograma
+plt.style.use('ggplot')
+dataframe_meta['totcost'].hist(color = 'blue')
+plt.ylabel('Freq')
+plt.xlabel('totcost MM USD')
+plt.tile('Histogram total cost million dollars')
+plt.show()
+
+#graficar funcion de densidad, siendo un histograma graficado de forma continua
+plt.style.use('seaborn-white') #la version del estilo ver a cual corresponde
+dataframe_meta['totcost'].plt.kde() #se cambia a kde
+plt.title('Densidad totocost mm USD')
+plt.show()
+
+#graficar una regresion
+plt.style.use('seaborn-dark')
+plt.scatter(dataframe_meta.output, dataframe_meta.avgcost, s=10, color='red') #grafica de puntos
+plt.titlw('Grafico de dispersion Output vs Avg cost')
+plt.show
+
+###############################################################################
+
+"Se busca estimar la escuacion del logartimo de la funcion del costo total en funcion del logartimo de las otras variables"
+#para hacer una regresion sencilla
+Y = dataframe_meta['Ltotcost'] #logaritmo del costot total definido como variable y
+X = dataframe_meta[['One', 'Loutput', 'LpLabor', 'Lpfuel', 'Lpkap']] 
+#One columna de 1 para la constante, logaritmo del output, logaritmo del precio del trabajo, logaritmo del precio del combustible, logaritmo de capital
+
+"Se puede agregar la columna de one en la funcion como constante o quitarla del dataframe de X"
+"Y utilizar esta funcion de " #X2=sm.add_constant(X)
+"Donde se agrega una constante de la variable X"
+
+#Se define el modelo: / se hace la representacion de lo que va estimar pero no ha estimado nada
+estimacion =sm.OLS(Y,X) #va a stat modelo toma la funcion de OLS y aplica la funcion a la variable Y , matriz X (varias variables en X)
+estimacion2 = estimacion.fit() #toma el objeto estimnacion y le agrega el fit para agregar la estimacion
+"con la funcion   .fit()  se hace la estimacion"
+estimacion2.summary() #se imprime el resumen de la estimacion previamente hecha, dando los resultados.
+
+r_square = 0.926 #r cuadrada alta que 
+f_estadistico = 437.7 #el f estadistico corresponde a la prueba global, matriz siendo con j restricciones.
+#prueba que todos los coeficientes de estas variables son significativos, incluido la constante
+#resticciones para todas las variables excepto la constante k-u(restricciones)
+#al menos el modelo se debe modelar con 1 constante, no se puede evaluar sin que no incluya la constante
+#porque sin la constante se estaria trando de probar que el modelo global puede no incluir a la constante, lo cual
+#deberia incluir la constante porque la constante es el promedio.
+
+#Prueba estaditica de t-1.96 (0.05), tiene que ser mayor a 1.96 aunque sea negativo el valor 
+#p-value que sea menor a 0.05
+
+###############################################################################
+
+#Se vuelve a usar la misma estimacion pero con la funcion de stat-model
+
+Y = dataframe_meta['Ltotcost']
+X = dataframe_meta[['Loutput', 'Lplabor', 'Lpfuel', 'Lpkap']]
+X2 = sm.add_constant(X) #se le agrega una constante al vector de x
+estimacion_x = sm.OLS(Y,X2).fit() #se ahce el calculo de la regresion de variable Y y matriz X
+estimacion_x.summary() #se imprimen los resultados de la estimacion
+
+#probar las hipotesis de las variables a estimar (hipotesis nula = beta (k) es igual a cero )
+#HO : Bk = 0 / HO : Bk no es igual a cero
+#probar individualmente que que Bk = 0 o que no es igual a cero 
+
+estimacion_x.params #se extrae los parametros de la estimacion X / extrae los coeficientes.
+#los coeficientes estan asociados a la forma Douglas
+
+"Constante es importante para el modelo"
+#el modelo deberia ser explicado por la constante, la constante se representa en el promedio.
+#si la primera fila de la matriz tiene puros seros quiere decir que no esta poniendo restriccion sobre el primer coeficiente
+#las restricciones son los 1 que se colocan en la matriz asociado a su posicion correspondiente del valor de la matriz.
+
+"Prueba Global"
+#La prueba global va enunciar en funcion a lo que se desea probar, si todas las variables explicativas,
+#son realmente valiosas para el modelo.
+#Prueba global F, cuantas restricciones se van a tener (k-1), 
+"Si son 5 coeficientes la j es de 4"
+
+#para estimar todo los calores de t
+estimacion_x.tvalues
+#valor estimado 
+estimacion_x.fvalue
+
+#calculo matricial / matriz de restricciones (cada 1 es una restriccion interpretado como constante)
+#primer renglon es cero
+#depues tiene una restriccion por cada entrada hasta el ultimo tramo de la matriz
+restricciones = np.array(([0,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]))
+restricciones
+estimacion_x.f_test(restricciones) #sale el mismo resultado de la estimacion anterior.
+
+###############################################################################
+
+"Restriccion conjunta" # / restriccion diferente
+#Se prueba que en conjunto la suma del coeficiente 2 y del coeficiente 3 es 0 y por individual cada uno es 0
+"si se buca poner una resticcion donde la combinacion lineal, donde ambos coeficientes de restricciones osea"
+"los numeros 1 puestos anteriormente que den 0 en determinada variable, se coloca un -1"
+
+restriccion_diferente = np.array(([0,0,0,0,0],[0,1,-1,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]))
+restriccion_diferente
+
+###############################################################################
+
+#Prueba estadistica 
+#Que la suma de los coeficientes sea 1 / la industria tiene retornos a escala constantes
+#toda la industria tiene el misma estructura de retornos a escala
+
+###############################################################################
+"Las restricciones dependen de los renglones de las matrices"
+###############################################################################
+
+"Matriz de restriccion ahora solo con 1 renglon" #la restriccion es que sumen 1 (r)
+matriz_restriccion = (([0,0,1,1,1]))
+matriz_restriccion
+
+###############################################################################
+"Otra forma de calcular minimos cuadrados ordinarios"
+#es la forma mas sencilla de hacer la prueba de hipotesis
+
+formula = 'Lolcost ~ One + Loutput +Lplabor + Lpfuel + Lpkap' #ecuacion a estimar
+resultados = ols(formula, dataframe_meta).fit #funcion ols aplica la formula para calcular
+hypotesis = 'Lplabor + Lpfuel + Lpkap = 1 ' #prueba de hipotesis los 3 coeficientes suman 1
+
+t_test = resultados.t_test(hypotesis) #se calcula el coeficiente de la prueba de hipotesis
+t_test 
+
+#coef es la suma de coeficientes de todas las variables
+#eror estandar 
+#zona de aceptacion de la hipotesis nula p value debe ser mayor a 0.05
+
+#aunque haya salido un t-value de -0.757, porque cae dentro del intervalo de confianza, aunque el valor sea negativo
+#se acepta la hipotesis nula de que todos los 
+#coeficientes sumados son 1 y de que las industrias estan en economias de  escala  similar
+
+#media del coeficiente son los ultimos dos valores del test de resultados que arroja un resultado de
+#-0.289 y 1.575, del intervalo de confianza de este coeficiente.
+#p-value es de 0.45008 esta dentro de la zona de aceptacion de la hipotesis nula porque es mayor a 0.05
+
+###############################################################################
+"Hipotesis alternativa" #/que hay economias a escala pero el efecto de la cantidad de produccion sobre el costo total sea 0
+#quiere decir que la industria la cantidad que produce no afecta el costo total
+#osea que no importa el nivel total de produccion no hay cambio en su costos totales
+#industrias de costos hunidods, transporte, aeropuertos, metro.
+#el costo variable es poco relevante, industrias como electrica deben cumplir disponibilidad.
+
+#hipotesis alternativa
+hypotesis_2 = 'Lplabor + Lpfuel + Lpkap  = 1 , Loutput = 0'
+f_test = resultados.f_tes(hypotesis_2)
+f_test
+
+#calculo de residuos
+residuos = Y - estimacion_x.predict()
+residuos
+
+'minuto 30:01'
+
