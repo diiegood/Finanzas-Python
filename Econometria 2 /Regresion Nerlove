@@ -202,9 +202,121 @@ hypotesis_2 = 'Lplabor + Lpfuel + Lpkap  = 1 , Loutput = 0'
 f_test = resultados.f_tes(hypotesis_2)
 f_test
 
-#calculo de residuos
+#calculo de residuos / calculo del valor de y  restando la prediccion
 residuos = Y - estimacion_x.predict()
 residuos
 
-'minuto 30:01'
+"Conclusion"
+"Hay heterocdasticidad en la grafica de residuos debido al producto, significa que el producto o la cantidad"
+"producida es un indicador de tamaño de la empresa, entre mas pequeña son mas variantes y mas grandes mas homogeneas"
+#al trabajar con datos de empresas siempre hay heterocedasticidad asociada al nivel de produccion.
+#porque las empresas grandes son las que mas se parecen, mientras en las pequeñas hay mayor discrepancia
+#siendo mas facil encontrar homocedasticidad solo en empresas grandes, mientras que la heterocedasticiadad
+#es mas comun en empresas pequeñas.
+
+#cuando 
+
+"La heterocedasticidad es cuando no se cumple que la varianza sea la constante de la matriz"
+"Si la regresion tiene heterocedasticidad se puede corregir"
+#la homocedasticidad es cuando la varianza se pone como sontante , por que es la misma varianza
+#para todos los posibles valores que conforman la beta o variables explicativas, por lo que para cualquier
+#individuo la varianza es la misma.
+
+###############################################################################
+###############################################################################
+"Problemas del modelo"   
+#autocorrelacion
+#heterocedasticidad 
+
+"Solucion de los problemas"
+#autocorrelacion / se modela lo que esta fuera de la diagonal de las varianzas de la matriz.
+#heterocedasticidad / solo se modela la diagonal de la varianza de matriz 
+###############################################################################
+###############################################################################
+###############################################################################
+######## GRAFICAS VARIABLES DEPENDIENTES COMPARADAS CON LOS RESIDUOS ##########
+###############################################################################
+#hay heterocedasticidad y autocorrelacion. / en el modelo.
+"Grafica de residuos con variables dependientes" 
+#para graficar los residuos /  eje de x logaritmo de la produccion / eje de y residuales.
+plt.style.use('ggplot')
+plt.scatter(dataframe_meta.Loutput , residuos, s=15, color= 'red')
+plt.title('Grafica de dispersion Loutput vs Residuos')
+plt.show()
+    
+###############################################################################
+
+"Grafica de residuo con otra variable dependidente del modelo"
+#se estima los residuos / eje x precio del trabajo / eje y residuos
+plt.style.use('ggplot')
+plt.scatter(dataframe_meta.Lplabor , residuos, s=15, color= 'red')
+plt.title('Grafica de dispersion Lplabor vs Residuos')
+plt.show() #Hay heterocedasticidad
+
+###############################################################################
+
+"Grafica de residuo con otra variable dependidente del modelo"
+#se estima los residuos / eje x precio del combustible  / eje y residuos
+plt.style.use('ggplot')
+plt.scatter(dataframe_meta.Lpfuel , residuos, s=15, color= 'red')
+plt.title('Grafica de dispersion Lpfuel vs Residuos')
+plt.show() #Hay heterocedasticidad
+
+###############################################################################
+
+"Grafica de residuo con otra variable dependidente del modelo"
+#se estima los residuos / eje x precio del capital / eje y residuos
+plt.style.use('ggplot')
+plt.scatter(dataframe_meta.Lpkap , residuos, s=15, color= 'red')
+plt.title('Grafica de dispersion Lpkap vs Residuos')
+plt.show() #Hay heterocedasticidad
+    
+############################################################################### 
+"Al ver las cuatro graficas se puede ver que la unica variable que genera heterocedasticidad"
+"Es la produccion"
+###############################################################################
+
+#estimacion de minimos cuadrados ordinarios / estimacion incial tentativa a corregir o ajustar
+estimacion_x.summary()
+
+"Estimacion final corregida, o ajustada con los valores significativos"
+Y = dataframe_meta['Ltotcost'] #variable de costo total
+X = dataframe_meta ['One', 'Loutput', 'Lplabor', 'Lpfuel', 'Lpkap'] #matriz x
+estimaciion_nueva = sm.OLS(Y,X).fit(cov_type='HCO') #utilizar en fit esa opcion HCO 
+estimaciion_nueva.summary()
+#HCO se refiere a que los errores estandar de heterocedasticidad son robustos.
+"Funcion HCO de covarianza corrige la estimacion de heterocedasticidad"
+#cambio f estadistico, valor t , error estandar cambia
+
+###############################################################################
+"Opciones disponibles para corregir modelo por heterocedasticidad"
+###############################################################################
+
+#HCO #Matriz de White / mas sugerible 
+#HC1
+#HC2
+#HC3
+
+###############################################################################
+
+"Corregido el problema de heterocedaticidad se busca estimar la curva de costos medios"
+#Se recupera la regresion del valor del Log de costo estimado
+ly_prediccion = estimacion_x.predict(X)
+#funcion anti-logaritmica
+Y = np.exp(ly_prediccion)
+#se coloca el data frame / se agregan dos nuevas variables al data frame que son los residuos
+dataframe_meta['totcost_e']=Y
+dataframe_meta['avgcost_e']=dataframe_meta['totcost_e'] / dataframe_meta['output']
+dataframe_meta.head()
+
+"Se grafica el nuevo modelo"
+plt.style.use('ggplot')
+plt.scatter(dataframe_meta.output, dataframe_meta.avgcost, s=15, color='blue')
+plt.scatter(dataframe_meta.output, dataframe_meta.avgcost_e, s=15, color='red')
+plt.title('Grafico de dispersion Output vs Average cost estimado')
+plt.show()
+
+#se puede ver que el modelo dice que la industria todavia tiene bastante mercado, para crecer.
+#escala minima eficiente el numero minimo de refresquera que necesita en una region, por region de distribucion
+
 
