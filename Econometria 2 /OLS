@@ -18,7 +18,7 @@ media_y = np.mean(consumo["Y"]) #se calcula de la variable y el consumo
 numero_filas = consumo.shape[0] #para ppder ver el numero de filas del array
 #tiene 10 filas 
 
-#para calcular la suma de los cuadrados de lso valores de un data frame se usa pandas
+#para calcular la suma de los cuadrados de los valores de un data frame se usa pandas
 suma_cuadrados_x = np.sum( consumo['X'] * consumo['X'])
 suma_x_y = np.sum(consumo['X']* consumo['Y'])
 
