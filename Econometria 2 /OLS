@@ -15,7 +15,7 @@ consumo = pd.read_csv('https://raw.githubusercontent.com/vmoprojs/DataLectures/m
 media_x = np.mean(consumo["X"]) #se calcula de la variable x el consumo
 media_y = np.mean(consumo["Y"]) #se calcula de la variable y el consumo
 
-numero_filas = consumo.shape[0] #para ppder ver el numero de filas del array
+numero_filas = consumo.shape[0] #para poder ver el numero de filas del array
 #tiene 10 filas 
 
 #para calcular la suma de los cuadrados de los valores de un data frame se usa pandas
