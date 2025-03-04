@@ -110,12 +110,15 @@ dfAux
 np.mean(e)
 np.corrcoef(e,consumo['X']) 
 
+#####################################################################################
+#Suma de cuadrados.
+SCT = np.sum((consumo['Y']-media_y)**2) #Total
+SCE = np.sum((y_ajustado-media_y)**2)   #Residuos
+SCR = np.sum(e**2)                      #Regresion
 
-SCT = np.sum((consumo['Y']-media_y)**2)
-SCE = np.sum((y_ajustado-media_y)**2)
-SCR = np.sum(e**2)
 
-R_2 = SCE/SCT
+#para calcular la R^2 / que tanto se ajusta el modelo.
+R_2 = SCE/SCT 
 R_2
 
-print(regresion1.fit().summary())
+print(regresion1.fit().summary())  #valores del modelo
