@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from statsmodels.iolib.summary2 import summary_col #para ser estadistica resumen de regresiones.
-#from linearmodels.iv import IVLIML, IV2SLS, IVGMM, IVGMMCUE #modulos para estimar variables instrumentales
+from linearmodels.iv import IVLIML, IV2SLS, IVGMM, IVGMMCUE #modulos para estimar variables instrumentales
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -209,7 +209,60 @@ plt.show()
 
 #se importan nuevos datos:
 
-"minuto 41:25"
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\practica4.dta" 
+# Lee el archivo Stata
+df4 = pd.read_stata(ruta) #para leer la ruta del archivo en formato stata
+df4 = df4[df4['baseco'] == 1] #para agregarle una cosntante al archivo
+df4.head()
+
+df4['constante'] = 1
+resultados4 = sm.OLS(df4['avexpr'],df4[['constante','logem4']],
+                     missing = 'drop').fit()
+resultados4.summary()
+
+#el p-value es significativa la relacion
+#la prueba global (f estadistico), dice que el modelo es valido
+#el r-cuadrado es bajo porque log nat mortalidad se captura muy poco de la posibilidad de expropiacion
+#explicando el 27% de la mortalidad de los primeros colonizadores 
+#es mejor estimarlo asi aunque salga baja la r-cuadrada a que salga con endogeneidad
+
+###############################################################################
+
+"Se toma el valor predecido de la regresion anterior y se toma en la segunda etapa"
+
+df4['predicted_avexpr'] = resultados4.predict()
+df4.head()
+
+#se hace la regresion usando los valores predichos (no la variable original)
+#se estiman los valores de la regresion con esos nuevos valores
+
+resultados_ss = sm.OLS(df4['logpgp95'],df4[['constante', 'predicted_avexpr']]).fit()
+resultados_ss.summary()
+
+#la R-cuadrada aumento a 47.7% de explicacion del modelo
+#el coeficiente predicted_avexpr subio a 94.43%, subiendo mucho de valor
+#ahora separada la endogeneidad del modelo
+#quiere decir que la variable es mas importante de lo que se tenia estimado
+
+"Corregir endogeneidad ayuda"
+#porque  puede disminuir o aumentar el efecto que tiene la variable de interes
+#dandonos una respuesta mas clara del modelo sobre lo que se quiere explicar
+
+"Conclusion"
+#Solo por endogeneidad la variable de estudio nos dice que es mas importante
+#de lo que se tenia pensado, por cada punto de proteccion contra la exporpiacion
+#el pib per capita crece  casi uno en terminos logaritmicos ("predicted_avexpr") estimador nuevo
+
+
+###############################################################################
+
+
+
+
+
+
+
+
 
 
 
