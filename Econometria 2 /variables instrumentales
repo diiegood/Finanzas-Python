@@ -1,0 +1,218 @@
+"Econometria 2 Practicas variables instrumentales"
+
+#librerias 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from statsmodels.iolib.summary2 import summary_col #para ser estadistica resumen de regresiones.
+#from linearmodels.iv import IVLIML, IV2SLS, IVGMM, IVGMMCUE #modulos para estimar variables instrumentales
+import warnings
+warnings.filterwarnings('ignore')
+
+#para leer el archivo
+import pandas as pd
+
+# Ruta completa del archivo Stata
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\practica.dta"  
+
+# Lee el archivo Stata
+df1 = pd.read_stata(ruta)
+
+# muestra los primeros datos del archivo
+df1.head()
+
+#para graficar los datos.
+plt.style.use('ggplot')
+plt.scatter(df1['avexpr'], df1['logpgp95'])  # Cambié plt.plot a plt.scatter para dispersión
+plt.title('Gráfica de Dispersión')  # Título de la gráfica
+plt.xlabel('Avexpr')  # Etiqueta eje x
+plt.ylabel('Logpgp95')  # Etiqueta eje y
+plt.show()
+
+
+###############################################################################
+
+#MODELO OLS BIVARIADO  / filtros
+
+#se genera un subconjunto limpio de datos eliminando las observaciones con datos NA
+
+archivo = df1.dropna(subset=['logpgp95', 'avexpr']) #limpia de los NA
+archivo.head()
+
+archivo = archivo[archivo['baseco']==1] #para filtrar solamente con los valores de 1 en la columna baseco 
+archivo.tail()
+
+###############################################################################
+
+#para establecer parametros de X y Y
+X = archivo['avexpr']
+Y = archivo ['logpgp95']
+
+#para poner una funcion con los valores de las etiquetas
+etiqueta = archivo['shortnam'] #se agrega una columna en la funcion
+#se remplaza los marcadores con las etiquetas
+fig, ax = plt.subplots() #se define el plot / ax es la informacion de ejes y etiquetas / fig es la impresion del grafico
+ax.scatter(X,Y, marker='') #grafica de puntos de la variable X Y que el marcador sea nulo ('')
+
+#para los indices sean enumados de la etiqueta / la etiqueta es una fila de puros nombres
+
+for i, label in enumerate(etiqueta):
+    ax.annotate(label, (X.iloc[i],Y.iloc[i]))
+
+###############################################################################
+
+#para graficar
+#se traza una linea de tendencia , linea recta
+ax.plot(np.unique(X), np.poly1d(np.polyfit(X,Y,1))(np.unique(X)), color='black')
+
+#se definen los ejes de la grafica los limites y las etiquetas de cada variable
+ax.set_xlim([3.3,10.5])
+ax.set_ylim([4,10.5])
+ax.set_xlabel('Proteccion promedio contra el riesgo de expropiacion 1985-95')
+ax.set_ylabel('Log Pib per capita, PPP, 1995')
+ax.set_title('Grafica OLS relacion entre riesgo y expropiacion e ingreso')
+
+#si quiero guardar el grafico
+#plt.savefig('FIGURA.png', bbox_inches='tight')
+
+plt.show() #muestra el desempeño economico de los paises que estan mas cerca de la recta
+
+###############################################################################
+#para estimar el OLS / se toma el data frame original sin modificar
+
+df1['const'] = 1 #se agrega una columna como constante a la base de datos
+df1.head()
+
+#para construir el modelo OLS, se construye una regresion.
+#como variable endogena:   logpgp95 (1 columna)
+#como variable exogena:   const , avexpr (2 columnas)
+regresion = sm.OLS(endog=df1['logpgp95'], exog=df1[['const','avexpr']], missing='drop')
+
+resultados = regresion.fit() #para calcular la regresion
+
+resultados.summary() #para mostrar los resultados
+
+"P-value cercano a 0 se rechaza la hipotesis nula " #relacionado a la prueba global
+#que las variables sean estadisticamente no significativas , modelo es valido de forma global.
+
+###############################################################################
+#para predeceir el PIB per capita:
+#/ se uso la variable ya limpia , y con la constante puesta en la nueva columna (variable archivo)
+
+media_expr = np.mean(archivo['avexpr']) #promedio de la muestra 
+media_expr
+
+resultados.predict(exog=[1,media_expr]) #se toman los resultados 
+#considerando solamente como exogenas la constante (1) y el nuevo valor creado previamente del promedio de muestra
+
+###############################################################################
+#para graficar
+
+grafica1 = df1.dropna(subset=['logpgp95', 'avexpr'])
+
+fix, ax = plt.subplots()
+ax.scatter(grafica1['avexpr'], resultados.predict(), alpha=0.5, label='Prediccion', color='purple')
+ax.scatter(grafica1['avexpr'], grafica1['logpgp95'], alpha=0.5, label='Observado', color='blue')
+
+ax.legend()
+ax.set_title('OLS valores predichos')
+ax.set_xlabel('avexpr')
+ax.set_ylabel('logpgp95')
+plt.show()
+
+
+###############################################################################
+#Modelo Multivariado / agregar mas variables a el modelo
+
+#para cargar el archivo:
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\practica2.dta" 
+# Lee el archivo Stata
+df2 = pd.read_stata(ruta) #para leer la ruta del archivo en formato stata
+
+df2['constante'] = 1 #para agregarle una cosntante al archivo
+
+df2.head()
+
+###############################################################################
+"Para crear 3 modelos de regresion distintos"
+#cada modelo tiene difernetes columnas de estudio
+#avexpr = indice de proteccion contra la expropiacion
+#lat_abst = latitud
+#variables dummys que son variables que sirven para ver si el pais es de asia, africa u otro.
+X1 = ['constante', 'avexpr'] 
+X2 = ['constante', 'avexpr', 'lat_abst']
+X3 = ['constante', 'avexpr', 'lat_abst', 'asia', 'africa', 'other']
+
+#Se busca estimar un modelo de regresion OLS, por cada conjunto de variables
+regresion1 = sm.OLS(df2['logpgp95'], df2[X1], missing='drop').fit()
+regresion2 = sm.OLS(df2['logpgp95'], df2[X2], missing='drop').fit()
+regresion3 = sm.OLS(df2['logpgp95'], df2[X3], missing='drop').fit()
+
+###############################################################################
+"Nueva Instruccion Suma de Col" #es para hacer resumen de los 3 modelos en 1 tabla
+
+info_dict={ 'R-squared': lambda x: f"{x.rsquared:2f}", "No. observaciones" :lambda x:
+           f"{int(x.nobs):d}"}
+
+tabla_resultados = summary_col( results=[regresion1,regresion2,regresion3],
+                               float_format='%0.2f', stars=True, model_names = [
+                                   'Model 1', 'Model 3', 'Model 4'], info_dict= info_dict, 
+                               regressor_order=['constante', 'avexpr','lat_abst','asia','africa'])
+
+
+tabla_resultados.add_title('Tabla 2 - OLS regresiones')
+
+#funcion lambda es para iteraciones en las tablas
+
+tabla_resultados #para ver todos los resultados de la tabla creada previamente.
+#las que tienen estrellitas son las variables significativas 
+
+#cada modelo incluye diferente control.
+#primer control latitud, condicion climatica favorable menos progreso por comodidad
+#segundo control 
+
+###############################################################################
+
+#estimador de minimos cuadrados generalizados
+#se regresa al estimador 
+
+df1_normal = df1.dropna(subset=['logem4', 'avexpr'])
+
+X= df1_normal['logem4']
+Y= df1_normal['avexpr']
+etiquetas1 = df1_normal['shortnam']
+
+
+fig, ax= plt.subplots()
+ax.scatter(X,Y, marker='')
+
+for i, label in enumerate(etiquetas1):
+    ax.annotate(label, (X.iloc[i], Y.iloc[i]))
+    
+###############################################################################
+
+#para la linea de tendencia
+ax.plot(np.unique(X), np.poly1d(np.polyfit(X,Y,1))(np.unique(X)),
+        color='darkblue')
+
+ax.set_xlim([1.8,8.4])
+ax.set_ylim([3.3,10.4])
+ax.set_xlabel('Logaritmo de la mortalidad de los colonizadores')
+ax.set_ylabel('Riesgo promedio de exporpiacion 1985-95')
+ax.set_title('Grafica Relacion entre mortalidad de los colonos y el riesgo de expropiacion', size=14)
+
+plt.show()
+
+###############################################################################
+
+#se importan nuevos datos:
+
+"minuto 41:25"
+
+
+
+
+
+
