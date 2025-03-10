@@ -1,0 +1,100 @@
+"Simulacion de Monte Carlo" 
+
+#tecnicas de simulacion, generando diferentes situaciones en el futuro para predecir los precios de los
+#activos basados en sus distribuciones estadisticas. 
+
+"VaR y CVaR"
+
+#Estiman la maxima perdida de confianza tipificado en el 95% - 99% de confianza, perdida maxima 
+#que no sera superada en un periodo normal de mercado , durante un horizonte temporal especifico, 1 dia 1 semana
+#VaR- se usa para medir el nivel de riesgo financiero durante un cierto periodo especifico la maxima perdida esperada en percentil 
+
+#CVaR o Expected Shortfall - Riesgo de cola , tamaño promedio de las perdidas extremas que puede ocurrir 
+#alla del VaR, excede al VaR en el peor caso del porcentaje (segun el intervalo de confianza) de la distribucion
+#de la perdida , es el promedio de las perdidas esperadas que estan mas alla del Value At Risk, durante un tiempo
+#en condiciones de mercado normales.
+
+#librerias
+import pandas as pd
+import numpy as np
+import datetime as dt
+import yfinance as yf
+from scipy.stats import norm, t
+import matplotlib.pyplot as plt
+
+#se crea una funcion para importar los datos de yahoo finance:
+#se calcula el rendimiento, covarianza de los activos para la matriz de Markowitz
+def importardatos(activos, start, end):
+    datos_Activos = yf.download(activos, start= start, end=end)
+    datos_Activos= datos_Activos['Adj Close']
+    retornos = datos_Activos.pct_change()
+    media_retornos = retornos.mean()  #rendimientos
+    cov_retornos = retornos.cov() #matriz de covarianza
+    return retornos, media_retornos, cov_retornos
+
+#se crea otra funcion para poder ver el rendimiento del portafolio.
+#rendimiento del portafolio que es la media , donde escala multiplicando con T
+#desviacion estandar que es la volatilidad , donde esc^ala con la raiz cuadrada de T
+
+def rendimiento_portafolio(pesos, media_retornos, cov_retornos, tiempo):
+    retornos = np.sum(media_retornos*pesos)*tiempo #rendimeinto
+    desv_stand = np.sqrt(np.dot(pesos.T, np.dot(cov_retornos, pesos) )) * np.sqrt(tiempo) #volatilidad
+    return retornos, desv_stand
+
+#lista de activos usados para el calculo del portafolio.
+activos = ['AAPL', 'SPY', 'AMZN', 'EWW', '^MXN']
+
+fecha_final = dt.datetime.now()
+fecha_inicio = fecha_final - dt.timedelta(days=500)
+
+retornos, media_retornos, cov_retornos = importardatos(activos, start=fecha_inicio, end=fecha_final)
+retornos = retornos.dropna()
+
+#pesos de los portafolios se determinan de manera aleatoria
+pesos = np.random.random(len(retornos.columns))
+pesos /= np.sum(pesos)
+
+retornos['portafolio'] = retornos.dot(pesos)
+
+#Para la simulacion de Monte Carlo :
+
+#inputs
+monte_carlo = 10000 #simulaciones
+dias = 50 #tiempo en dias para la simulacion 
+
+#datos para las simulaciones 
+media = np.full(shape=(dias, len(pesos)), fill_value=media_retornos)
+media = media.T
+
+#para almacenar los datos de cada simulacion del portafolio
+portafolio_simulaciones = np.full(shape=(dias, monte_carlo), fill_value=0.0)
+portafolio_inicial = 1000 
+
+monto_del_portafolio = 1000000 #expresado en modena USD, mxn, yenes, libras
+
+#bucle for para el ciclo de simulacion de monte carlo, itera cada simulacion
+
+for m in range(0, monte_carlo):
+    Matriz = np.random.normal(size=(dias, len(pesos))) #matriz generada a traves de la dist normal
+    #la matriz simula las variaciones diarias de los retornos de los activos.
+    cholesky = np.linalg.cholesky(cov_retornos) #hace la descomposicion de cholesky de una matriz de covarianza
+    #se hace para mantener la estructura de la correlacion entre las acciones y la simulacion de los rendimientos
+    retornos_diarios = media + np.inner(cholesky, Matriz)
+    #se actualiza la funcion de portafolio simulaciones creada previamente, donde cada dia se calcula el valor
+    #del portafolio multiplicando los retornos diarios simulados por los pesos y agregando +1 para reflejar el cambio
+    #en el valor del portafolio 
+    portafolio_simulaciones[:,m] = np.cumprod(np.inner(pesos, retornos_diarios.dias)+1)*monto_del_portafolio
+    
+    
+    
+    #para graficar
+    plt.figure(figsize=(20,10))
+    plt.plot(portafolio_simulaciones)
+    plt.ylabel('Portafolio Valor en pesos mexicanos')
+    plt.xlabel('Transcurso de dias')
+    plt.title('Simulacion de Monte Carlo del portafolio')
+    plt.show()
+
+
+
+
