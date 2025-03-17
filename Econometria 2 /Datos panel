@@ -1,0 +1,239 @@
+"Datos Panel problema"  
+
+#librerias a usar
+import pandas as pd 
+import numpy as np
+import statsmodels.api as sm
+from statsmodels.iolib.summary2 import summary_col
+from linearmodels.panel import PooledOLS, PanelOLS, RandomEffects
+from statsmodels.tools.tools import add_constant
+
+import warnings 
+warnings.filterwarnings('ignore')
+
+
+#importar los datos de los que se van a trabajar
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\wage_panel.csv"  
+
+# Lee el archivo Stata
+datos_panel = pd.read_csv(ruta)
+datos_panel.head()
+
+#variables a tomar en cuenta de los tados panel
+#indicador nr / individuo (dado por el numero siendo el sujeto 13, 12, etc)
+#year /  año
+###############################################################################
+#Caracteristicas dummis:
+    
+#black / etnia si es negro
+#hisp / etnia si es latino o hispano
+#queda como variable complementaria  de las dummis (no estipulada) / si es blanco o asiatico
+
+###############################################################################
+
+#exper / indicador de numero de horas de trabajo 
+#married / si la persona esta casada o no 
+#educ / años de educacion 
+#union / si vive en union
+#lwage / logaritmo de salario
+#expersq / experiencia al cuadrado
+#occupation / ocupacion (codigo por numero de en que industria esta empleada)
+
+
+"Para estimar un panel se le debe decir a python que la informacion esta agrupada"
+"Dada por un grupo con otras dimensiones (tiempo) "
+
+#se crea la variable años 
+year = datos_panel['year'] #se crea una funcion que contenga solamente los años de los datos
+wage_df = datos_panel.set_index(['nr','year']) #se crea un nuevo indice que sea individuo y años
+wage_df.head()
+
+#ahora las variables estan ordenadas por grupos de acuerdo al individuo que lo corresponden
+#durante todo ese conjunto de datos que esta dentro de su misma agrupacion
+
+#se le agrega una columna adicional de año / porque se indexo y para no perderla completamente
+datos_panel['year']=pd.Categorical(year) #ya no se tiene años porque es parte del indice 
+#la funcion Categorical es para que python interprete la variable year como categoria y no como numero
+datos_panel.head()
+
+
+"Para la regresion Pooled"#se requiere libreria de:from linearmodels.panel import PooledOLS, PanelOLS
+
+#se definen las variables exogenas y endogenas
+#primero se definen las variables de regresores matriz x / variable exogena X
+X = ['black','hisp','exper','expersq','married','educ','union','year','hours'] #matriz de regresores
+X = sm.add_constant(datos_panel[X]) #se agrega la constante al modelo
+X
+
+#Se define la variable Y / variable endogena Y
+#se extrae el logaritmo de salario
+Y = wage_df['lwage']
+Y
+
+#para hacer la regresion 
+modelo_pooled = PooledOLS(Y, X) #se define el modelo de pool , variables a estimar
+pooled_regression = modelo_pooled.fit() #se estima el modelo con las variables previemente dadas
+pooled_regression
+
+"Interpretacion"
+#En modelos de datos panel el R-cuadrado se puede partir en 3 categorias:
+#r-cuadrado total , r-cuadrado (between) entre grupos, r-cuadrado (overall) total coincide con el total
+
+#prueba global ; 
+#F-estadistico  
+#p-value:  puede o no recharaz la hipotesis de que el modelo sea o no significativo
+#distribucion:
+    
+#Cov estimator: nos habla sobre si la matriz de ovarianza esta ajustada o no ajustada
+#ajustada - adjusted
+#no ajustada - Unadjusted
+    
+#Entities: conteo por entidad de los individuos
+#Time periods: peridos de tiempo en el modelo 
+
+###############################################################################
+
+#Estimacion de parametros: coeficientes  / parameters es el resultado del modelo de la interpretacion
+#p-value sirve para identificar la significancia de los datos estadisticos, para rechazar o aceptar hipotesis nula
+
+#por lo que en los parametros se vio que black tuvo un -0.1379 y un Lower CI de -0.1839
+#Y los hispano un 0.0210 mientras que un Lower CI de -0.0196
+#por el hecho de ser negro se obtiene un 13.79% menos de salario hasta un minimo de  18.39% menos
+#mientras que el hispano gana un 2.10 % mas hasta un minimo de 1.96% menos que el promedio
+#los años de experiencia muestran rendimientos decrecientes, crecen conforme a la experiencia crece
+#el salario pero llega a un punto donde el salario deja de crecer 
+#tiene relacion conforme al tiempo por lo que se puede ver que entre mas años pasan mas sube el porcentaje
+#cuando esta casado tambien tiene un salario mas elevado
+#las dumis nos diria que tan diferente es el salario de las personas conforme va cambiando el tiempo
+
+
+"Para la Regresion de Efectos Aleatorios"
+
+modelo_efec_aleatorios = RandomEffects(X,Y) #se define el modelo de efectos aleatorios y variables a estimar
+regresion_aleatoria = modelo_efec_aleatorios.fit() #se hace la estimacion del modelo
+regresion_aleatoria
+
+#para descompener la varianza
+des_var = regresion_aleatoria.variance_decomposition
+des_var
+
+###############################################################################
+#Bajo el modelo de efectos aleatorios hay otra interpretacion
+
+#Con este modelo el r-cuadrado se descompone en 2 variables, donde el r-cuadrado total (overall)
+#no coincide con el r-cuadrado convencional (r-cuadrado), porque se asume un componente de termino de error separado
+#siendo este el aporte de diferencia de este efecto aleatorio.
+
+#Tiene prueba global F-estadistico, p-value dice que las variables son significativas.
+
+#Se puede ver que las variables de tiempo pierden significacion muy rapidamente por lo que
+#al estimar el modelo de efectos aleatorios habia cierta informacion del termino de error que habia sido
+#capturada por las variables de tiempo que en realidad eran de caracter aleatorio y se correlacionaban al tiempo de alguna forma
+#al separar el error en efectos aleatorios, el error incrementa y se captura ahi y pierde significancia en el tiempo
+
+
+###############################################################################
+#para ver la descompisicion de la varianza 
+
+#Es como se descompondrian los residuales por el efecto aleatorio siendo este la primera linea (Effects)
+#y por el puro residual (residuals), 
+#lo que nos dice que el porcentaje del efecto aleatorio aporta 47% de la variabilidad (Percent due to Effects)
+#por lo que parece que si es un modelo de efectos aleatorios en el modelo, o si no es que en el termino
+#de error hay algo que probablemente es informacion omitida y se deberia incorporar al modelo
+
+###############################################################################
+
+#falla por problema de multicolinealidad por lo que requiere de un ajuste
+"Para la regresion de efectos fijos" #estimar modelo de efectos fijos
+
+#regresion / esta regresion tiene un problema de multicolinealidad
+modelo_efectos_fijos = PanelOLS((X), Y, entity_effects=True) 
+efectos_fijos_regresion = modelo_efectos_fijos.fit()
+efectos_fijos_regresion
+
+"Aveces no se puede capturar la informacion porque puede haber un problema de multicolinealidad"
+#se pueden poner dummis para poder separar por grupos las variables 
+#las variables negro, hispano, edicacion , experiencia, es informacion que no cambia con el tiempo 
+#por lo que se decidio omitirlas en el modelo de efectos fijos 
+
+"Al estimar un modelo de efectos fijos se deben no considerar las variables que no cambian con el tiempo"
+#por que la informacion que no cambia conforme pasa el tiempo sera capturada por el efecto fijo 
+
+#el efecto fijo tendra una combinacion de factores, que son los que le corresponden al individuo pero
+#pero no pueden ser capturados por variables observables.
+
+###############################################################################
+"Segundo Ajuste de la regresion"
+
+#se corrige la regresion con nuevos parametros omitiendo las etnias y variables que no cambian con el tiempo
+"Estimacion de condicion del efecto fijo dado solo por tiempo omitiendo individuos"
+#parametros de los regresores variables independientes
+X=['expersq', 'union', 'married', 'year', 'hours'] #amtriz X de variables 
+# X_dummies = ['black','hisp','exper','expersq','married','educ','union','year','hours'] #matriz X con dummies
+X = sm.add_constant(wage_df[X])
+modelo_efectos_fijos_corregido = PanelOLS(Y,X,entity_effects= True)
+regresion_efectos_fijos = modelo_efectos_fijos_corregido.fit()
+regresion_efectos_fijos
+
+###############################################################################
+#Observaciones
+
+#Al estimar paneles se puede perder la posibilidad de interpretar una variable como la de la etnia
+#se vuelve mas generalizada la interpretacion, si se hace un dato panel y no incluyen caracteristicas que
+# que no cambian conforme pasa el tiempo , esas variables no seran interpretadas, por que se van al efecto fijo
+ 
+
+#Se puede ver que el r-cuadrado crece en el modelo la experiencia 
+#la variable de tiempo aumenta considerablemente donde ahi pueden estar contenidas las otras variables como etnias, etc
+#muestra los datos que todos tienen significancia estadistica.
+
+###############################################################################
+
+"Tercer Ajuste de la regresion"
+
+#cambiar la  el modelo de regresion inlciuendo doncidiones de individuos y tiempo
+#para poder tener una mejor precision del estudio
+
+X = ['expersq','union','married','hours'] #aumentando las dimensiones del panel
+X = sm.add_constant(wage_df)
+#se le agrego las variables de entidad y de efectos de tiempo
+modelo_reg_ef_nuevo = PanelOLS(Y, X, entity_effects= True, time_effects=True)
+regresion_efectosfijos_ajuste = modelo_reg_ef_nuevo.fit()
+regresion_efectosfijos_ajuste
+
+#entonces con este nuevo ajuste el tiempo se va al efecto fijo y los coeficientes se ven asi
+
+
+###############################################################################
+"Para comparar los modelos"
+
+#uso de la biblioteca 
+from linearmodels.panel import compare
+
+#se genera un diccionario con los regresores y el nombre de cada modelo
+print(compare({'efecto fijo': regresion_efectos_fijos,
+         'efecto dijo ajustado': regresion_efectosfijos_ajuste,
+         'efecto variable': regresion_aleatoria,
+         'Metodo Pool': pooled_regression}))
+
+
+###############################################################################
+"Ajuste de Varianza robusta"
+
+X = ['expersq', 'union', 'married', 'year', 'hours'] #se genera la matriz x 
+X = sm.add_constant(wage_df[X]) #agrega una constante a la matriz X
+#se estima un modelo de efectos fijos con efectos en la entidad o individuo
+modelo_ajuste_varianza = PanelOLS(Y, X, entity_effects=True) 
+#se pone que la covarianza sea de tipo robusta y se estima
+regresion_varianza = modelo_ajuste_varianza.fit(cov_type='robust') 
+regresion_varianza
+
+#En la varianza robusta consiste en reconocer que puede haber una posible heterogeneidad
+#entre los individuos, esta heterogeneidad se manifiesta como heterocedasticidad
+#tiene efectos sobre los estimadores y se puede corregir agregando una constante a la matriz X
+
+###############################################################################
+
+
+
+
