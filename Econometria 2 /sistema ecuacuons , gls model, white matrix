@@ -1,0 +1,56 @@
+"Sistemas de ecuaciones practica"
+
+from linearmodels.datasets import fringe
+from collections import OrderedDict
+print(fringe.DESCR)
+
+fdata = fringe.load()
+fdata
+
+exog = ['educ','exper','expersq','tenure','tenuresq','union','south','nrtheast','nrthcen','married','white','male']
+
+x = sm.add_constant( fdata[exog] )
+x
+
+#Estimacion 
+
+fmod_data = OrderedDict()
+fmod_data ['hrearn'] = {'dependent': fdata.hearn, 'exog':x}
+fmod_data ['hrbens'] = {'dependent': fdata.hearn, 'exog':x}
+fmod = SUR(fmod_data)
+
+#si el p-value es menor a  0.05 es estadisticamente significativa la variable
+#si el p-value es mayor a 0.05 es estadisticamente no significativa la variable
+
+print(fmod.fit(cov_type= 'unadjusted'))
+
+print(fmod.fit(method='gls', cov_type= 'unadjusted')) #modelo de minimos cuadrados generalizados
+
+#si los regresores difieren en algunas variables / los regresores para cada una de las ecuaciones son distintos
+
+#si los regresores infieren
+
+exog_earn = ['educ','exper','expersq','union','nrtheast','white']
+exog_bens = ['educ', 'exper','expersq','tenure','tenuresq','union','male']
+
+X_1 = sm.add_constant(fdata[expg_earn])
+X_2 = sm.add_constant(fdata[expg_bens])
+
+fmod_data ['hrearn'] = {'dependent': fdata.hrearn, 'exog': X_1}
+fmod_data ['hrbens'] = {'dependent': fdata.hrbens, 'exog': X_1}
+fmod = SUR(fmod_data)
+
+
+print(fmod.fit(cov_type='unadjusted'))
+fmod_res = fmod.fit(cov_type = 'unadjusted', iterate = True)
+print(fmod_res)
+fmod_res.iterations #ver las iteraciones para poder ajustar el modelo 
+
+#correcion por heterocedasticidad , por medio de la correcion de matriz de white
+fres_het = fmod.fit(cov_type = 'robust') #estimacion robusta es para que use una matriz de white
+resultado = fres_het.summary
+resultado
+ 
+ 
+ 
+
