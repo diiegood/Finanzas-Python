@@ -1,0 +1,256 @@
+"Modelo de Eleccion binaria a traves de una estimacion de un Probit "
+#modelo de eleccion binaria a traves de un Probit, Logit
+#la diferencia de estos modelos cae en la funcion de densidad asociada.
+
+#se cargan las librerias.
+import pandas as pd 
+import numpy as np
+import statsmodels.api as sm
+from statsmodels.discrete.discrete_model import Probit
+
+###############################################################################
+
+#Variables de estudio de la base de datos:
+    
+#participacion de la mujer en mercado laboral ( 0 o 1)
+#numero de hijos menores de 6 años
+#numero de hojos entre 6 y 18 años.
+#edad en años 
+#asistencia a la escuela esposa ( 0 o 1) 0 no asistio 1 si asistio
+#asistencia a la escuela esposo ( 0 o 1) 0 no asistio 1 si asistio
+#logaritmo de la expecatativa de salario para la mujer por fuerza laboral
+#ingreso de la familia sin el ingreso de la esposa
+
+###############################################################################
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\eleccion_binaria.csv"  
+
+data = pd.read_csv(ruta)
+data.head() 
+#data.tail()
+
+###############################################################################
+
+"Para limpiar los datos (dummys)"
+#se crean nuevas variables (que son dummys) conforme a otras 
+
+data['lfp_d'] = 0 #se crea una columna de puro cero
+#se hace un filtro donde cambia la columna que sea si a el valor 1 de la nueva columna creada
+data.loc[data.lfp == 'yes', "lfp_d"] = 1  
+
+data["wc_d"] = 0
+data.loc[data.wc == 'yes', 'wc_d'] = 1
+
+data["hc_d"] = 0
+data.loc[data.hc == 'yes', 'hc_d'] = 1
+
+###############################################################################
+
+data
+
+valores = data.describe()
+valores
+
+"Lectura de datos"
+
+#el 56.83 % de las mujeres estan en el mercado laboral
+#28.15% de las mujeres acudieron a la escuela
+#el 39.17% de los esposos de las mujeres fueron a la escuela
+#la media de edad es de 42.53 años 
+#el numero de hijos estimado menores de 6 años es un promedio de 0.23 (pocos hijos en este rango de edad)
+#el numero de hijos estimado mayores de 6 a 18 años es de 1.35 niños por mujer (tienen mas hijos grandes)
+
+###############################################################################
+#se definen los parametros a estimar
+Y = data['lfp_d']
+X = data[['k5', 'k618', 'age', "wc_d", "hc_d", 'lwg', 'inc']]
+X = sm.add_constant(X)
+
+#para hacer la estimacion del modelo
+model = Probit(Y, X.astype(float)) #se pone float por si hay un numero no real en la matriz X lo cambia a real
+probit_model = model.fit()
+probit_model.summary()
+
+#observaciones:
+#variable dependiente es lfp_d
+
+#pseudo r-cuadrado , es como el r-cuadrado normal; 
+#la informacion explica muy poco la variabilidad de la variable dependiente, 
+#el valor es de 0.1208 por lo que se ajusta muy poco
+
+#los coeficientes solo hablan del efecto que tienen sobre la variable latente
+"la variable latente: es la informacion de la variable que se supone que " 
+" esta ocurriendo subyacentemente en el modelo  " 
+#nos dice que las variables subyacentes en el modelo (ingreso, hogar) afectan de alguna forma la 
+#poscion o la respuesta dentro del umbral, pero no son interpretables cada uno de manera directa.
+#para interpretarlos directamente solamente con efectos marginales a cada uno.
+#pero se interpreta el sentido del resultado 
+
+#ejemplo: (solo se interpreta las variables conforme a que tanto estan relacionadas a la variable latente)
+#(k5) tener hijos menores de 6 años disminuye las posibilidades de ingresar al mercado laboral
+#(k618) tener hijos de 6-18 años tambien disminuye la posibilidad de ingresar al mercado laboral
+#(lwg) la expectativa al alza del salario incrementa la posibilidad de ingresar al mercado laboral
+
+
+###############################################################################
+ 
+#crosstable / tablas de freciencia por categoria de que sus esposos fueron a la escuela
+
+pd.crosstab(data['lfp'], data['hc'], margins = True)
+#mujeres que estan en el mercado laboral 428, esposos que no fueron al colegio 251 
+
+#mujeres que no estan en el mercado laboral son 325, esposos que no fueron al colegio 207
+
+#ambas variables se parecen por lo que se puede decir que la variable de que su esposo haya 
+#asistido al colegio o no no es tan relvante para que ellas decidan trabajar o no.
+
+###############################################################################
+
+#En efectos marginales se puede evaluar bajo diferentes puntos,  la convencion es evaluarlos en el promedio
+#tomar las variables y evaluar en el promedios de los datos, pero tambien se puede evaluar en los extremos (marginales)
+
+"Efectos Marginales" 
+
+#se toma la probabilidad de que una mujer entre al mercado laboral condicional de que el esposo fue al colegio
+#y a este se le resta la probabilidad de que la mujer este en el mercado laboral condicional a que su esposo no fue al colegio
+
+#ahora si se puede estimar la probabilidad de que la mujer entre al mercado laboral, dada la informacion de su marido
+
+"efecto marginal de que las mujeres estan en el mercado laboral, condional a que su marido no tiene educacion"
+
+#variables: (variable de respuesta es la que se busca explicar a traves de otras)
+# y = 1 que la mujer entre al mercado laboral
+# y = 0 que la mujer no entre al mercado laboral
+    
+#es la convencion sobre y = 1 / que la mujer entra al mercado laboral 
+#(se busca determinar que factores contribuyen positivamente a la variable de respuesta)
+
+hc_data0 = np.column_stack(( #se construye el data ser para evaluar una funcion de densidad
+    1, np.mean(data["k5"]), np.mean(data["k618"]), np.mean(data["age"]), #el 1 significa mujer que este en el mercado laboral
+    np.mean(data["wc_d"]), 0, np.mean(data["lwg"]), np.mean(data["inc"]) #se evaluan las variables con los promedios de las variables
+    )) #el 0 singifica que su marido no fue a la escuela
+
+hc_data0
+
+"efecto marginal de que la mujeres enstan en el mercado laboral, condicional a que su marido tiene educacion"
+" variable hc"
+#es la convencion sobre y = 1 / que la mujer entra al mercado laboral 
+
+hc_data1 = np.column_stack(( #se construye el data ser para evaluar una funcion de densidad
+    1, np.mean(data["k5"]), np.mean(data["k618"]), np.mean(data["age"]), #el 1 significa mujer que este en el mercado laboral
+    np.mean(data["wc_d"]), 1, np.mean(data["lwg"]), np.mean(data["inc"]) #se evaluan las variables con los promedios de las variables
+    )) #el 1 singifica que su marido  fue a la escuela
+
+hc_data1
+
+###############################################################################
+#hc = husband college attendance
+
+#estimaciones / en relacion a la asistencia del esposo a la escuela (variable hc)
+prediccion0 = probit_model.predict(hc_data0) #que se haga la prediccion de la probabilidad al conjunto de datos 0
+prediccion0 #estimar el probit cuando x vale 0
+
+prediccion1 = probit_model.predict(hc_data1) #que se haga la prediccion de la probabilidad al conjunto de datos 1
+prediccion1 #estimar el probit cuando x vale 1
+
+"El efecto marginal es la diferencia de la probabilidad de la prediccion 1 restando la de la prediccion 0"
+
+efecto_marginal = prediccion1 - prediccion0
+efecto_marginal
+
+#se puede ver que una mujer cuando tiene un esposa con educacion,
+#incrementa su probabilidad de acudir al mercado laboral en un 2.2337% , con respecto a una que no
+#por lo que es mas probable que este en el mercado laboral dada la condicion de que su esposo tuvo educacion
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Ahora realizamos otra prueba teniendo en cuenta la variable de escolaridad de la mujer"
+"variable wc"
+
+pd.crosstab(data['lfp'], data['wc'], margins = True)
+
+#wife collage attendance = 0
+wc_data0 = np.column_stack(( #se construye el data ser para evaluar una funcion de densidad
+    1, np.mean(data["k5"]), np.mean(data["k618"]), np.mean(data["age"]), #el 1 significa mujer que este en el mercado laboral
+   0, np.mean(data["hc_d"]) , np.mean(data["lwg"]), np.mean(data["inc"]) #se evaluan las variables con los promedios de las variables
+    )) #el 0  singifica que ella no fue a la escuela
+
+wc_data0
+
+#wife collage attendance = 1
+wc_data1 = np.column_stack(( #se construye el data ser para evaluar una funcion de densidad
+    1, np.mean(data["k5"]), np.mean(data["k618"]), np.mean(data["age"]), #el 1 significa mujer que este en el mercado laboral
+   1, np.mean(data["hc_d"]), np.mean(data["lwg"]), np.mean(data["inc"]) #se evaluan las variables con los promedios de las variables
+    )) #el 1  singifica que ella fue a la escuela
+
+wc_data1
+
+#estimaciones / en relacion a la asistencia dela mujer a la escuela (variable wc)
+prediccion_wcdata1 = probit_model.predict(wc_data1) 
+prediccion_wcdata1
+
+prediccion_wcdata0 = probit_model.predict(wc_data0) 
+prediccion_wcdata0
+
+efecto_marginal2 = prediccion_wcdata1 - prediccion_wcdata0
+efecto_marginal2   
+
+#en promedio una mujer que tiene educacion tiene una probabilidad de 18.4355% mas de
+#acudir al mercado laboral.
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Ahora realizamos otra prueba teniendo en cuenta el numero de hijos de la mujer menores a 6 años"
+"variable k5" #esta variable contribuye negativamente a la probabilidad de estar en el mercado laboral.
+#entre mas hijos tenga de edad menor a 6 años menos probabilidad  tiene de estar en el mercado laboral
+
+
+#cross table de variable de numero de niños menores a 6 años por mujer que se quiere insertar al mercado laboral
+pd.crosstab(data['lfp'], data['k5'], margins = True) 
+
+
+"Se hace 4 tabalas simulando una mujer que tiene 0,1,2,3 hijos que esta en el mercado laboral"
+#wife number of kids with less than 6 years old, that she has  = 0
+k5_data = np.column_stack(( np.repeat(1,4), (0,1,2,3), #se hace un stack de columnas , 4 renglones
+    #se evalua en los promedios y se va repetir 4 veces los promedios 
+    np.repeat( np.mean(data["k618"]),4), np.repeat(np.mean(data["age"]),4),np.repeat( np.mean(data["wc_d"]), 4), 
+    np.repeat(np.mean(data["hc_d"]), 4), np.repeat(np.mean(data["lwg"]),4), np.repeat( np.mean(data["inc"]), 4)
+    )) 
+
+k5_data
+
+#se hace 4 tabalas simulando una mujer que tiene 0,1,2,3 hijos que esta en el mercado laboral
+
+
+#estimaciones / de la mujer en el mercado laboral segun el numero de hijos que estan por debajo de 6 años de edad
+prediccion_hijos = probit_model.predict(k5_data) 
+prediccion_hijos
+
+ #Ahora se puede ver que la mujer que tiene:
+     #0 hijos tiene una probabilidad de estar en el mercado laboral de 65.73%
+     #1 hijos tiene una probabilidad de estar en el mercado laboral de 31.93%
+     #2 hijos tiene una probabilidad de estar en el mercado laboral de 8.94%
+     #3 hijos tiene una probabilidad de estar en el mercado laboral de 1.32%
+     
+#se puede ver que la probabilidad va bajando conforme va teniendo hijos mas grandes
+
+efecto_marginal_hijos = probit_model.get_margeff()
+efecto_marginal_hijos = efecto_marginal_hijos.summary()
+efecto_marginal_hijos
+
+###############################################################################
+"Interpretacion de datos"
+###############################################################################
+"Los efectos marginales solo son interpretables para variables que no son dicotomicas ni categoricas por conteo"
+#en el caso de hijos solo se podria asumir si el numero de edades de hijos es continuo (k5)
+#tener un hijo tenga menos de 6 años contribuye negativamente a  la probabilidad de entrar al mercado laboral en un 29.97%
+
+#en el caso de que los hijos tengan un rango de edad entre 6 y 18 años (k618)
+#contribuye negativamente en un 1.32% a la probabilidad de entrar al mercado laboral
+
+#en el caso de que los hijos tengan un rango de edad entre 6 y 18 años (k618)
+#contribuye negativamente en un 1.32% a la probabilidad de entrar al mercado laboral
