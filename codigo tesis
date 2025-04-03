@@ -31,10 +31,8 @@
 #EWW  ISHARES MSCI Mexico ETF /  NYSE
 #NAFTRAC.MX    ISHARES NAFTRAC  / NACIONAL FINANCIERA S.N.C. / Impulsora y Black Rock Mexico
 
-
-
-
 ###############################################################################
+
 
 #librerias importantes  #scikitt / tensorflow (IA google) , pytortch (IA)
 import numpy as np  #conocer bien la libreria
@@ -51,8 +49,8 @@ import importlib
 "Comparacion de activos" ## Definir los activos (ric) y el benchmark
 
 #security = '^MXN' (benchmark)
-security = "EWW2" #variable y #activo
-benchmark = "NAFTRAC" #variable x #indice de referencia
+security = "NAFTRAC" #variable y #activo
+benchmark = "SPY2" #variable x #indice de referencia
 
 ###############################################################################
 
@@ -66,9 +64,10 @@ def series_tiempo(ric):
     path = directorio + ric + '.csv' #se genera una funcion dond esta la ruta, el nombre del archivo y su fomrato
     raw_data = pd.read_csv(path) #carga un data frame, tipo csv asignado en la funcion path
     t = pd.DataFrame()
-    t['Fecha']  = pd.to_datetime(raw_data['Date'], dayfirst = False ) 
-    t['cierre'] = raw_data['Close']
-    t = t.sort_values(by='fecha', ascending=True)
+    t['fecha']  = pd.to_datetime(raw_data['Date'], dayfirst = False )
+    #t['fecha'] = pd.to_datetime(raw_data['Date'], format="%d/%m/%Y") #correcion
+    t['cierre'] = raw_data['Price']
+    t = t.sort_values(by='fecha', ascending= True)
     t['close_previous'] = t['cierre'].shift(1)
     t ['rendimiento'] = t['cierre']/t['close_previous'] - 1
     t = t.dropna()
@@ -233,6 +232,12 @@ plt.ylabel(security)
 plt.xlabel(benchmark)
 plt.grid()
 plt.show()
+
+
+
+
+
+
 
 
 
