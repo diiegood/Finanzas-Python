@@ -166,9 +166,19 @@ print(f"El error estándar es {error_estandar}")
 print(f"El valor alfa es {alpha}")
 print(f"La hipótesis nula es {hipotesis_nula}")
 
+titulo_grafica = 'Regresión lineal del activo ' + security  \
+   + ' | benchmark ' + benchmark + '\n' \
+   + ' alfa (intercepto) ' + str(alpha)  \
+   + ' | beta (pendiente) ' + str(beta) + '\n'  \
+   + ' p-value ' + str(p_value) + \
+   ' | hipótesis nula ' + str(hipotesis_nula) + '\n'  \
+   + ' r-cuadrada ' + str(r_cuadrada)  \
+   + ' | correlación ' + str(correlacion)
+
+
 # Graficar la regresión lineal
 plt.figure()
-plt.title(f'Regresión lineal del activo {security} | benchmark {benchmark}')
+plt.title(titulo_grafica)
 plt.scatter(x, y)
 plt.plot(x, prediccion_regresion_lineal, color='black')
 plt.ylabel(security)
@@ -224,18 +234,12 @@ plt.ylabel('Precios')
 ax = plt.gca()
 
 ax1 = series_de_tiempo.plot(kind='line', x='fecha', y='cierre_x', ax=ax, grid=True, color='red', label=benchmark)
-ax2 = series_de_tiempo.plot(kind='line', x='fecha', y='cierre_y', ax=ax, grid=True, color='black', secondary_y=True, label=security)
+ax2 = series_de_tiempo.plot(kind='line', x='fecha', y='cierre_y', ax=ax, grid=True, color='blue', secondary_y=True, label=security)
 
 # Mostrar leyendas
 ax.legend(loc=2)
 ax2.legend(loc=1)
 plt.show()
-
-
-
-
-
-
 
 
 
