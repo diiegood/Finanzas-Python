@@ -1,0 +1,85 @@
+"Modelo de estimacion Logit multinomial" #panel multinomial (panel logit o panel probit.)
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import statsmodels.api as sm
+
+#Descripcion de variables: / modelo no ordenado / no se puede decir que alguna de las siguientes categorias es mejor
+#Variable estado /  3 posibles resultados; 
+#0 no esta en la escuela
+#1  categoria no trabaja ni esta en la escuela 
+#2  este solo trabaja
+
+"SE CARGAN LOS DATOS"
+keane_df = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\practica5.dta" 
+keane_df
+#la informacion es un panel 
+keane_df = pd.read_stata(keane_df)
+keane_df
+
+"SE DEFINEN LAS VARIABLES QUE SERAN USADAS"
+###############################################################################
+
+keane_df.head()
+keane_df.shape #muestra el volumen de los datos
+
+#se usara solo año 1987 de la informacion
+keane_df2 = keane_df.loc[keane_df.y87 == 1]
+
+keane_df2["estado"] = 0 #se crea una columna llamada estado
+keane_df2.loc[keane_df2.status == 2.0, "estado" ] = 1 #se remplaza el 2 de la columna estado por 1
+keane_df2.loc[keane_df2.status == 3.0, "estado" ] = 2 #se remplaza el 3 de la columna estado por 2
+keane_df2.head()  #muestra los primeros valores de la matriz
+keane_df2.shape #muestra el tamaño de la matriz
+
+keane_df2 = keane_df2[['estado','educ','exper','expersq','black']]
+keane_df2.head() #se usan variables; estado, educacion, experiencia, experiencia al caudrado y etnia negra.
+
+datos = pd.crosstab(keane_df2['estado'],keane_df2['educ'], margins=True) 
+datos 
+#se puede ver que la mayoria de la poblacion esta entre 15 a 17 años de educacion (variable 0)
+#entre los individuos que no estudian ni trabajan estan en 10-13 años de educacion (variable 1)
+#en los que trabajan estan en 10-13 años de ecuacion (variable 2)
+#los que no trabajan ni estudian puede que no sea descion propia sino que no han sido absorbidos por el mercado laboral
+
+###############################################################################
+
+"SE HACE LA ESTIMACION"
+#definicion de variables para la regresion:
+y = keane_df2['estado'] #variable explicada
+x = keane_df2[['educ','exper','expersq','black']] #variables explicativas / regresores
+x = sm.add_constant(x) #se le agrega una constante a la matriz de x
+
+#estimacion
+modelo = sm.MNLogit(y, x) #se selecciona el modelo logit
+modelo= modelo.fit() #se estima / se puede optimizar se realizao con  7 iteraciones 
+analisis_modelo = modelo.summary() #nos da el resultado
+analisis_modelo
+
+###############################################################################
+
+#Analisis de resultados:
+#no se estimo la categoria  base, solamente las categorias 2 y 3 y con estas se tiene el resultado de la otra
+#betas para la categoria 2 y 3 
+
+#En la categoria 1:  la eduacacion contribuye negativamente, la experiencia y la experiencia al cuadrado
+#pero ser de raza negra contribuye positivamente en la categoria.
+
+#en la categoria 2: la educacion, la experiencia al cuadrado y ser de raza negra contribuyen negativamente
+#pero los años de experiencia contribuyen postivamente.
+    
+###############################################################################
+
+"Para calcular los efectos Marginales" #se pueden calcular para cada categoria.
+
+modelo.get_margeff()
+
+#los efectos marginales nos dicen que para la categoria 0 cada año de educacion contribuye positivamente, puede ser problema de endogeneidad
+#para la categoria 1 la educacion contribuye negativamente a no estudiar ni trabajar, pero ser de raza negra aporta mas en esta categoria
+#para la categoria 2 ser de raza negra contribuye negativamente a estar trabajando.
+
+
+
+
+
