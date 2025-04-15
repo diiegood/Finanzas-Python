@@ -1,0 +1,131 @@
+"Regresion de Poisson" #se usa esta funcion asociada a la distribucion de Poisson para modelos de tipo conteo
+
+#pip install statsmodels instalar en la terminal
+import statsmodels.api as sm
+import statsmodels.api as sm#para hacer regresiones
+import pandas as pd   
+import numpy as np #para manipular matrices
+import matplotlib.pyplot as plt
+from statsmodels.iolib.summary2 import summary_col
+
+#se pueden leer funciones dta con la libreria de pandas
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\FERTIL2.dta"  
+data_df = pd.read_stata(ruta)
+data_df.head() 
+#data.tail()
+
+"Estimar modelo de conteo" #Ser reconoce un modelo de conteo cuando el valor 0 es el mas comun
+#En modelo de conteo se asume que el valor 0 es altamente probable, siendo el mas comun
+ 
+
+#Analisis desriptivo
+data_df = data_df[['children', 'educ', 'age', 'agesq', 'evermarr', 'urban', 'electric', 'tv']].dropna()
+data_df.children.max(), data_df.children.min() #se calcula el maximo y el minimo de la columna children
+#valor maximo de 13 y valor minimo de 0
+
+#se grafica el histograma (son 14 categorias porque oscilan en el rango de 0 a 13, siendo 14 datos)
+plt.hist(data_df.children, bins=14, density=True, histtype='bar')
+
+#para poner titulo
+plt.ylabel('numero de niños')
+plt.title('numero de niños vivos')
+
+plt.show() #para mostrar la grafica
+
+
+###############################################################################
+
+valores_x = data_df['age']
+valores_y = data_df['children']
+
+#como se relaciona la edad de la madre con el numero de hijos?
+plt.scatter(valores_x, valores_y, marker = 'o')
+
+plt.title('relacion entre  numero de hijos y edad de la madre') 
+plt.xlabel('edad (años)')
+plt.ylabel('numero de hijos')
+
+plt.show()
+
+#se puede ver que conforme pasa la edad el numero de hijos se incrementa pero hay un limite maximo y minimo
+#entre mayor edad aumentan los hijos, hay una relacion positiva de las variables
+
+###############################################################################
+
+#como se relaciona los años de educacion con el numero de hijos?
+
+#entre mas educacion deciden tener pocos hijos o ninnguno, o en edades mas avanzadas
+valores_x = data_df['educ']
+valores_y = data_df['children']
+
+plt.scatter(valores_x, valores_y, marker = 'o')
+
+plt.title('relacion entre  numero de hijos y educacion de la madre') 
+plt.xlabel('educacion (años)')
+plt.ylabel('numero de hijos')
+
+plt.show()
+
+###############################################################################
+
+"Estimacion DEL MODELO POR MCO Y POISSON"
+
+#se definen los valores
+Y = data_df['children'] #vector de valores
+X = data_df[['educ','age','agesq','evermarr','urban','electric','tv']] #matriz de valores
+X = sm.add_constant(X)
+
+"Modelo de Minimos cuadrados (OLS)"
+Modelo_OLS = sm.OLS(Y,X)
+Modelo_OLS_resultados = Modelo_OLS.fit()
+Modelo_OLS_resultados.summary()
+
+#Analisis del modelo lineal / en este caso el 0 afecta la media del modelo lineal
+"El R-cuadrao en este modelo se calcula con la diferencia del valor predicho y del valor real, y se suma a las desviaciones estandar"
+# R-cuadrado es alto, al trabajar con microdatos se tiene la expectativa de que sea alto este valor
+#variables de efecto negativo: educacion, años al cuadrado, si es de ciudad , si tiene electricidad o television.
+#variables de efecto positivo: edad, que este casada
+
+"Modelo de tipo Poisson"  #es un modelo cercano al de clasificacion / clasifica valores, solo compara variables entre si
+Modelo_Poisson = sm.Poisson(Y,X)
+Modelo_Poisson_resultados = Modelo_Poisson.fit()
+Modelo_Poisson_resultados.summary()
+
+#Analisis del modelo Poisson:
+#Se estima la regresion, se tiene un pseudo r-cuadrado, es el porcentaje de exactitud del modelo
+
+#resultados / se van a comparar los resultados del modelo de regresion y del poisson
+tabla_resultados = summary_col(results=[Modelo_OLS_resultados, Modelo_Poisson_resultados], float_format = '%0.4f', #fijado a 4 decimales
+                               stars = True, model_names= ['Model OLS', 'Model Poisson'], #se ponen los nombres de los modelos
+                               regressor_order=['const','educ','age','agesq','evermarr','urban','electric','tv']) #regresores estimados por orden
+    #la constante va al inicio de los regresores
+tabla_resultados.add_title('Tabla 1 - Comparacion de OLS con regresion tipo Poisson')  #nombre de la tabla
+#tiene marcadores de asteristico para indicar coeficientes significativos y los que no son
+tabla_resultados 
+
+#en este caso el modelo adecuado es el de conteo porque los datos tienen forma de conteo, no una forma lineal
+#se se hace una prediccion de un modelo lineal podria darnos datos absodurdos como que la mujer tiene 2.5 hijos 
+#en el modelo poission la prediccion nos va arrojar el numero entero de hijos por lo que es mas adeucado
+
+#calculo de la media de los valores de la matriz:
+x_mean = pd.DataFrame(data_df[['educ','age','agesq','evermarr','urban','electric','tv']].mean()).T
+x_mean['const'] = 1
+x_mean = x_mean[['const', 'educ', 'age', 'agesq', 'evermarr', 'urban', 'electric', 'tv']]
+
+###############################################################################
+"Para predecir el numero promedio de hijos de la mujer de la tabla de datos de cada modelo"
+
+Modelo_OLS_resultados.predict(x_mean) #promedio de hijos 2.26
+
+Modelo_Poisson_resultados.predict(x_mean) #promedio de hijos 1.51
+###############################################################################
+"Efectos marginales del modelo poisson"
+
+efectos_marginales_poisson = Modelo_Poisson_resultados.get_margeff()
+efectos_marginales_poisson.summary()
+
+#en promedio por cada año de educacion las muejeres disminuyen el numero de hijos en .0093
+
+
+
+
