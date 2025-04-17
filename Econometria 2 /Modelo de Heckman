@@ -1,0 +1,33 @@
+"Regresion de Heckman  / Modelo de Seleccion de Muestra "
+#regresion censurada
+
+import pandas as pd 
+import statsmodels.api as sm
+import numpy as np
+import matplotlib.pyplot as plt3
+from statsmodels.iolib.summary2 import summary_col
+from statsmodels.regression.heckman import Heckman
+
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\womenwk.dta"  
+df = pd.read_stata(ruta)
+df.head() 
+
+#c1 y c2 son resultados de la estiamcion del paper 
+
+"Se construye una ecuacion para estimar si la mujer esta en el mercado laboral y si tiene salario"
+#variable z =salario / variable W (matriz); casada, hijos, educacion, edad
+
+Y = df.wage
+W = df[['married', 'childre', 'education', 'age']]
+W = sm.add_constant(W)
+
+X = df[['education', 'age']]
+X = sm.add_constant(X)
+
+"Se estima el modelo"
+res = heckman.Heckman(Y,X,W).fit(method = 'twostep')
+res.summary()
+
+
+ 
