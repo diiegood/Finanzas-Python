@@ -1,0 +1,94 @@
+" Modelo Censurado "  
+#regresion censurada
+
+import pandas as pd 
+import statsmodels.api as sm 
+import numpy as np 
+import matplotlib.pyplot as plt 
+from statsmodels.iolib.summary2 import summary_col
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\Gas_LP.dta"  
+Gaslp_df = pd.read_stata(ruta)
+Gaslp_df.head() 
+
+ruta2 = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\Gas_LP.csv"  
+Gaslp_df2 = pd.read_csv(ruta2)
+Gaslp_df2.head() 
+
+plt.hist(Gaslp_df.gasto_gaslp, histtype= 'bar')
+plt.ylabel('Gasto en Gas LP')
+plt.title('Histogram')
+plt.show()
+ 
+"Se filtran los datos donde el gasto de gas sea mayor a 0" #Se seleccionan todos los datos mayores a 0
+Gasto_positivo = Gaslp_df.loc[Gaslp_df.gasto_gaslp > 0, : ]
+Gasto_positivo
+
+plt.hist(Gasto_positivo.gasto_gaslp, histtype='bar')
+
+plt.ylabel( 'Gasto en Gas LP ')
+plt.title( "Histograma de Gasto Positivo")
+plt.show()
+
+
+"Se vuelven a filtrar los datos a gasto medio"
+Gasto_medio = Gaslp_df.loc[(Gaslp_df.gasto_gaslp > 0 ) & (Gaslp_df.gasto_gaslp < 2000), : ]
+Gasto_medio
+
+plt.hist(Gasto_medio.gasto_gaslp, histtype='bar')
+plt.ylabel('Gasto en Gas LP')
+plt.title('Histograma para Gasto Medio')
+plt.show()
+
+Gasto_medio2 = Gaslp_df.loc[Gaslp_df.gasto_gaslp < 500, : ]
+Gasto_medio2
+
+plt.hist(Gasto_medio2.gasto_gaslp, histtype='bar')
+plt.ylabel('Gasto en Gas LP')
+plt.title('Histograma para Gasto Medio')
+plt.show()
+
+###############################################################################
+
+plt.hist(Gasto_medio2.gasto_gaslp, histtype='bar')
+plt.ylabel('Gasto en Gas LP')
+plt.title('Histograma para Gasto Sin Datos Aberrantes')
+plt.show()
+
+###############################################################################
+
+y_values = Gaslp_df['gasto_gaslp']
+x_values = Gaslp_df['ing_cor']
+
+plt.scatter(x_values, y_values, marker='o')
+plt.title('Relacion entre el Gasto en gas lp e ingreso, gasto positivo') #toda la muestra
+plt.ylabel('Gasto')
+plt.xlabel('ingreso')
+plt.show()
+
+###############################################################################
+
+y_values_medio = Gasto_medio['gasto_gaslp']
+x_values_medio = Gasto_medio['ing_cor']
+
+plt.scatter(x_values_medio, y_values_medio, marker='o')
+plt.title('Relacion entre el Gasto en gas lp e ingreso') #toda la muestra
+plt.ylabel('Gasto')
+plt.xlabel('ingreso')
+plt.show()
+
+###############################################################################
+
+y_values_medio2 = Gasto_medio['gasto_gaslp']
+x_values_medio2 = Gasto_medio['tot_integ']
+
+plt.scatter(x_values_medio2, y_values_medio2, marker='o')
+plt.title('Relacion entre el Gasto en gas lp e ingreso') #toda la muestra
+plt.ylabel('Gasto')
+plt.xlabel('ingreso')
+plt.show()
+
+
+
+
+
