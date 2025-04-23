@@ -1,0 +1,57 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from scripy import stats
+import matplotlib.pyplot as plt
+
+Activos = ['SPY', 'AMZN', 'MXN', 'AAPL', 'BAC']
+data = yf.download(Activos, start='2024-12-01', end='2025-04-30')['Close']
+
+df = data.dropna()
+df
+
+def momentum(df, period=30):
+    return(df- df.shift(period)) / df.shift(period)
+
+mscores = momentum(df)
+forward_return_day = 5
+returns = df.shift(-forward_return_day) / df-1
+returns.dropna(inplace = True)
+returns
+
+correlations = pd.DataFrame (index =returns.columns, columns=['Scores', 'pvalues'])
+mscores = mscores [mscores.index.isin(returns.index)]
+
+for stock in correlations.index:
+    score,pvalue = stats.spearmanr(mscores[stock], returns[stock])
+    correlations.loc[stock] = [score, pvalue]
+    correlations.sort_values('Scores', inplace=True)
+    
+plt.figure(figsize=(15,7))
+plt.bar(range(len(correlations)), correlations['Scores'])
+plt.xticks(range(len(correlations)), correlations.index,rotation=90)
+plt.axhline(0, color= 'Black', linestyle = '--')
+plt.title('Momentum-Return Correlations By Stock')
+plt.ylabel('Spearmen Correlation')
+plt.show()
+
+
+ranks = mscores.rank(axis = 1)
+quintiles = ranks.quantile([0.2, 0.8], axis=1).transpose()
+quintiles.columns = ['q20', 'q80']
+aligned_rank, aligned_quintiles = ranks.alig(quintiles, axis = 0)
+long_stock = aligned_rank.le (aligned_quintiles['q20'], axis=0)
+long_stock.tail()
+
+short_stock = aligned_rank.ge (aligned_quintiles['q80'], axis=0)
+short_stock.tail()
+
+strategy_returns = (returns[long_stock].mean(axis=1)-returns[short_stock].mean(axis=1))
+strategy_returns
+
+(strategy_returns +1).cumprod().plot(figsize=(15,7), title='Strategy  Cumulative Returns')
+plt.ylabel('Cumulative Returns')
+plt.show()
+
+
+
