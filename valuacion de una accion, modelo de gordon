@@ -1,0 +1,85 @@
+"Valuacion y Analisis de una Accion"
+
+#Modelo de DFC 
+#Modelo de Crecimiento de Gordon
+
+#valores:
+#5 años  de horizonte temporal
+#crecimiento 10% / WACC 8%
+#Crecimiento terminal 2.5%
+#Valor intrinseco $177, por accion
+#FCA por accion $6.56  / g = 5%  / r=8%
+#Valuacion = $230 por accion (estrategia agresiva)
+#Upside 17%  a +50%
+#Recomendacion Comprar
+#Riesgo de mercado: presion reglamentario y macroheadwings prerogative
+
+#inputs
+FCF_2024 = 82 #free cash flow in millones
+tasa_crecimiento = 0.10  #tasa de crecimiento para los siguientes 5 años
+WACC = 0.08 #costo ponderado de capital 8% 
+tasa_terminal_crecimiento = 0.025 #tasa terminal de crecimiento 2.5%
+acciones_en_circulacion = 12.5  #acciones en circulacion en millones
+net_cash = 110  #estimacion del net cash en millones
+
+#proyeccion de flujos de efectivo libres  / en un periodo de 2025 a 2029
+fcfs  = [FCF_2024 * (1 + tasa_crecimiento) ** n for n in range (1,6)] #funcion de free cash flow para ese tiempo
+
+#descuento de free cash flow a valor presente 
+total_present_value = [fcf / (1 + WACC) ** n for n, fcf in enumerate(fcfs, start = 1)]
+
+#valor presente total de free cash flow
+total_pv_fcf = sum(total_present_value)
+
+#Valor terminal usando el modelo de crecimiento de Gordon
+FCF_2029 = fcfs[-1]
+terminal_value = FCF_2029 * (1 + tasa_terminal_crecimiento) / (WACC - tasa_terminal_crecimiento)
+
+#valor presente del terminal value
+present_value_terminal_value = terminal_value / (1 + WACC) **  5  
+
+#enterprise value 
+enterprise_value = total_present_value + terminal_value
+
+#valor del equity
+equity_value = enterprise_value + net_cash
+
+#valor intrinseco por accion
+valor_intrinseco = equity_value / acciones_en_circulacion
+
+#para el modelo de gordon.
+free_cashflow_por_accion = FCF_2024 / acciones_en_circulacion #free cash flow por accion
+#valor de gordon
+gordon_value = free_cashflow_por_accion * (1 + 0.05) / (0.08 - 0.05) #5% de tasa de crecimiento por modelo de gordon
+
+
+###############################################################################
+
+"Descripcion de la informacion"
+print("Proyeccion free Cash Flow es de", fcfs)
+print('Descuento de valor presente de free cash flow', total_present_value)
+print("total present value del cash flow es ", total_pv_fcf)
+print("terminal value es de", terminal_value)
+print("termina value descontado es de", present_value_terminal_value)
+print("el enterprise value es de", enterprise_value)
+print("el equity value es de ", equity_value)
+print("el valor intrinseco por accion es de ", valor_intrinseco)
+print("modelo de gordon con el valor intriseco por accion es de ", gordon_value)
+
+
+#Conclusion = 151 
+current_price = 151 
+analyst_target_price = 195
+print("Como la conclusion se puede ver que el valor de la accion actual es de ", current_price, 
+      "por lo que el valor del precio objetivo es de", analyst_target_price, "pudiendo ver que se tiene una proyeccion de incremento de valor del activo",
+      "con el calculo del valor intriseco por accion de ", valor_intrinseco)
+
+
+if valor_intrinseco > current_price:
+    print("Se recomienda comprar por tendencia de Bullish")
+else:
+    print("Se recomienda vender por caida de precio de la accion al valor intrinseco estimado, tendencia Bearish")
+
+
+
+
