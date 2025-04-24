@@ -1,0 +1,73 @@
+"Practica basica python / Machine Learning "
+
+#mostrar valores: 
+    
+print(5) #IMPRIMIENDO UN NUMERO
+print("Hola mundo")
+print("Esta es una suma", 5+5)
+
+#arumentos posicionales:
+    
+print(3,6,7)
+print(3,6,7, sep='-', end=',')
+print(3,6,7, sep='', )
+print(3,6,7, sep='')
+
+#strings, para poner mensajes
+
+curp = "aech904234jka"
+edad = 33
+pi = 3.1416
+correo = "hac106@hotmail.com"
+
+print("El correo del usuario es",correo)
+print("El correo del usuario es" + " " + correo)
+
+#para concatenar cadenas:
+    
+nombre = "Humberto"
+apellido = "Acevedo"
+nombre_completo= nombre + " " +apellido
+
+print("El nombre del usuario es",nombre_completo)
+
+#para repetir una cadena:
+
+nombre="Beto"
+repeticion = nombre * 4
+print(repeticion)
+
+#para acceder a un caracter por posicion (indice)
+
+RFC = "AECH901227TK1"
+HOMOCLAVE=RFC[10:13]
+print(HOMOCLAVE)
+
+###############################################################################
+#operadores
+
+print(2+3*5)
+
+#variables
+a=10
+b=20
+c=30
+
+print(a,b,c)
+
+#intercambio de valores
+
+x=5
+y=10
+
+x, y = 5, 10
+x, y = y,x
+print(y)
+
+#asignar valores
+
+m = n = p = 100
+print(m,n,p)
+nombre, edad, peso = "juan", 25, 70.5
+print(nombre,edad, peso)
+
