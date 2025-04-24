@@ -1,0 +1,112 @@
+"Modelo Diff in Diff"
+
+import statsmodels.api as sm
+import pandas as pd
+import numpy as np 
+import matplotlib.pyplot as plt
+from statsmodels.formula.api import ols
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\employment.csv"  
+
+df = pd.read_csv(ruta)
+df.head() 
+df.info() #para ver las observaciones de los datos
+df.shape
+
+#para hacer el analisis descriptivo
+df.groupby('state').mean() #se toma la informacion y se hacen calculos por grupo 
+#va calcular la media de los dos grupos que hay.
+
+###############################################################################
+"Para calcular la diferencia de medias"
+
+mean_emp_pabefore = df.groupby('state').mean().iloc[0,0]
+mean_emp_paafter = df.groupby('state').mean().iloc[0,1]
+mean_emp_njbefore = df.groupby('state').mean().iloc[1,0]
+mean_emp_njafter = df.groupby('state').mean().iloc[1,1]
+
+print('media pa de empleo antes', mean_emp_pabefore)
+print('media pa de empleo despues', mean_emp_paafter)
+print('media nj de empleo antes', mean_emp_njbefore)
+print('media nj de empleo antes', mean_emp_njafter ) 
+
+"Modelo de Difference in Difference"
+pa_diff = mean_emp_paafter - mean_emp_pabefore
+nj_diff = mean_emp_njafter - mean_emp_njbefore
+did = nj_diff - pa_diff; did
+print(f'DiD en media de empleo es  {did:.2f}')
+
+###############################################################################
+
+"Modelo de regresion implementada"
+
+#grupo D: 0 control del grupo (PA) / 1 para el grupo tratado (NJ)
+# T: 0 antes del tratamiento (minimo salario subido), 1 despues del tratamiento
+# DT: interaccion de D * T
+
+"para hacer la regresion se tienen que hacer las dummys separando la informacion en dos grupos"
+"primero se toman todos los datos before, haciendo una particion del data frame, antes del perido de interes"
+"Donde sea PA = 0 (variable dummy antes del tratamiento)"
+
+#variables / dummys (PA, NJ, DT):
+# 0 / PA para los que son antes del tratamiento
+# 1 / NJ para los que son despues del tratamiento
+# DT (variable de mayor interes porque es la interaccion de ambas variables anteriores en cada individuo)
+
+#datos antes del tratamiento / columna T toma el valor de 0 (antes del tratamiento)
+df_before = df[['total_emp_feb', 'state']]
+df_before['T'] = 0
+df_before.columns = ['total_emp', 'D','T'] ; df_before
+
+#datos despues del tratamiento / columna T toma el valor de 1 (despues del tratamiento)
+df_after = df[['total_emp_nov', 'state']]
+df_after['T'] = 1
+df_after.columns = ['total_emp', 'D', 'T'] ; df_after
+
+"datos para la regresion"
+df_reg = pd.concat([df_before, df_after]) #para que con pandes se concatene la funcion
+"datos para la interacion"
+df_reg['DT'] = df_reg['D'] * df_reg['T'] ; df_reg #se crea la ultima dummy que es variable DT, la cual se crea de la multiplicacion de D *T
+
+###############################################################################
+
+"Para hacer la regresion"
+
+#forma 1
+
+Y = df_reg['total_emp']
+X = df_reg[['D', 'T', 'DT']]
+X = sm.add_constant(X)
+est = sm.OLS(Y,X).fit()
+print(est.summary())
+
+#forma 2 
+
+ols = ols('total_emp ~ D + T + DT', data = df_reg).fit()
+ols.summary()
+
+###############################################################################
+"Interpretacion"
+
+#R^2 valor bajo tiene poco ajuste el modelo por lo que faltan mas variables que lo expliquen mejor
+#el intercepto es de 23 
+#el valor de la dummy D es de -2.94, beta 3
+#valor asociado a la t es de  -2.28, beta 2
+#valor de teta es de 2.75
+
+#Se puede ver que el efecto del tratamiento del incremento de la variable de salario minimo
+#disminuye el numero de personas que estan contratadas en 2.75 valores y no es significativa
+#por lo que este incremento de salario, no es tan grande como  para considerar que sea estadisticamente significativo
+
+
+
+
+
+
+
+
+
+
+
+
+
