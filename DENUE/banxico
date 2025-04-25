@@ -1,1 +1,6 @@
+#para consultar el mapa
 https://www.inegi.org.mx/app/mapa/denue/default.aspx
+#descarga de bases de datos
+https://www.inegi.org.mx/app/descarga/?ti=6 
+
+#hacer un script que me junte todos los datos en un solo data frame y filtrar.
