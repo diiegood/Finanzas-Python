@@ -1,0 +1,175 @@
+"Modelo de Control sintetico" #posible candidato a usar en tesis.
+"Se recomienda Usar Jupyter Notebook para poder correr este codigo"
+
+#se instala la libreria Sparse Synthetic Controls
+#pagina : https://github.com/microsoft/SparseSC / se debe instalar el github en windows
+#no funciona la libreria de instalar github
+import os 
+install = '"git+ https://github.com/microsoft/SparseSC.git"'
+os.system(f'pip install -Uqq {install}')
+
+import SparseSC
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.graph_objects as pgo
+pd.set_option("display.max_columns", None)
+
+#minuto 38:02
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\smoking_data.csv"  
+df = pd.read_csv(ruta)
+df.head() ; df.tail()
+df.shape
+
+#para cambiar la estructura de la informacion:
+df = df.pivot(index = 'state', columns= 'year', values='cigsale')
+df.head()
+df.shape
+
+#Para el analisis descriptivo / se toma la fila se vuelve una columna con dos variables; año y valor de california
+plot_df = df.loc[df.index == 'California'].T.reset_index(drop = False)
+plot_df
+
+#se toma el resto de los estados, todos los que no son california , se calcula la media de los demas estadios
+#y se agrega como una columna nueva dentro del data frame
+
+#se usa este simbolo para excluir a todos los que no son californica  (!= california)
+plot_df['OtherStates'] = df.loc[df.index !='California'].mean(axis = 0).values
+#es oara hacer un grafico simple sobre como se ve el promedio de los otros estados de consumo sobre california
+
+###############################################################################
+
+"Para graficar con la biblioteca de Plotly" #se usa para hacer graficos dinamicos , requiere de marcar el data frame (plot_df)
+fig = px.line(data_frame= plot_df, x = 'year', y=["California", "OtherStates"], template = "plotly_white")
+
+# templates que se pueden usar, es para definir la grafica;
+#plotly , plottly_white, plotly_dark, ggplot2, seaborn, simple_white, none
+
+fig.add_trace (pgo.Scatter(x = [1988, 1988],
+                           y = [plot_df.California.min()*0.98, plot_df.OtherStates.max()*1.0],
+                           line = {'dash': 'dash', }, name= 'Proposition 99'
+                           ))
+fig.update_layout( title = {'text': 'Gap in per capita cigarrete sales (in packs)',
+                            'y':0.95, 'x':0.5,},
+                  legend = dict(y = 1, x= 0.8, orientation = 'v'),
+                  legend_title = "",
+                  xaxis_title="year",
+                  yaxis_title = "cigarette sales trend",
+                  font = dict(size=15))
+fig.show()
+
+###############################################################################
+
+
+fig = px.line(
+    data_frame=plot_df,
+    x='year',
+    y=["California", "OtherStates"],
+    template="plotly_white"
+)
+
+# Añadir línea vertical para indicar la implementación de la Proposición 99 (1988)
+fig.add_trace(
+    go.Scatter(
+        x=[1988, 1988],
+        y=[plot_df['California'].min() * 0.98, plot_df['OtherStates'].max()],
+        mode='lines',
+        line=dict(dash='dash'),
+        name='Proposition 99'
+    )
+)
+
+# Personalización del gráfico
+fig.update_layout(
+    title={
+        'text': 'Gap in per capita cigarette sales (in packs)',
+        'y': 0.95,
+        'x': 0.5,
+        'xanchor': 'center',
+        'yanchor': 'top'
+    },
+    legend=dict(y=1, x=0.8, orientation='v'),
+    legend_title="",
+    xaxis_title="Year",
+    yaxis_title="Cigarette sales trend",
+    font=dict(size=15)
+)
+
+# Mostrar gráfico
+fig.show()
+
+###############################################################################
+"Fitting synthethic control using SparseSC"
+
+df.iloc[ :, df.columns <=1988]
+df.iloc[: ,df.columns>1988]
+df.index.values
+
+features = df.iloc [ :, df.columns <= 1988].values #esnecario antes de la intervencion
+targets = df.iloc [ :, df.columns > 1988].values #observaciones despues de la intervencion
+#identifica la unidad de la region que fue tratada
+treated_units = [idx for idx, val in enumerate (df.index.values) if val == 'California']
+features.shape
+targets.shape
+treated_units
+
+#funcion sparseSC
+sc_model = SparseSC.fit_fast(features = features,
+                             targets = targets,
+                             treated_units = treated_units)
+
+result = df.loc[df.index == 'California'].T.reset_index(drop = False)
+result.columns = ['year', 'Observed']
+result.head()
+
+#weights:
+W = sc_model.get_weights (include_trivial_donors = True) ; W
+W.shape
+
+#Para hacer el predict un resultado sintetico, un escenario alternativo que se puede construir con
+#las demas variables (demas estados)
+
+result['Synthetic'] = sc_model.predict(df.values)[treated_units, : ] [0]
+result.head(5)
+
+###############################################################################
+
+"Para graficar"
+
+fig = px.line (data_frame = result, 
+               x = "year", y = ['Observed', 'Synthetic'],
+               template = 'plotly_white',)
+
+fig.add_trace( pgo.Scatter( x = [1988, 1988],
+                           y = [result.Observed.min()*0.98, result.Observed.max()*1.02],
+                           line = {'dash': 'dash', }, name = 'Proposition 99'
+                           ))
+
+fig.add_trace ( pgo.Scatter ( x = result['year'],
+                             y = plot_df ['OtherStates'], name = 'Others (mean)'))
+
+fig.update_layout (title = {'text': "Synthetic Control Assessment",
+                            'y': 0.95, 'x':0.5,},
+                   legend = dict( y=1, x=0.8, orientation = 'v'),
+                   legend_title= "",
+                   xaxis_title = 'Year', yaxis_title = 'Per_Capita cigarette sales (in packs)',
+                   font = dict(size =15))
+
+fig.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
