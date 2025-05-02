@@ -1,0 +1,49 @@
+"Denue datos"  
+
+import pandas as pd
+import os
+
+directorio = "J:\\Diego-files\\DENUE-INEGI\\DENUE-datos\\"
+
+sectores = [
+    "denue_Actgobierno_93.csv",
+    "denue_Agricultura_11.csv",
+    "denue_comercioalpormayor_43.csv",
+    "denue_comercioalpormenor1_46111.csv",
+    "denue_comercioalpormenor2_46112-46311.csv",
+    "denue_comercioalpormenor3_46321-46531.csv",
+    "denue_comercioalpormenor4_46591-46911.csv",
+    "denue_construccion_23.csv",
+    "denue_corporativos_55.csv",
+    "denue_generacionenergia_22.csv",
+    "denue_industriasmanufactureras_31-33.csv",
+    "denue_informacionenmediosmasivos_51.csv",
+    "denue_mineria_21.csv",
+    "denue_otroservicios1_81_1.csv",
+    "denue_otroservicios2_81_2.csv",
+    "denue_serviciosalojamiento1_72_1.csv",
+    "denue_serviciosalojamiento2_72_2.csv",
+    "denue_serviciosalud_62.csv",
+    "denue_serviciosapoyonegocios_56.csv",
+    "denue_servicioseducativos_61.csv",
+    "denue_serviciosesparcimiento_71.csv",
+    "denue_serviciosfinancieros_52.csv",  # <- Le faltaba ".csv"
+    "denue_serviciosinmobiliarios_53.csv",
+    "denue_serviciosprofesionales_54.csv",
+    "denue_transportescorreosalmacenamiento_48-49.csv"
+]
+
+dataframes = []
+
+for archivo in sectores:
+    path = os.path.join(directorio, archivo)
+    df = pd.read_csv(path, encoding='latin1')
+    df["sector_origen"] = archivo.replace("denue_", "").replace(".csv", "") #se agrega una columna que indique el sector
+    dataframes.append(df)
+    
+    
+raw_data = pd.concat(dataframes, ignore_index=True); raw_data
+raw_data.head()
+raw_data.shape
+
+###############################################################################
