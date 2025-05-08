@@ -51,18 +51,35 @@ raw_data.head()
 raw_data.shape
 
 ###############################################################################
+
 "Separacion de empresas que no se repitan por sector"
 #1er sector Agricultura
 
 import pandas as pd
 import os
+import numpy as np
 
-directorio1 = "J:\Diego-files\\DENUE-datos\\denue_Agricultura_11.csv"
-sector_A = pd.read_csv(directorio1)
+directorio = r"J:\Diego-files\DENUE-datos\"
+archivo = "denue_Agricultura_11.csv"
+ruta = os.path.join(directorio, archivo, encoding ='latin1' )
+
+df = pd.read_csv(ruta)
+df.head(30)
+df.columns #muestra las columnas 
+df.dtypes #ver tipo de datos de cada variable del data frame
+df.isnull().values.any() #ver si hay alguna columna con un valor nulo
+df..describe().round(2) #ver el panel completo del data frame
+ 
+
+###############################################################################
+
+
+
 
 #para que me muestre todas las empresas sin que se repitan
-empresas = sector_A['nom_estab','raz_social'].unique()
+empresas = sector_A['nom_estab','raz_social'].drop_duplicates() #se usa unique cuando es una columna y drop_duplicates si son varias
 empresas 
+
 
 #crear una funcion indice para todas las variables que pertenezcan a ese funcion. (oxxo para todos los oxxos)
 
@@ -78,5 +95,9 @@ raw_data.head()
 raw_data.shape()
 
 raw_data[""]
+
+
+
+
 
 
