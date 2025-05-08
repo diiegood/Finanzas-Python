@@ -73,9 +73,6 @@ df..describe().round(2) #ver el panel completo del data frame
 
 ###############################################################################
 
-
-
-
 #para que me muestre todas las empresas sin que se repitan
 empresas = sector_A['nom_estab','raz_social'].drop_duplicates() #se usa unique cuando es una columna y drop_duplicates si son varias
 empresas 
@@ -95,6 +92,8 @@ raw_data.head()
 raw_data.shape()
 
 raw_data[""]
+
+
 
 
 
