@@ -1,7 +1,6 @@
 "Denue datos"  
-
 ###############################################################################
-"Universo muestral del total de todos los conjuntos de los datos 
+"Universo muestral del total de todos los conjuntos de los datos"
 #la carga computacional es demasiado extensa por lo que no se puede trabajar en conjunto con ellos.
 
 import pandas as pd
@@ -59,24 +58,29 @@ import pandas as pd
 import os
 import numpy as np
 
-directorio = r"J:\Diego-files\DENUE-datos\"
+directorio = "J:\Diego-files\\DENUE-datos\\"
 archivo = "denue_Agricultura_11.csv"
-ruta = os.path.join(directorio, archivo, encoding ='latin1' )
+datos_1 = os.path.join(directorio, archivo)
 
-df = pd.read_csv(ruta)
-df.head(30)
-df.columns #muestra las columnas 
-df.dtypes #ver tipo de datos de cada variable del data frame
-df.isnull().values.any() #ver si hay alguna columna con un valor nulo
-df..describe().round(2) #ver el panel completo del data frame
- 
+Agricultura = pd.read_csv(datos_1, encoding='latin1')
+Agricultura.head(30)
+Agricultura.columns #muestra las columnas 
+Agricultura.dtypes #ver tipo de datos de cada variable del data frame
+Agricultura.isnull().values.any() #ver si hay alguna columna con un valor nulo
+
+#2do sector 
+
+archivo2 = "denue_mineria_21.csv"
+datos_2 = os.path.join(directorio, archivo2)
+Mineria = pd.read_csv(datos_1, encoding='latin1')
+
 
 ###############################################################################
 
 #para que me muestre todas las empresas sin que se repitan
-empresas = sector_A['nom_estab','raz_social'].drop_duplicates() #se usa unique cuando es una columna y drop_duplicates si son varias
-empresas 
 
+empresas = raw_data['nom_estab','raz_social'].drop_duplicates() #se usa unique cuando es una columna y drop_duplicates si son varias
+empresas 
 
 #crear una funcion indice para todas las variables que pertenezcan a ese funcion. (oxxo para todos los oxxos)
 
