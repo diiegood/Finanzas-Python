@@ -1,10 +1,16 @@
 "Denue datos"  
 
+###############################################################################
+"Universo muestral del total de todos los conjuntos de los datos 
+#la carga computacional es demasiado extensa por lo que no se puede trabajar en conjunto con ellos.
+
 import pandas as pd
 import os
+import dask.dataframe as dd #para manejo de grandes cantidades de datos mas eficientes que pandas:
 
-directorio = "J:\\Diego-files\\DENUE-INEGI\\DENUE-datos\\"
+directorio = "J:\Diego-files\\DENUE-datos\\"
 
+#corregir librerias
 sectores = [
     "denue_Actgobierno_93.csv",
     "denue_Agricultura_11.csv",
@@ -36,15 +42,33 @@ dataframes = []
 
 for archivo in sectores:
     path = os.path.join(directorio, archivo)
-    df = pd.read_csv(path, encoding='latin1') #para poder leer las ñ  de los datos
-    df["sector_origen"] = archivo.replace("denue_", "").replace(".csv", "") #se agrega una columna que indique el sector
+    df = pd.read_csv(path, encoding='latin1') #para leer datos con ñ / cambiar a pd para pandas y dd para dask
+    df["sector"] = archivo.replace("denue_", "").replace(".csv", "") #se agrega una columna que indique el sector
     dataframes.append(df)
     
-raw_data = pd.concat(dataframes, ignore_index=True); raw_data
+raw_data = pd.concat(dataframes, ignore_index=True); raw_data #cambiar a dd 
 raw_data.head()
 raw_data.shape
 
 ###############################################################################
+"Separacion de empresas que no se repitan por sector"
+#1er sector Agricultura
+
+import pandas as pd
+import os
+
+directorio1 = "J:\Diego-files\\DENUE-datos\\denue_Agricultura_11.csv"
+sector_A = pd.read_csv(directorio1)
+
+#para que me muestre todas las empresas sin que se repitan
+empresas = sector_A['nom_estab','raz_social'].unique()
+empresas 
+
+#crear una funcion indice para todas las variables que pertenezcan a ese funcion. (oxxo para todos los oxxos)
+
+
+razon social = raw_data['raz_social']
+
 
 columnas = ['nom_estab', 'raz_social', 'codigo_act', 'nombre_act', 'per_ocu', 'sector_origen']
 raw_data2 = raw_data[columnas].fillna()
@@ -52,5 +76,7 @@ raw_data2
 
 raw_data.head()
 raw_data.shape()
+
+raw_data[""]
 
 
