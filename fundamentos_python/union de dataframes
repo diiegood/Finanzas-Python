@@ -1,0 +1,63 @@
+"Union de data frames"
+import pandas as pd
+
+#union por filas
+
+df1 = pd.DataFrame({
+    'nombre': ['Ana', 'Luis'],
+    'edad': [25, 30]
+})
+
+df2 = pd.DataFrame({
+    'nombre': ['Carlos', 'Elena'],
+    'edad': [40, 35]
+})
+
+# Unión vertical (stack)
+df_vertical = pd.concat([df1, df2], ignore_index=True)
+
+print(df_vertical)
+
+###################################################################################################################################
+
+#union por columnas (lado a lado)
+
+df3 = pd.DataFrame({
+    'nombre': ['Ana', 'Luis'],
+})
+
+df4 = pd.DataFrame({
+    'edad': [25, 30]
+})
+
+# Unión horizontal
+df_horizontal = pd.concat([df3, df4], axis=1)
+
+print(df_horizontal)
+
+###################################################################################################################################
+
+#union por clave comun / merge 
+
+df5 = pd.DataFrame({
+    'id': [1, 2],
+    'nombre': ['Ana', 'Luis']
+})
+
+df6 = pd.DataFrame({
+    'id': [1, 2],
+    'edad': [25, 30]
+})
+
+# Unión por clave 'id'
+df_merge = pd.merge(df5, df6, on='id')
+
+print(df_merge)
+
+
+
+
+
+
+
+
