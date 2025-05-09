@@ -51,53 +51,298 @@ raw_data.shape
 
 ###############################################################################
 
-"Separacion de empresas que no se repitan por sector"
+"Analisis de empresas por sector"
+
+###############################################################################
 #1er sector Agricultura
 
 import pandas as pd
 import os
 import numpy as np
 
-directorio = "J:\Diego-files\\DENUE-datos\\"
-archivo = "denue_Agricultura_11.csv"
-datos_1 = os.path.join(directorio, archivo)
+direccion = "J:\Diego-files\\DENUE-datos\\"
+libreria = "denue_Agricultura_11.csv"
+lectura_Datos = os.path.join(direccion, libreria)
 
-Agricultura = pd.read_csv(datos_1, encoding='latin1')
+#para conocer las caracteristicas generales de la matriz
+Agricultura = pd.read_csv(lectura_Datos, encoding='latin1')
 Agricultura.head(30)
-Agricultura.columns #muestra las columnas 
 Agricultura.dtypes #ver tipo de datos de cada variable del data frame
 Agricultura.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Agricultura.columns #muestra las columnas 
 
+#para mostrar las empresas del sector Agropecuario sin repetir 
+Agricultura_data = Agricultura[['id','clee','nom_estab', 'raz_social', 'codigo_act','nombre_act' ,'per_ocu','entidad','municipio']].fillna(0)#se usa unique cuando es una columna y drop_duplicates si son varias
+empresas_Agricultura = Agricultura_data[['nom_estab']].drop_duplicates() #se filtra el nombre de establecimiento donde no se repitan los nombres
+empresas_Agricultura  = len(empresas_Agricultura)
+
+#para juntar todos los datos de la poblacion que correspondan a una sola entidad
+poblacion_total_Agricultura = Agricultura_data.groupby('nom_estab')['per_ocu'].sum().reset_index()
+poblacion_total_Agricultura
+
+#descripcion de los datos 
+"hacer un diccionario con cada sector que contenga clave de sector subclaves, total de empresas"
+
+print('Sector Agropecuario')
+print('Total de empresas es de', empresas_A  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 11, 'con subsectores de', 111, 'hasta', 115 )
+
+###############################################################################
 #2do sector 
 
-archivo2 = "denue_mineria_21.csv"
-datos_2 = os.path.join(directorio, archivo2)
-Mineria = pd.read_csv(datos_1, encoding='latin1')
+libreria = "denue_mineria_21.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Mineria = pd.read_csv(lectura_Datos, encoding='latin1')
+Mineria.head(30)
+Mineria.dtypes #ver tipo de datos de cada variable del data frame
+Mineria.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Mineria.columns #muestra las columnas 
+
+#para mostrar las empresas del sector Agropecuario sin repetir 
+Mineria_data = Mineria[['id','clee','nom_estab', 'raz_social', 'codigo_act','nombre_act' ,'per_ocu','entidad','municipio']].fillna(0)#se usa unique cuando es una columna y drop_duplicates si son varias
+empresas_Mineria = Mineria_data[['nom_estab']].drop_duplicates() #se filtra el nombre de establecimiento donde no se repitan los nombres
+empresas_Mineria  = len(empresas_Mineria)
+
+#para juntar todos los datos de la poblacion que correspondan a una sola entidad
+poblacion_total_Mineria = Mineria_data.groupby('nom_estab')['per_ocu'].sum().reset_index()
+poblacion_total_Mineria
+
+#descripcion de los datos 
+"hacer un diccionario con cada sector que contenga clave de sector subclaves, total de empresas"
+
+print('Sector Minero')
+print('Total de empresas es de', empresas_Mineria  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 21, 'con subsectores de', 211, 'hasta', 213 )
+
+###############################################################################
+#3er sector 
+
+libreria = "denue_generacionenergia_22.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Generacion_energia = pd.read_csv(lectura_Datos, encoding='latin1')
+Generacion_energia.head(30)
+Generacion_energia.dtypes #ver tipo de datos de cada variable del data frame
+Generacion_energia.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Generacion_energia.columns #muestra las columnas 
+
+#para mostrar las empresas del sector Agropecuario sin repetir 
+Generacion_energia_data = Generacion_energia[['id','clee','nom_estab', 'raz_social', 'codigo_act','nombre_act' ,'per_ocu','entidad','municipio']].fillna(0)#se usa unique cuando es una columna y drop_duplicates si son varias
+empresas_Generacion_energia = Generacion_energia_data[['nom_estab']].drop_duplicates() #se filtra el nombre de establecimiento donde no se repitan los nombres
+empresas_Generacion_energia  = len(empresas_Generacion_energia)
+
+#para juntar todos los datos de la poblacion que correspondan a una sola entidad
+poblacion_total_Generacion_energia = Generacion_energia_data.groupby('nom_estab')['per_ocu'].sum().reset_index()
+poblacion_total_Generacion_energia
+
+#descripcion de los datos 
+"hacer un diccionario con cada sector que contenga clave de sector subclaves, total de empresas"
+
+print('Sector Generacion de energia')
+print('Total de empresas es de', empresas_Generacion_energia  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 22, 'con subsector de', 221 )
+
+###############################################################################
+#4to sector
+
+libreria = "denue_construccion_23.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Construccion = pd.read_csv(lectura_Datos, encoding='latin1')
+Construccion.head(30)
+Construccion.dtypes #ver tipo de datos de cada variable del data frame
+Construccion.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Construccion.columns #muestra las columnas 
+
+#para mostrar las empresas del sector Agropecuario sin repetir 
+Construccion_data = Construccion[['id','clee','nom_estab', 'raz_social', 'codigo_act','nombre_act' ,'per_ocu','entidad','municipio']].fillna(0)#se usa unique cuando es una columna y drop_duplicates si son varias
+empresas_Construccion = Construccion_data[['nom_estab']].drop_duplicates() #se filtra el nombre de establecimiento donde no se repitan los nombres
+empresas_Construccion  = len(empresas_Construccion)
+
+#para juntar todos los datos de la poblacion que correspondan a una sola entidad
+poblacion_total_Construccion = Construccion_data.groupby('nom_estab')['per_ocu'].sum().reset_index()
+poblacion_total_Construccion
+
+#descripcion de los datos 
+"hacer un diccionario con cada sector que contenga clave de sector subclaves, total de empresas"
+
+print('Sector Generacion de Construccion')
+print('Total de empresas es de', empresas_Construccion  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 23, 'con subsector de', 236, 'hasta', 238 )
+
+###############################################################################
+#5to sector
+
+libreria = "denue_industriasmanufactureras_31-33.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Industria_Manufacturera = pd.read_csv(lectura_Datos, encoding='latin1')
+Industria_Manufacturera.head(30)
+Industria_Manufacturera.dtypes #ver tipo de datos de cada variable del data frame
+Industria_Manufacturera.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Industria_Manufacturera.columns #muestra las columnas 
+
+#para mostrar las empresas del sector Agropecuario sin repetir 
+Industria_Manufacturera_data = Industria_Manufacturera[['id','clee','nom_estab', 'raz_social', 'codigo_act','nombre_act' ,'per_ocu','entidad','municipio']].fillna(0)#se usa unique cuando es una columna y drop_duplicates si son varias
+empresas_Industria_Manufacturera = Industria_Manufacturera_data[['nom_estab']].drop_duplicates() #se filtra el nombre de establecimiento donde no se repitan los nombres
+empresas_Industria_Manufacturera  = len(empresas_Industria_Manufacturera)
+
+#para juntar todos los datos de la poblacion que correspondan a una sola entidad
+poblacion_total_Industria_Manufacturera = Industria_Manufacturera_data.groupby('nom_estab')['per_ocu'].sum().reset_index()
+poblacion_total_Industria_Manufacturera
+
+#descripcion de los datos 
+"hacer un diccionario con cada sector que contenga clave de sector subclaves, total de empresas"
+
+print('Sector Generacion de la Industria_Manufacturera')
+print('Total de empresas es de', empresas_Industria_Manufacturera  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 31, '-',33,  'con subsector de', 311, 'hasta', 339 )
+
+###############################################################################
+#6to sector
+
+libreria = "denue_comercioalpormayor_43.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Industria_Comercio_al_por_Mayor = pd.read_csv(lectura_Datos, encoding='latin1')
+Industria_Comercio_al_por_Mayor.head(30)
+Industria_Comercio_al_por_Mayor.dtypes #ver tipo de datos de cada variable del data frame
+Industria_Comercio_al_por_Mayor.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Industria_Comercio_al_por_Mayor.columns #muestra las columnas 
+
+
+#para mostrar las empresas del sector Comercio_al_por_Mayor sin repetir 
+Comercio_al_por_Mayor_data = Comercio_al_por_Mayor[['id','clee','nom_estab', 'raz_social', 'codigo_act','nombre_act' ,'per_ocu','entidad','municipio']].fillna(0)#se usa unique cuando es una columna y drop_duplicates si son varias
+empresas_Comercio_al_por_Mayor = Comercio_al_por_Mayor_data[['nom_estab']].drop_duplicates() #se filtra el nombre de establecimiento donde no se repitan los nombres
+empresas_Comercio_al_por_Mayor  = len(empresas_Comercio_al_por_Mayor)
+
+#para juntar todos los datos de la poblacion que correspondan a una sola entidad
+poblacion_total_Comercio_al_por_Mayor = Comercio_al_por_Mayor_data.groupby('nom_estab')['per_ocu'].sum().reset_index()
+poblacion_total_Comercio_al_por_Mayor
+
+#descripcion de los datos 
+"hacer un diccionario con cada sector que contenga clave de sector subclaves, total de empresas"
+
+print('Sector Generacion de la Comercio_al_por_Mayor')
+print('Total de empresas es de', empresas_Comercio_al_por_Mayor  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 31, '-',33,  'con subsector de', 311, 'hasta', 339 )
+
+###############################################################################
+#7mo sector 
+
 
 
 ###############################################################################
+###############################################################################
+###############################################################################
 
-#para que me muestre todas las empresas sin que se repitan
+#crear una funcion que automoatice la recoleccion de informacion por cada sector:
+#variablles de interes:  poblacion, nombre de empresas que no se repitan
 
-empresas = raw_data['nom_estab','raz_social'].drop_duplicates() #se usa unique cuando es una columna y drop_duplicates si son varias
-empresas 
+#funcion para el procesamiento de datos: 
 
-#crear una funcion indice para todas las variables que pertenezcan a ese funcion. (oxxo para todos los oxxos)
+datos = 
 
-
-razon social = raw_data['raz_social']
-
-
-columnas = ['nom_estab', 'raz_social', 'codigo_act', 'nombre_act', 'per_ocu', 'sector_origen']
-raw_data2 = raw_data[columnas].fillna()
-raw_data2
-
-raw_data.head()
-raw_data.shape()
-
-raw_data[""]
+def procesamiento_datos(datos):
+    Agricultura = pd.read_csv(ruta_csv, encoding='latin1')
+    print(datos.head())
 
 
+
+
+#para mandarlo a excel:;
+empresas_A.to_excel('/Users/TuUsuario/Documents/empresas_agropecuarias.xlsx', index=False)
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+import os
+import pandas as pd
+
+# Función para procesar datos de un archivo
+def procesar_datos_agricultura(Agricultura):
+    print(Agricultura.head(30))
+    print(Agricultura.dtypes)
+    # Verificar si hay valores nulos
+    hay_nulos = Agricultura.isnull().values.any()
+    # Mostrar columnas
+    print(Agricultura.columns)
+    # Filtrar y limpiar datos relevantes
+    columnas = ['id','clee','nom_estab', 'raz_social', 'codigo_act', 'per_ocu','entidad','municipio']
+    columnas_presentes = [col for col in columnas if col in Agricultura.columns]  # verifica columnas presentes
+    datos_Agricultura = Agricultura[columnas_presentes].fillna(0)
+    
+    # Contar empresas únicas por nombre de establecimiento
+    if 'nom_estab' in datos_Agricultura.columns:
+        empresas_unicas = datos_Agricultura[['nom_estab']].drop_duplicates()
+        total_empresas = len(empresas_unicas)
+        print(f"\n🔹 Total de empresas únicas: {total_empresas}")
+    else:
+        total_empresas = None
+        print("\n⚠️ No se encontró la columna 'nom_estab'.")
+    
+    # Agrupar población total por empresa
+    if 'nom_estab' in datos_Agricultura.columns and 'per_ocu' in datos_Agricultura.columns:
+        poblacion_total_empresa = datos_Agricultura.groupby('nom_estab')['per_ocu'].sum().reset_index()
+        # Ordenar empresas por población (de menor a mayor)
+        poblacion_total_empresa = poblacion_total_empresa.sort_values(by='per_ocu')
+        print("\n🔹 Empresas ordenadas por población (menor a mayor):")
+        print(poblacion_total_empresa)
+    else:
+        poblacion_total_empresa = None
+        print("\n⚠️ No se encontraron las columnas necesarias para agrupar población.")
+    
+    return {
+        'datos_limpios': datos_Agricultura,
+        'total_empresas': total_empresas,
+        'poblacion_por_empresa': poblacion_total_empresa
+    }
+
+# Ruta base donde están los archivos
+direccion = "J:\\Diego-files\\DENUE-datos\\"
+
+# Lista de archivos CSV
+sectores = [
+    "denue_Actgobierno_93.csv",
+    "denue_Agricultura_11.csv",
+    "denue_comercioalpormayor_43.csv",
+    "denue_comercioalpormenor1_46111.csv",
+    "denue_comercioalpormenor2_46112-46311.csv",
+    "denue_comercioalpormenor3_46321-46531.csv",
+    "denue_comercioalpormenor4_46591-46911.csv",
+    "denue_construccion_23.csv",
+    "denue_corporativos_55.csv",
+    "denue_generacionenergia_22.csv",
+    "denue_industriasmanufactureras_31-33.csv",
+    "denue_informacionenmediosmasivos_51.csv",
+    "denue_mineria_21.csv",
+    "denue_otroservicios1_81_1.csv",
+    "denue_otroservicios2_81_2.csv",
+    "denue_serviciosalojamiento1_72_1.csv",
+    "denue_serviciosalojamiento2_72_2.csv",
+    "denue_serviciosalud_62.csv",
+    "denue_serviciosapoyonegocios_56.csv",
+    "denue_servicioseducativos_61.csv",
+    "denue_serviciosesparcimiento_71.csv",
+    "denue_serviciosfinancieros_52.csv",
+    "denue_serviciosinmobiliarios_53.csv",
+    "denue_serviciosprofesionales_54.csv",
+    "denue_transportescorreosalmacenamiento_48-49.csv"
+]
+
+# Diccionario para guardar resultados de cada sector
+sectores_resultados = {}
+
+# Procesar cada archivo individualmente
+for archivo in sectores:
+    ruta_completa = os.path.join(direccion, archivo)
+    nombre_base = os.path.splitext(archivo)[0]  # elimina ".csv"
+    
+    try:
+        df = pd.read_csv(ruta_completa, encoding='latin1')
+        print(f"\n📂 Procesando archivo: {archivo}")
+        resultado = procesar_datos_agricultura(df)
+        sectores_resultados[nombre_base] = resultado
+        print(f"✅ Procesado correctamente: {nombre_base}")
+    except Exception as e:
+        print(f"❌ Error al procesar {archivo}: {e}")
 
 
 
