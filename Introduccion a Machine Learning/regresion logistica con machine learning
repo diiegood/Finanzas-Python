@@ -1,0 +1,289 @@
+"Ejemplo de Regresion Logistica con Machine Learning"
+"Analisis de riesgo por default con regresion logistica + machine learning"
+
+import pandas as pd
+import numpy as np
+import matplotlib as mpl
+import  matplotlib.pyplot as plt
+import seaborn as sns
+
+#bibliotecas basicas para machine learning  / con modelos lineales
+import sklearn.linear_model as skl_lm
+from sklearn.metrics import confusion_matrix, classification_report, precision_score
+from sklearn import preprocessing
+
+import statsmodels.api as sm
+
+ruta = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\Default.xlsx"  
+df = pd.read_excel(ruta)
+df.head() 
+
+"Clasificacion binaria de machine learning"
+
+#para factorizar los elementos
+df.default.factorize()
+df.default.factorize()[0]
+df.head()
+
+#se dividen las variables finales en python si tiene texto la tabla 
+
+###############################################################################
+
+#se puede hacer una sustitucion de los valores de texto por valores numericos 
+# o tambien se puede usar un comando factorizador de python
+
+df.default.factorize() #se toma el data frame y se factoriza, regresa un arreglo de puros ceros y unos y un indice
+#la funcion transforma la columna en un vector con puros ceros y unos , ademas de un indice que permite
+#identificar los valores donde 0 es no 1 es si
+
+df.default.factorize()[0] 
+
+#se crean dos nuevas colimnas que tendran los datos factorizados
+"se factorizan y se toma solamente el arreglo"
+
+df['default2'] = df.default.factorize()[0]
+
+df['student2']= df.student.factorize()[0]
+
+df.head()
+
+"Se grafican las variables"
+fig = plt.figure(figsize = (12,5))
+gs = mpl.gridspec.GridSpec (1,4)
+ax1 = plt.subplot(gs[0,:-2])
+ax2 = plt.subplot(gs[0, -2])
+ax3 = plt.subplot(gs[0, -1])
+
+#se toma una fraccion de los datos donde el default es no
+df_no = df[df.default2 == 0].sample(frac = 0.15)
+
+#se toman los valores donde los datos de default son yes
+df_yes = df[df.default2 == 1]
+
+df_ = df_no.append(df_yes)
+
+#graficas de dispersion
+ax1.scatter(df_[df_.default == 'Yes'].balance,
+            df_[df_.default == 'Yes'].income,
+            s = 40, c = 'orange', marker = '+', linewidths = 1)
+
+ax1.scatter(df_[df_.default == 'No'].balance,
+            df_[df_.default == 'No'].income,
+            s = 40,  marker = 'o', linewidths = 1, edgecolors= 'red', facecolors = 'yellow',
+            aplha = 0.6)
+
+ax1.set_ylim(ymin = 0)
+ax1.set_ylabel('Income')
+ax1.set_xlim(xmin = -100)
+ax1.set_xlabel('Balance')
+
+#graficos box-plot
+c_palette = {'No': 'red', 'Yes':'orange'}
+sns.boxplot('default', 'balance', data = df, orient='v', ax=ax2, palette = c_palette)
+sns.boxplot('default', 'income', data = df, orient='v', ax=ax3, palette = c_palette)
+gs.tight_layout(plt.gcf())
+
+#la grafica de cajas muestra los datos, se etiqueta con una cruz naranja los individuos de la muestra
+#que no pagan credito, y los de la bolita azul son los que pagan.
+
+#En los modelos de clasificacion se busca mostrar que la nube de puntos 
+#se usan 2 variables : ingreso y total de credito permitido en las personas, se toma una seccion de los datos
+#en la nube de puntos se separan en dos conjuntos los datos recopilados 
+
+###############################################################################
+
+"Modelo de clasificacion binaria"
+
+#Son modelos que separan conjuntos a traves de caracteristicas, la variable balance del modelo antarior
+#permite separa la informaacion en 2 grupos los que pagan y los que no pagan
+
+#en la grafica de las cajas es mas evidente, la persona que no paga en promedio tiene un balance mas alto 
+#que una persona que si paga, por lo que si saca un credito alto porque no lo va pagar parece ser cierta
+
+#mientras que el ingreso no tiene una relacion especifica realmente no es una buena variable representativa
+#dependiendo de las variables que se eligan van a definir si son buenos o malos clasificadores que permitan describir
+# o clasificar mejor los datos.
+
+###############################################################################
+
+"Existen 3 conjuntos en un modelo de aprendizaje estaditico"
+"Conjunto de entrenamiento"
+"Conjunto de validacion"
+"Conjunto de pruebas"
+
+###############################################################################
+
+"Regresion Logistica y Variables de entrenamiento, variables de pruebas"
+
+#Se crea variables de X e Y -- datos de entrenamiento
+train_x = df.balance.values.reshape(-1,1)
+y = df.default2
+
+#se crea el set de los datos de prueba / se va tomar el valor maximo y minimo de la variable que mejor cuantifica la informacion.
+x_test = np.arange(df.balance.min(), df.balance.max()).reshape(-1, 1) #se particiona de forma proporcional.
+
+train_x
+
+x_test
+
+###############################################################################
+
+#Para hacer la regresion logistica
+
+#Se define el modelo
+clf = skl_lm.LogisticRegression(solver = 'newton-cg ')
+
+#Se estima el modelo
+clf.fit(train_x, y)
+
+#se calcula la probabilidad en el set de entrenamiento
+prob = clf.predict_proba(x_test)
+
+###############################################################################
+
+"Para graficar el modelo"
+#se compara una aproximacion lineal y una logistica
+
+fig, (ax1, ax2) = plt.subplot(1,2, figsize = (12,5))
+
+#grafica izquierda
+sns.regplot(df.balance, df.default2, order = 1, ci = None,
+            scatter_ks = {'color':'orange'},
+            line_kws = {'color':'blue', 'lw':2}, ax = ax1  )
+
+#grafica derecha
+ax2.scatter(train_x, y, color = 'red')
+ax2.plot(x_test, prob[:1], color='ligthblue')
+
+for ax in fig.axes:
+    ax.hlines(1, xmin = ax.xaxis.get_data_interval () [0],
+              xmax = ax.xaxis.get_data_interval()[1], linestyles = 'dashed', lw = 1)
+    ax.hlines(0, xmin = ax.xaxis.get_data_interval () [0],
+              xmax = ax.xaxis.get_data_interval()[1], linestyles = 'dashed', lw = 1)
+    
+    ax.set_ylabel('Probability of default')
+    ax.set_xlabel('Balance')
+    ax.set_ysticks([0,0.25, 0.5, 0.75, 1.])
+    ax.set_xlim(xmin = -100)
+
+#panel izquierdo es la regresion lineal simple del modelo, con la probabilidad de no pago entre 0 y 1 
+#puntos naranjas son las observaciones de las personas que si pagan el credito / todas las que no pagan son u
+#en la estimacion lineal un predictor deberia ser como la linea, la linea se distorsiona porque la mayoria de los datos estan en cero 
+#por ende la recta de regresion se sesga y el valor que va predecir va ser cercano a cero, predice muy poco a las personas que dice que no pagan
+
+#panel derecho es la regresion logistica, con una linea curva , predice como es que las personas que deben pagaran
+#por lo que indica que cuando el balance es cercano a 2000, se genera un cambio y la probabilidad de que la persona no pague
+#es mayor probabilidad de que no paguen a que paguen en ese valor (2000), 
+
+
+###############################################################################
+
+"Estimacion del modelo"  #utilizando otra variable
+
+clf = skl_lm.LogisticRegression(solver = 'newton-cg')
+train_x = df.balance.values.reshape (-1,1)
+clf.fit(train_x, y)
+
+print('coefficients' ,clf.coef_)
+print('intercept', clf.intercept_)
+
+#Regresion con balance
+train_x = sm.add_constant(df.balance)
+est = sm.Logit(y.ravel(), train_x).fit()
+est.summary2().tables[1]
+
+
+est.summary()
+
+#el balance esta correlacionado con la probabilidad de impago
+#tiene un r-cuadrado de 45%
+#el estadistico z es altamente significativo es mayor a 0.05, quiere decir que la regresion logistica
+#responde bastante bien a la variable explicativa
+#el ingreso no tiene relevancia en la probabilidad de inpago y de pago.
+
+
+#se le agrega la variable de ser estudiante y esta tiene un coeficiente mayor 
+#pero su valor z es menor por lo que si tiene un efecto de impago sobre el credito pero 
+#es bastante menor que el anterior, por lo que genera una confianza menor.
+
+
+#modelo logistico multiple
+x_train = sm.add_constant(df[['balance', 'income', 'student2']])
+est = sm.Logit(y, x_train).fit()
+est.summary().tables[1]
+est.summary()
+
+#permite clasificar a los grupos de conjuntos de datos en una clasificacion binaria
+#coef mide si es significativa la variable
+#valor z mide la magnitud de que tanto afecta esa variable o que tanto explica
+
+###############################################################################
+"lo importante es determinar si la variable es un buen predictor o explica bien el evento"
+#no se buscan efectos causales ni explicar el fenomeno / solamente se busca la correlacion
+###############################################################################
+
+#incorporar matriz de confusion
+
+#esta nos permite ver que tan bien clasifica la regresion logistica
+#la regresion permite clasificar a las personas en dos grupos, las que pagan y las que no pagan
+#se va preguntar al clasificador que compare la clasificacion respecto de los resultados realmente observados3
+#se toma la regresion logistica y se toma un individuo, se toma el algoritmo de clasificacion 
+#y se observa donde lo clasifico al individuo que ya se conoce su resultado para comprabar si lo clasifica igual
+#o si lo clasifica diferente.
+
+#la matriz de confusion permite comparar los resultados obtenidos 
+
+###############################################################################
+
+"Matriz de confusion"
+
+#balance de vectores, con la variable de estudiantes
+train_x = df[df.student == 'Yes'].balance.values.reshape(df[df.student == 'Yes'].balance.size, 1)
+y = df[df.student == 'Yes'].default2
+
+#balance and default vectors for non-students
+train_x2 = df[df.student == 'No'].balance.values.reshape(df[df.student == 'No'].balance.size, 1)
+y2 = df[df.student == 'No'].default2
+
+#vector con la variable balance para graficar
+x_test = np.arange(df.balance.min(), df.balance.max()).reshape(-1,1)
+
+clf = skl_lm.LogisticRegression(solver = 'newton-cg')
+clf2 = skl_lm.LogisticRegression(solver = 'newton-cg')
+
+clf.fit(train_x, y)
+clf2.fit(x_train, y2)
+
+prob = clf.predict_proba(x_test)
+prob2 = clf2.predict_proba(x_test)
+
+df.groupby(['student', 'default']).size().unstack('default')
+
+
+###############################################################################
+"Para graficar"
+
+#para cerar la grafica
+fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12, 5) )
+
+#grafica derecha
+ax1.plot(x_test, pd.DataFrame(prob)[1], color = 'orange', label = 'student')
+ax1.plot(x_test, pd.DataFrame(prob2)[1], color = 'ligthblue', label = 'Non-student' )
+ax1.hlines(127/2817, colors='orange', label='Overall Student', 
+           xmin = ax1.xaxis.get_data_interval()[0],
+           xmax = ax1.xaxis.get_data_interval()[1], linestyle= 'dashed')
+
+ax1.hlines(206/6850, colors='lightblue', label='Overall Non-Student',
+           xmin = ax1.xaxis.get_data_interval()[0],
+           xmax = ax1.xaxis.get_data_interval()[1], linestyle= 'dashed')
+ax1.set_ylabel('Default Rate')
+ax1.set_xlabel('Credit Carad Balance')
+ax1.set_yticks([0,0.2, 0.4, 0.6, 0.8, 1.])
+ax1.set_xlim(450, 2500)
+ax1.legend(loc=2)
+
+#Se puede hacer una estimacion separada para los estudiantes y los no estudiantes 
+
+
+
+
