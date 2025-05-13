@@ -1,6 +1,11 @@
 "Denue datos"  
 
 ###############################################################################
+"Funciones de agrupacion"
+
+
+
+###############################################################################
 
 "Universo muestral del total de todos los conjuntos de los datos"
 #la carga computacional es demasiado extensa por lo que no se puede trabajar en conjunto con ellos.
@@ -298,29 +303,327 @@ print('clave del sector va de', 46,'con subsector de', 461, 'hasta', 469)
 
 libreria = "denue_transportescorreosalmacenamiento_48-49.csv"
 lectura_Datos = os.path.join(direccion, libreria)
-Comercio_al_por_Mayor = pd.read_csv(lectura_Datos, encoding='latin1')
-Comercio_al_por_Mayor.head(30)
-Comercio_al_por_Mayor.dtypes #ver tipo de datos de cada variable del data frame
-Comercio_al_por_Mayor.isnull().values.any() #ver si hay alguna columna con un valor nulo
-Comercio_al_por_Mayor.columns #muestra las columnas 
-Comercio_al_por_Mayor.duplicated().sum()
+Transportes_Correos_Almacenamiento = pd.read_csv(lectura_Datos, encoding='latin1')
+Transportes_Correos_Almacenamiento.head(30)
+Transportes_Correos_Almacenamiento.dtypes #ver tipo de datos de cada variable del data frame
+Transportes_Correos_Almacenamiento.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Transportes_Correos_Almacenamiento.columns #muestra las columnas 
+Transportes_Correos_Almacenamiento.duplicated().sum()
 
-Comercio_al_por_Mayor = Comercio_al_por_Mayor[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
-Comercio_al_por_Mayor[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Mayor['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
-Comercio_al_por_Mayor.drop(columns = 'per_ocu', inplace = True) 
-Comercio_al_por_Mayor['poblacion_minima'] = pd.to_numeric(Comercio_al_por_Mayor['poblacion_minima'], errors='coerce')
-Comercio_al_por_Mayor['poblacion_maxima'] = pd.to_numeric(Comercio_al_por_Mayor['poblacion_maxima'], errors='coerce')
-poblacion_total_Comercio_al_por_Mayor = (Comercio_al_por_Mayor.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
-poblacion_total_Comercio_al_por_Mayor = Comercio_al_por_Mayor.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
-poblacion_total_Comercio_al_por_Mayor
+Transportes_Correos_Almacenamiento = Transportes_Correos_Almacenamiento[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Transportes_Correos_Almacenamiento[['poblacion_minima', 'poblacion_maxima']] = Transportes_Correos_Almacenamiento['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Transportes_Correos_Almacenamiento.drop(columns = 'per_ocu', inplace = True) 
+Transportes_Correos_Almacenamiento['poblacion_minima'] = pd.to_numeric(Transportes_Correos_Almacenamiento['poblacion_minima'], errors='coerce')
+Transportes_Correos_Almacenamiento['poblacion_maxima'] = pd.to_numeric(Transportes_Correos_Almacenamiento['poblacion_maxima'], errors='coerce')
+poblacion_total_Transportes_Correos_Almacenamiento = (Transportes_Correos_Almacenamiento.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Transportes_Correos_Almacenamiento = Transportes_Correos_Almacenamiento.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Transportes_Correos_Almacenamiento
 
-empresas_Comercio_al_por_Mayor = Comercio_al_por_Mayor['nom_estab'].drop_duplicates() 
-empresas_Comercio_al_por_Mayor = len(empresas_Comercio_al_por_Mayor)
+empresas_Transportes_Correos_Almacenamiento = Transportes_Correos_Almacenamiento['nom_estab'].drop_duplicates() 
+empresas_Transportes_Correos_Almacenamiento = len(empresas_Transportes_Correos_Almacenamiento)
 
 print('Sector de Transportes, correos y almacenamiento')
-print('Total de empresas es de', empresas_Comercio_al_por_Mayor  )  #para imprimir cuantas empresas son
+print('Total de empresas es de', empresas_Transportes_Correos_Almacenamiento  )  #para imprimir cuantas empresas son
 print('clave del sector va de', 48, '-', 49, 'con subsector de', 481,'-',488, 'hasta', 491, '-',493 )
 
+###############################################################################
+
+#9no Sector /  Información en medios masivos 
+
+libreria = "denue_informacionenmediosmasivos_51.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Información_en_medios_masivos = pd.read_csv(lectura_Datos, encoding='latin1')
+Información_en_medios_masivos.head(30)
+Información_en_medios_masivos.dtypes #ver tipo de datos de cada variable del data frame
+Información_en_medios_masivos.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Información_en_medios_masivos.columns #muestra las columnas 
+Información_en_medios_masivos.duplicated().sum()
+
+Información_en_medios_masivos = Información_en_medios_masivos[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Información_en_medios_masivos[['poblacion_minima', 'poblacion_maxima']] = Información_en_medios_masivos['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Información_en_medios_masivos.drop(columns = 'per_ocu', inplace = True) 
+Información_en_medios_masivos['poblacion_minima'] = pd.to_numeric(Información_en_medios_masivos['poblacion_minima'], errors='coerce')
+Información_en_medios_masivos['poblacion_maxima'] = pd.to_numeric(Información_en_medios_masivos['poblacion_maxima'], errors='coerce')
+poblacion_total_Información_en_medios_masivos = (Información_en_medios_masivos.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Información_en_medios_masivos = Información_en_medios_masivos.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Información_en_medios_masivos
+
+empresas_Información_en_medios_masivos = Información_en_medios_masivos['nom_estab'].drop_duplicates() 
+empresas_Información_en_medios_masivos = len(empresas_Información_en_medios_masivos)
+
+print('Sector de Información en medios masivos')
+print('Total de empresas es de', empresas_Información_en_medios_masivos  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 51, 'con subsector de', 512, 'hasta',519 )
+
+###############################################################################
+
+#10mo Sector /  Servicios financieros y de seguros 
+
+libreria = "denue_serviciosfinancieros_52.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_financieros = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_financieros.head(30)
+Servicios_financieros.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_financieros.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_financieros.columns #muestra las columnas 
+Servicios_financieros.duplicated().sum()
+
+Servicios_financieros = Servicios_financieros[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_financieros[['poblacion_minima', 'poblacion_maxima']] = Servicios_financieros['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_financieros.drop(columns = 'per_ocu', inplace = True) 
+Servicios_financieros['poblacion_minima'] = pd.to_numeric(Servicios_financieros['poblacion_minima'], errors='coerce')
+Servicios_financieros['poblacion_maxima'] = pd.to_numeric(Servicios_financieros['poblacion_maxima'], errors='coerce')
+poblacion_total_Servicios_financieros = (Servicios_financieros.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Servicios_financieros = Servicios_financieros.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Servicios_financieros
+
+empresas_Servicios_financieros = Servicios_financieros['nom_estab'].drop_duplicates() 
+empresas_Servicios_financieros = len(empresas_Servicios_financieros)
+
+print('Servicios_financieros')
+print('Total de empresas es de', empresas_Servicios_financieros  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 52, 'con subsector de', 521, 'hasta',525 )
+
+###############################################################################
+
+#11vo Sector /   Servicios inmobiliarios y de alquiler de bienes muebles e intangibles
+
+libreria = "denue_serviciosinmobiliarios_53.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_inmobiliarios = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_inmobiliarios.head(30)
+Servicios_inmobiliarios.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_inmobiliarios.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_inmobiliarios.columns #muestra las columnas 
+Servicios_inmobiliarios.duplicated().sum()
+
+Servicios_inmobiliarios = Servicios_inmobiliarios[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_inmobiliarios[['poblacion_minima', 'poblacion_maxima']] = Servicios_inmobiliarios['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_inmobiliarios.drop(columns = 'per_ocu', inplace = True) 
+Servicios_inmobiliarios['poblacion_minima'] = pd.to_numeric(Servicios_inmobiliarios['poblacion_minima'], errors='coerce')
+Servicios_inmobiliarios['poblacion_maxima'] = pd.to_numeric(Servicios_inmobiliarios['poblacion_maxima'], errors='coerce')
+poblacion_total_Servicios_inmobiliarios = (Servicios_inmobiliarios.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Servicios_inmobiliarios = Servicios_inmobiliarios.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Servicios_inmobiliarios
+
+empresas_Servicios_inmobiliarios = Servicios_inmobiliarios['nom_estab'].drop_duplicates() 
+empresas_Servicios_inmobiliarios = len(empresas_Servicios_inmobiliarios)
+
+print('Servicios_financieros')
+print('Total de empresas es de', empresas_Servicios_inmobiliarios  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 53, 'con subsector de', 531, 'hasta',533 )
+
+###############################################################################
+
+#12vo Sector /    Servicios profesionales, científicos y técnicos
+
+libreria = "denue_serviciosprofesionales_54.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_profesionales_tecnicos = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_profesionales_tecnicos.head(30)
+Servicios_profesionales_tecnicos.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_profesionales_tecnicos.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_profesionales_tecnicos.columns #muestra las columnas 
+Servicios_profesionales_tecnicos.duplicated().sum()
+
+Servicios_profesionales_tecnicos = Servicios_profesionales_tecnicos[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_profesionales_tecnicos[['poblacion_minima', 'poblacion_maxima']] = Servicios_profesionales_tecnicos['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_profesionales_tecnicos.drop(columns = 'per_ocu', inplace = True) 
+Servicios_profesionales_tecnicos['poblacion_minima'] = pd.to_numeric(Servicios_profesionales_tecnicos['poblacion_minima'], errors='coerce')
+Servicios_profesionales_tecnicos['poblacion_maxima'] = pd.to_numeric(Servicios_profesionales_tecnicos['poblacion_maxima'], errors='coerce')
+poblacion_total_Servicios_profesionales_tecnicos = (Servicios_profesionales_tecnicos.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Servicios_profesionales_tecnicos = Servicios_profesionales_tecnicos.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Servicios_profesionales_tecnicos
+
+empresas_Servicios_profesionales_tecnicos = Servicios_profesionales_tecnicos['nom_estab'].drop_duplicates() 
+empresas_Servicios_profesionales_tecnicos = len(empresas_Servicios_profesionales_tecnicos)
+
+print('Servicios profesionales, científicos y técnicos')
+print('Total de empresas es de', empresas_Servicios_profesionales_tecnicos  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 54, 'con subsector de', 541 )
+
+###############################################################################
+
+#13vo Sector /    Dirección y administración de grupos empresariales o corporativos
+
+libreria = "denue_corporativos_55.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Administracion_grupos_empresariales = pd.read_csv(lectura_Datos, encoding='latin1')
+Administracion_grupos_empresariales.head(30)
+Administracion_grupos_empresariales.dtypes #ver tipo de datos de cada variable del data frame
+Administracion_grupos_empresariales.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Administracion_grupos_empresariales.columns #muestra las columnas 
+Administracion_grupos_empresariales.duplicated().sum()
+
+Administracion_grupos_empresariales = Administracion_grupos_empresariales[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Administracion_grupos_empresariales[['poblacion_minima', 'poblacion_maxima']] = Administracion_grupos_empresariales['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Administracion_grupos_empresariales.drop(columns = 'per_ocu', inplace = True) 
+Administracion_grupos_empresariales['poblacion_minima'] = pd.to_numeric(Administracion_grupos_empresariales['poblacion_minima'], errors='coerce')
+Administracion_grupos_empresariales['poblacion_maxima'] = pd.to_numeric(Administracion_grupos_empresariales['poblacion_maxima'], errors='coerce')
+poblacion_total_Administracion_grupos_empresariales = (Administracion_grupos_empresariales.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Administracion_grupos_empresariales = Administracion_grupos_empresariales.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Administracion_grupos_empresariales
+
+empresas_Administracion_grupos_empresariales = Administracion_grupos_empresariales['nom_estab'].drop_duplicates() 
+empresas_Administracion_grupos_empresariales = len(empresas_Administracion_grupos_empresariales)
+
+print('Dirección y administración de grupos empresariales o corporativos')
+print('Total de empresas es de', empresas_Administracion_grupos_empresariales  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 55, 'con subsector de', 551 )
+
+###############################################################################
+
+#14vo Sector / Servicios de apoyo a los negocios y manejo de residuos, y servicios de remediación
+
+libreria = "denue_serviciosapoyonegocios_56.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicio_apoyo_negocios = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicio_apoyo_negocios.head(30)
+Servicio_apoyo_negocios.dtypes #ver tipo de datos de cada variable del data frame
+Servicio_apoyo_negocios.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicio_apoyo_negocios.columns #muestra las columnas 
+Servicio_apoyo_negocios.duplicated().sum()
+
+Servicio_apoyo_negocios = Servicio_apoyo_negocios[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicio_apoyo_negocios[['poblacion_minima', 'poblacion_maxima']] = Servicio_apoyo_negocios['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicio_apoyo_negocios.drop(columns = 'per_ocu', inplace = True) 
+Servicio_apoyo_negocios['poblacion_minima'] = pd.to_numeric(Servicio_apoyo_negocios['poblacion_minima'], errors='coerce')
+Servicio_apoyo_negocios['poblacion_maxima'] = pd.to_numeric(Servicio_apoyo_negocios['poblacion_maxima'], errors='coerce')
+poblacion_total_Servicio_apoyo_negocios = (Servicio_apoyo_negocios.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Servicio_apoyo_negocios = Servicio_apoyo_negocios.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Servicio_apoyo_negocios
+
+empresas_Servicio_apoyo_negocios = Servicio_apoyo_negocios['nom_estab'].drop_duplicates() 
+empresas_Servicio_apoyo_negocios = len(empresas_Servicio_apoyo_negocios)
+
+print('Servicios de apoyo a los negocios y manejo de residuos, y servicios de remediación')
+print('Total de empresas es de', empresas_Servicio_apoyo_negocios  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 56, 'con subsector de', 551, 'hasta', 552 )
+
+###############################################################################
+
+#15vo Sector / Servicios educativos
+
+libreria = "denue_servicioseducativos_61.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_educativos = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_educativos.head(30)
+Servicios_educativos.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_educativos.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_educativos.columns #muestra las columnas 
+Servicios_educativos.duplicated().sum()
+
+Servicios_educativos = Servicios_educativos[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_educativos[['poblacion_minima', 'poblacion_maxima']] = Servicios_educativos['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_educativos.drop(columns = 'per_ocu', inplace = True) 
+Servicios_educativos['poblacion_minima'] = pd.to_numeric(Servicios_educativos['poblacion_minima'], errors='coerce')
+Servicios_educativos['poblacion_maxima'] = pd.to_numeric(Servicios_educativos['poblacion_maxima'], errors='coerce')
+poblacion_total_Servicios_educativos = (Servicios_educativos.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Servicios_educativos = Servicios_educativos.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Servicios_educativos
+
+empresas_Servicios_educativos = Servicios_educativos['nom_estab'].drop_duplicates() 
+empresas_Servicios_educativos = len(empresas_Servicios_educativos)
+
+print('Servicios educativos')
+print('Total de empresas es de', empresas_Servicios_educativos  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 61, 'con subsector de', 611 )
+
+###############################################################################
+
+#16vo Sector / Servicios de salud y de asistencia social
+
+libreria = "denue_serviciosalud_62.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_salud_asistencia = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_salud_asistencia.head(30)
+Servicios_salud_asistencia.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_salud_asistencia.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_salud_asistencia.columns #muestra las columnas 
+Servicios_salud_asistencia.duplicated().sum()
+
+Servicios_salud_asistencia = Servicios_salud_asistencia[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_salud_asistencia[['poblacion_minima', 'poblacion_maxima']] = Servicios_salud_asistencia['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_salud_asistencia.drop(columns = 'per_ocu', inplace = True) 
+Servicios_salud_asistencia['poblacion_minima'] = pd.to_numeric(Servicios_salud_asistencia['poblacion_minima'], errors='coerce')
+Servicios_salud_asistencia['poblacion_maxima'] = pd.to_numeric(Servicios_salud_asistencia['poblacion_maxima'], errors='coerce')
+poblacion_total_Servicios_salud_asistencia = (Servicios_salud_asistencia.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Servicios_salud_asistencia = Servicios_salud_asistencia.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Servicios_salud_asistencia
+
+empresas_Servicios_salud_asistencia = Servicios_salud_asistencia['nom_estab'].drop_duplicates() 
+empresas_Servicios_salud_asistencia = len(empresas_Servicios_salud_asistencia)
+
+print('Servicios educativos')
+print('Total de empresas es de', empresas_Servicios_salud_asistencia  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 62, 'con subsector de', 621, 'hasta',  624 )
+
+###############################################################################
+
+#17vo Sector / Servicios de esparcimiento culturales y deportivos, y otros servicios recreativos
+
+libreria = "denue_serviciosesparcimiento_71.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_esparcimiento_cultural = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_esparcimiento_cultural.head(30)
+Servicios_esparcimiento_cultural.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_esparcimiento_cultural.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_esparcimiento_cultural.columns #muestra las columnas 
+Servicios_esparcimiento_cultural.duplicated().sum()
+
+Servicios_esparcimiento_cultural = Servicios_salud_asistencia[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_esparcimiento_cultural[['poblacion_minima', 'poblacion_maxima']] = Servicios_salud_asistencia['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_esparcimiento_cultural.drop(columns = 'per_ocu', inplace = True) 
+Servicios_esparcimiento_cultural['poblacion_minima'] = pd.to_numeric(Servicios_salud_asistencia['poblacion_minima'], errors='coerce')
+Servicios_esparcimiento_cultural['poblacion_maxima'] = pd.to_numeric(Servicios_salud_asistencia['poblacion_maxima'], errors='coerce')
+poblacion_total_esparcimiento_cultural = (Servicios_salud_asistencia.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_esparcimiento_cultural = Servicios_salud_asistencia.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_esparcimiento_cultural
+
+empresas_Servicios_esparcimiento_cultural = Servicios_esparcimiento_cultural['nom_estab'].drop_duplicates() 
+empresas_Servicios_esparcimiento_cultural = len(empresas_Servicios_esparcimiento_cultural)
+
+print('Servicios de esparcimiento culturales y deportivos, y otros servicios recreativos')
+print('Total de empresas es de', empresas_Servicios_salud_asistencia  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 71, 'con subsector de', 711, 'hasta', 713)
+
+###############################################################################
+
+#18vo Sector / Servicios de alojamiento temporal y de preparación de alimentos y bebidas
+
+libreria = "denue_serviciosesparcimiento_71.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+Servicios_esparcimiento_cultural = pd.read_csv(lectura_Datos, encoding='latin1')
+Servicios_esparcimiento_cultural.head(30)
+Servicios_esparcimiento_cultural.dtypes #ver tipo de datos de cada variable del data frame
+Servicios_esparcimiento_cultural.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Servicios_esparcimiento_cultural.columns #muestra las columnas 
+Servicios_esparcimiento_cultural.duplicated().sum()
+
+Servicios_esparcimiento_cultural = Servicios_salud_asistencia[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Servicios_esparcimiento_cultural[['poblacion_minima', 'poblacion_maxima']] = Servicios_salud_asistencia['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Servicios_esparcimiento_cultural.drop(columns = 'per_ocu', inplace = True) 
+Servicios_esparcimiento_cultural['poblacion_minima'] = pd.to_numeric(Servicios_salud_asistencia['poblacion_minima'], errors='coerce')
+Servicios_esparcimiento_cultural['poblacion_maxima'] = pd.to_numeric(Servicios_salud_asistencia['poblacion_maxima'], errors='coerce')
+poblacion_total_esparcimiento_cultural = (Servicios_salud_asistencia.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_esparcimiento_cultural = Servicios_salud_asistencia.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_esparcimiento_cultural
+
+empresas_Servicios_esparcimiento_cultural = Servicios_esparcimiento_cultural['nom_estab'].drop_duplicates() 
+empresas_Servicios_esparcimiento_cultural = len(empresas_Servicios_esparcimiento_cultural)
+
+print('Servicios de esparcimiento culturales y deportivos, y otros servicios recreativos')
+print('Total de empresas es de', empresas_Servicios_salud_asistencia  )  #para imprimir cuantas empresas son
+print('clave del sector va de', 72, 'con subsector de', 721, 'hasta', 722)
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Informacion General"
+
+#data frame que contenga sector, total empresas, codigo sector y subsector , ponderacion del total
 
 
 
