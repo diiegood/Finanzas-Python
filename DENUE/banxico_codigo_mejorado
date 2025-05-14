@@ -75,27 +75,18 @@ class Conteo:
         return self.conteo, self.filtrado #se regresan las funciones importantes / funcion del filtro y la de saber cuantos son.
     
     
-class filtro_matriz:
+class filtro_matriz: #poner mas filtros como de razon social, nombre y sumar las poblaciones, agregarlas y promediarlas al df original.
     def matriz_columns(self, sector):
         sector[['poblacion_minima', 'poblacion_maxima']] = sector['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+        sector.drop(columns = 'per_ocu', inplace = True) 
         sector['poblacion_minima'] = pd.to_numeric(sector['poblacion_minima'], errors='coerce')
         sector['poblacion_maxima'] = pd.to_numeric(sector['poblacion_maxima'], errors='coerce')
-        sector.drop(columns='per_ocu', inplace=True)
         poblacion_total = sector.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum()
         sector['Poblacion_promedio'] = sector[['poblacion_minima', 'poblacion_maxima']].mean(axis=1)
         empresas_total = len(sector['nom_estab'].drop_duplicates())
-        return sector, poblacion_total, empresas_total
+        return sector, poblacion_total, empresas_total #variables regresadas de las que fueron creadas.
     
-    
-Mineria = Mineria[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
-Mineria[['poblacion_minima', 'poblacion_maxima']] = Mineria['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
-Mineria.drop(columns = 'per_ocu', inplace = True) 
-Mineria['poblacion_minima'] = pd.to_numeric(Mineria['poblacion_minima'], errors='coerce')
-Mineria['poblacion_maxima'] = pd.to_numeric(Mineria['poblacion_maxima'], errors='coerce')
-poblacion_total_Mineria = (Mineria.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
-poblacion_total_Mineria = Mineria.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
-poblacion_total_Mineria
-    
+
 ###############################################################################
         
 "Para definir y llamar las clases y funciones creadas"
@@ -106,7 +97,7 @@ stats = MatrixStats()
 stats.matrix_stats(sector) #se le cambia el sector que sera analizado
 
 conteo_instancia = Conteo(sector)
-total, filtrados = conteo_instancia.empresas_valores_atipicos()
+total_empresas_grandes, filtrados = conteo_instancia.empresas_valores_atipicos()
 
 filtros = filtro_matriz()
 sector_filtrado, poblacion_total, total_empresas = filtros.matriz_columns(sector)
@@ -122,16 +113,9 @@ stats.poblacion
 stats.dimension
 stats.columnas
 
-total
+total_empresas_grandes
 filtrados
 
 sector_filtrado
 poblacion_total
 total_empresas
-
-###############################################################################
-
-
-
-#para convertir un data frame del archivo data
-sector = pd.DataFrame(data) 
