@@ -1,0 +1,137 @@
+"Denue datos"  
+
+###############################################################################
+###############################################################################
+
+sectores = [
+    "denue_Actgobierno_93.csv",
+    "denue_Agricultura_11.csv",
+    "denue_comercioalpormayor_43.csv",
+    "denue_comercioalpormenor1_46111.csv",
+    "denue_comercioalpormenor2_46112-46311.csv",
+    "denue_comercioalpormenor3_46321-46531.csv",
+    "denue_comercioalpormenor4_46591-46911.csv",
+    "denue_construccion_23.csv",
+    "denue_corporativos_55.csv",
+    "denue_generacionenergia_22.csv",
+    "denue_industriasmanufactureras_31-33.csv",
+    "denue_informacionenmediosmasivos_51.csv",
+    "denue_mineria_21.csv",
+    "denue_otroservicios1_81_1.csv",
+    "denue_otroservicios2_81_2.csv",
+    "denue_serviciosalojamiento1_72_1.csv",
+    "denue_serviciosalojamiento2_72_2.csv",
+    "denue_serviciosalud_62.csv",
+    "denue_serviciosapoyonegocios_56.csv",
+    "denue_servicioseducativos_61.csv",
+    "denue_serviciosesparcimiento_71.csv",
+    "denue_serviciosfinancieros_52.csv",
+    "denue_serviciosinmobiliarios_53.csv",
+    "denue_serviciosprofesionales_54.csv",
+    "denue_transportescorreosalmacenamiento_48-49.csv"]
+
+###############################################################################
+###############################################################################
+
+#librerias
+import pandas as pd
+import os
+import numpy as np
+import re
+
+###############################################################################
+"Funcion de analisis de matriz"
+
+#dirrecion de los datos / carga de informacion.
+direccion = "J:\\Diego-files\\DENUE-datos\\"
+# libreria = "denue_Agricultura_11.csv"  LIBRERIA ORIGINAL
+libreria =  "denue_serviciosalud_62.csv"
+lectura_Datos = os.path.join(direccion, libreria)
+sector = pd.read_csv(lectura_Datos, encoding='latin1')
+
+sector = sector[['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0)
+
+
+#se crea una clase que me analice las caracteristicas de la matriz
+class MatrixStats:
+    def matrix_stats (self, sector):
+        self.first_values = sector.head(45) #muestra los primeros 45 datos de la matriz
+        self.last_values = sector.tail(45) #muestra los ultimos 45 datos de la matriz
+        self.tipos_variable = sector.dtypes #ver tipo de datos de cada variable del data frame
+        self.valor_nulo = sector.isnull().values.any() #ver si hay alguna columna con un valor nulo
+        self.columnas = sector.columns #muestra las columnas 
+        self.duplicados = sector.duplicated().sum() #muestra la cantidad de las filas duplicadas
+        self.poblacion = sector['per_ocu'].unique() #muestra los parametros dentro de la columna "per_ocu"
+        self.dimension = sector.shape
+
+class Conteo:
+    def __init__(self, df):  # Constructor / se crea un objeto 
+        self.sector = df #se guarda un data frame para que los otros metodos de la clase puedan usarlo 
+
+    def empresas_valores_atipicos(self): #clase nueva para ver las empresas con valores arriba de 252 de poblacion
+        filtro = self.sector['per_ocu'] == '251 y más personas' #se filtra la poblacion por columna que cumpla el requisito
+        self.filtrado = self.sector[filtro] #se aplica el filtro al data frame 
+        self.conteo = filtro.sum() #se cuentan cuantos individuos cumplen con esta condicion
+        return self.conteo, self.filtrado #se regresan las funciones importantes / funcion del filtro y la de saber cuantos son.
+    
+    
+class filtro_matriz:
+    def matriz_columns(self, sector):
+        sector[['poblacion_minima', 'poblacion_maxima']] = sector['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+        sector['poblacion_minima'] = pd.to_numeric(sector['poblacion_minima'], errors='coerce')
+        sector['poblacion_maxima'] = pd.to_numeric(sector['poblacion_maxima'], errors='coerce')
+        sector.drop(columns='per_ocu', inplace=True)
+        poblacion_total = sector.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum()
+        sector['Poblacion_promedio'] = sector[['poblacion_minima', 'poblacion_maxima']].mean(axis=1)
+        empresas_total = len(sector['nom_estab'].drop_duplicates())
+        return sector, poblacion_total, empresas_total
+    
+    
+Mineria = Mineria[['clee','nom_estab', 'raz_social','per_ocu','codigo_act','nombre_act','entidad','municipio','id']].fillna(0)
+Mineria[['poblacion_minima', 'poblacion_maxima']] = Mineria['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+Mineria.drop(columns = 'per_ocu', inplace = True) 
+Mineria['poblacion_minima'] = pd.to_numeric(Mineria['poblacion_minima'], errors='coerce')
+Mineria['poblacion_maxima'] = pd.to_numeric(Mineria['poblacion_maxima'], errors='coerce')
+poblacion_total_Mineria = (Mineria.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum())
+poblacion_total_Mineria = Mineria.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+poblacion_total_Mineria
+    
+###############################################################################
+        
+"Para definir y llamar las clases y funciones creadas"
+
+#se le asigna un valor a la clase y se carga la funcion matriz_stats
+#funciones y valores asignados por cada funcion creada
+stats = MatrixStats()
+stats.matrix_stats(sector) #se le cambia el sector que sera analizado
+
+conteo_instancia = Conteo(sector)
+total, filtrados = conteo_instancia.empresas_valores_atipicos()
+
+filtros = filtro_matriz()
+sector_filtrado, poblacion_total, total_empresas = filtros.matriz_columns(sector)
+
+
+###############################################################################
+"Para llamar las clases de las funciones a utilizar"
+
+stats.first_values
+stats.columnas
+stats.duplicados
+stats.poblacion
+stats.dimension
+stats.columnas
+
+total
+filtrados
+
+sector_filtrado
+poblacion_total
+total_empresas
+
+###############################################################################
+
+
+
+#para convertir un data frame del archivo data
+sector = pd.DataFrame(data) 
