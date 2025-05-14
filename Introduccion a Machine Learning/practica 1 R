@@ -1,0 +1,149 @@
+"Estimacion de la regresion logit-ordinal"
+
+#bibliotecas a usar
+install.packages("foreign")
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("plotly")
+install.packages("car")
+install.packages("MASS")
+install.packages("stargazen")
+install.packages("lntest")
+install.packages("zoo")
+install.packages("erer")
+install.packages("caret")
+install.packages("e1071")
+install.packages("arsenal")
+
+library(tidyverse)
+library(knitr)
+library(foreign)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(car)
+library(MASS)
+library(stargazer)
+library(lmtest)
+library(zoo)
+library(erer)
+library(lattice)
+library(caret)
+library(e1071)
+library(arsenal)
+
+#para cargar los datos en un data frame
+#cargar los datos del excel
+setwd("C:\\Users\\creep\\OneDrive\\Escritorio\\programacion")
+
+#funciones de extraccion#
+datos<-read.csv("datos.csv")  
+View(datos)
+dim(datos) #para ver el tamaño de los datos , renglones y columnas
+
+
+#para ver la tabla de frecuencias con la variable de ingresos
+datos%>%count(Cat.Rev.Year)
+
+#se crea un vector categorico
+
+"Se ordenan los datos para el modelo Probit" # por categorias segun esos criterios
+
+#se toma la columna Cat.Rev.Year / se vuelve una variable factor de texto como numero, para ordenar
+datos %>% count(Cat.Rev.Year) #tabla de frecuencia para ver la distribucion de los datos
+datos$Cat.Rev.Year<-factor(datos$Cat.Rev.Year, order=TRUE,
+                           levels= c("1. Menos de 1M",
+                                     "2. Mas de 1M y menos de 5M",
+                                     "3. Mas de 5M y menos de 20M",
+                                     "4. Menos de 20M"))
+
+datos %>% count(Cat.Rev.Year)
+
+"Para categorizar los datos" #cob base a comentarios positivos y seguidores
+
+datos$positive_n<-0
+datos$positive_n[(datos$positive_year<=4)]<-1
+datos$positive_n[(datos$positive_year>4) & (datos$positive_year<=60)]<-2
+datos$positive_n[(datos$positive_year>60)]<-3
+datos$positive_n<- factor(datos$positive_n)
+
+datos$followers_n<-0
+datos$followers_n[(datos$Followers_year<=50)]<-1
+datos$followers_n[(datos$Followers_year>50) & (datos$Followers_year<=500)]<-2
+datos$followers_n[(datos$Followers_year>60)]<-3
+datos$followers_n<- factor(datos$followers_n) 
+
+datos%>% count(positive_n)
+datos%>% count(followers_n)
+
+#seleccion del conjunto total de todos los datos
+tabla_datos<-tableby(~revenue_year + Price + year + mes + positive_year + negative_year + Followers_year + 
+                       Reviews_year + positive_n + followers_n + Score + Adventure + Singleplayer + Story.Rich + 
+                       Horror + X3D + Survival + Choices.Matter + Historical + Mystery + Replay.Value + Early.Access + 
+                       Female.Protagonist + Lovecraftian + Gore + Open.World + Multiplayer + Co.op + Indie + Atmospheric +
+                       Violent + Online.Co.Op + Third.Person + Sandbox + Strategy + Difficult + Gore + Soundtrack + Great.Soundtrack + 
+                       First.Person + Simulation + RPG + Character.Customization + Funny + Casual + Sci.fi + Exploration + Action + 
+                       Sexual.Content + Realistic + Nudity + Fantasy + Anime + Building + Turn.Based + Tactical + Management + Psychological + Visual.Novel + 
+                       Psychological.Horror + Moddable + Crafting, data=datos)
+
+summary(tabla_datos,title="Base Completa")
+
+#seleccion del conjunto mas grande menos de 1M de dolares
+datos_menos1M <- subset(datos, Cat.Rev.Year = "1. Menos de 1M")
+
+tabla_menos1M<-tableby(~revenue_year + Price + year + mes + positive_year + negative_year + Followers_year + 
+                       Reviews_year + positive_n + followers_n + Score + Adventure + Singleplayer + Story.Rich + 
+                       Horror + X3D + Survival + Choices.Matter + Historical + Mystery + Replay.Value + Early.Access + 
+                       Female.Protagonist + Lovecraftian + Gore + Open.World + Multiplayer + Co.op + Indie + Atmospheric +
+                       Violent + Online.Co.Op + Third.Person + Sandbox + Strategy + Difficult + Gore + Soundtrack + Great.Soundtrack + 
+                       First.Person + Simulation + RPG + Character.Customization + Funny + Casual + Sci.fi + Exploration + Action + 
+                       Sexual.Content + Realistic + Nudity + Fantasy + Anime + Building + Turn.Based + Tactical + Management + Psychological + Visual.Novel + 
+                       Psychological.Horror + Moddable + Crafting, data=datos_menos1M)
+
+summary(tabla_menos1M ,title="Base solo los de menos de 1M ")
+
+
+#conjunto de datos de 
+set.seed(1234)
+
+#sample es la funcion para seleccionar muestra / se selecciona datos de mas de 1M y menos de 10M
+datos_menos1M_10M <-datos_menos1M[sample(nrow(datos_menos1M), 1700, replace = FALSE), ]
+
+tabla_menos1M_10M<-tableby(~revenue_year + Price + year + mes + positive_year + negative_year + Followers_year + 
+                         Reviews_year + positive_n + followers_n + Score + Adventure + Singleplayer + Story.Rich + 
+                         Horror + X3D + Survival + Choices.Matter + Historical + Mystery + Replay.Value + Early.Access + 
+                         Female.Protagonist + Lovecraftian + Gore + Open.World + Multiplayer + Co.op + Indie + Atmospheric +
+                         Violent + Online.Co.Op + Third.Person + Sandbox + Strategy + Difficult + Gore + Soundtrack + Great.Soundtrack + 
+                         First.Person + Simulation + RPG + Character.Customization + Funny + Casual + Sci.fi + Exploration + Action + 
+                         Sexual.Content + Realistic + Nudity + Fantasy + Anime + Building + Turn.Based + Tactical + Management + Psychological + Visual.Novel + 
+                         Psychological.Horror + Moddable + Crafting, data=datos_menos1M)
+
+summary(tabla_menos1M_10M ,title ="Base solo los de menos de 1M")
+
+#combinar subsets : 1 menos de 1M ~ (1700) + "El resto"
+
+datos_otros<- subset(datos, Cat.Rev.Year != "1.Menos de 1M")
+datos_subset<- rbind(datos_menos1M_10M, datos_otros)
+datos_subset %>% count(Cat.Rev.Year)
+datos
+
+#creamos una particion en un conjunto de entrenamiento y conjunto de prueba
+set.seed(1234)
+
+trainIndex <-createDataPartition(datos_subset$Cat.Rev.Year, 
+                                 p= 0.7, list = FALSE, times =1)
+
+#funcion  / createDataPartition hace una particion de los datos, con base a la columna Cat.Rev.Year
+#que cada particion de la columna se paricione de la misma manera a proporcion de 70-30
+
+#Seleccion de los datos de conjunto de entrenamiento y de validacion
+train <- datos_subset[trainIndex,] #que toma los datos que coinciden con el index de la particion
+Valid <- datos_subset[-trainIndex,] #que tome los datos que no coinciden con el index de la particion
+
+train%>%count(Cat.Rev.Year)
+Valid%>%count(Cat.Rev.Year)
+
+#para ver las estadisticas resumen de la tabla de entrenamiento 
+
+38:17 /  #corregir codigo
+
