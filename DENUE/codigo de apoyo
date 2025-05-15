@@ -153,3 +153,134 @@ print("\nPrimer filtro:\n", primer_filtro)
 print("Segundo filtro:\n", segundo_filtro)
 print("Empresas totales únicas:", empresas_totales)
 
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+##################################################################################################################
+
+
+###############################################################################
+# LIBRERÍAS
+import pandas as pd
+import os
+import numpy as np
+import re
+
+###############################################################################
+# FUNCIÓN DE ANÁLISIS DE MATRIZ
+
+# Dirección de los datos / carga de información
+direccion = "J:\\Diego-files\\DENUE-datos\\"
+libreria = "denue_serviciosfinancieros_52.csv"  # Cambiar el archivo para ver otro sector
+lectura_datos = os.path.join(direccion, libreria)
+
+# Carga del archivo
+sector = pd.read_csv(lectura_datos, encoding='latin1')
+sector = sector[['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act', 
+                 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0)
+
+# Total de empresas sin duplicados por nombre
+empresas_totales_sector = sector['nom_estab'].nunique()
+
+###############################################################################
+# CLASE 1: ESTADÍSTICAS DE LA MATRIZ
+
+class MatrixStats:
+    def matrix_stats(self, sector):
+        self.first_values = sector.head(45)
+        self.last_values = sector.tail(45)
+        self.tipos_variable = sector.dtypes
+        self.valor_nulo = sector.isnull().values.any()
+        self.col = sector.columns
+        self.duplicados = sector.duplicated().sum()
+        self.poblacion = sector['per_ocu'].unique()
+        self.dimension = sector.shape
+
+###############################################################################
+# CLASE 2: EMPRESAS CON POBLACIÓN DE 251 O MÁS PERSONAS
+
+class Conteo:
+    def __init__(self, df):
+        self.sector = df
+
+    def empresas_valores_atipicos(self):
+        filtro = self.sector['per_ocu'] == '251 y más personas'
+        filtrado = self.sector[filtro]
+        conteo = filtro.sum()
+        return conteo, filtrado
+
+###############################################################################
+# CLASE 3: FILTRADO DE LA MATRIZ
+
+class FiltroMatriz:
+    def __init__(self, sector):
+        self.original = sector.copy()
+        self.sector = sector.copy()
+
+        # Extraer población mínima y máxima desde la columna 'per_ocu'
+        self.sector[['poblacion_min', 'poblacion_max']] = self.sector['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+        self.sector['poblacion_min'] = pd.to_numeric(self.sector['poblacion_min'], errors='coerce')
+        self.sector['poblacion_max'] = pd.to_numeric(self.sector['poblacion_max'], errors='coerce')
+        self.sector.drop(columns='per_ocu', inplace=True)
+
+    def agrupaciones(self):
+        # Agrupación por razón social
+        primer_filtro = self.sector.groupby('raz_social', as_index=False)[['poblacion_min', 'poblacion_max']].sum()
+
+        # Agrupación por nombre del establecimiento
+        segundo_filtro = self.sector.groupby('nom_estab', as_index=False)[['poblacion_min', 'poblacion_max']].sum()
+
+        # Conteo de empresas únicas
+        empresas_totales = self.sector['nom_estab'].nunique()
+
+        return primer_filtro, segundo_filtro, empresas_totales
+
+###############################################################################
+# LLAMADO A LAS CLASES
+
+# Clase 1: Estadísticas generales
+stats = MatrixStats()
+stats.matrix_stats(sector)
+
+# Resultados de estadísticas
+print("\nPrimeros registros:\n", stats.first_values)
+print("\nDuplicados:", stats.duplicados)
+print("\nValores únicos en 'per_ocu':", stats.poblacion)
+print("\nDimensión del DataFrame:", stats.dimension)
+
+# Clase 2: Conteo de empresas con población atípica
+conteo_instancia = Conteo(sector)
+total_empresas_grandes, filtrados = conteo_instancia.empresas_valores_atipicos()
+
+print("\nTotal de empresas con 251+ personas:", total_empresas_grandes)
+print("\nEmpresas filtradas:\n", filtrados)
+
+# Clase 3: Filtros y agrupaciones
+filtros = FiltroMatriz(sector)
+primer_filtro, segundo_filtro, empresas_totales = filtros.agrupaciones()
+
+print("\nAgrupación por razón social:\n", primer_filtro)
+print("\nAgrupación por nombre del establecimiento:\n", segundo_filtro)
+print("\nTotal de empresas únicas:", empresas_totales)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
