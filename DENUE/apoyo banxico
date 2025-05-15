@@ -1,0 +1,73 @@
+class FiltroMatriz:
+    def __init__(self, df):
+        self.original = df.copy()
+        self.sector = df.copy()
+        self.historial_filtros = []
+
+        # Extraer columnas de población mínima y máxima
+        self.sector[['poblacion_min', 'poblacion_max']] = self.sector['per_ocu'].astype(str).str.extract(r'(\d+)\D+(\d+)')
+        self.sector['poblacion_min'] = pd.to_numeric(self.sector['poblacion_min'], errors='coerce')
+        self.sector['poblacion_max'] = pd.to_numeric(self.sector['poblacion_max'], errors='coerce')
+        self.sector['Poblacion_promedio'] = self.sector[['poblacion_min', 'poblacion_max']].mean(axis=1)
+
+    def filtrar_por_razon_social(self, razon_social):
+        self.sector = self.sector[self.sector['raz_social'] == razon_social]
+        self.historial_filtros.append(f"Razón social: {razon_social}")
+
+    def filtrar_por_entidad(self, entidad):
+        self.sector = self.sector[self.sector['entidad'] == entidad]
+        self.historial_filtros.append(f"Entidad: {entidad}")
+
+    def filtrar_por_municipio(self, municipio):
+        self.sector = self.sector[self.sector['municipio'] == municipio]
+        self.historial_filtros.append(f"Municipio: {municipio}")
+
+    def filtrar_por_rango_poblacion(self, min_pob=None, max_pob=None):
+        if min_pob is not None:
+            self.sector = self.sector[self.sector['poblacion_max'] >= min_pob]
+            self.historial_filtros.append(f"Población >= {min_pob}")
+        if max_pob is not None:
+            self.sector = self.sector[self.sector['poblacion_min'] <= max_pob]
+            self.historial_filtros.append(f"Población <= {max_pob}")
+
+    def aplicar_agrupaciones(self):
+        agrupado_rs = self.sector.groupby('raz_social', as_index=False)[['poblacion_min', 'poblacion_max']].sum()
+        agrupado_ne = self.sector.groupby('nom_estab', as_index=False)[['poblacion_min', 'poblacion_max']].sum()
+        total_empresas = self.sector['nom_estab'].nunique()
+        return agrupado_rs, agrupado_ne, total_empresas
+
+    def ver_df(self):
+        return self.sector
+
+    def ver_historial(self):
+        return self.historial_filtros
+
+    def resetear(self):
+        self.sector = self.original.copy()
+        self.historial_filtros = []
+
+
+
+# Cargar datos
+sector = pd.read_csv(lectura_Datos, encoding='latin1')
+sector = sector[['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0)
+
+# Crear instancia de filtro acumulativo
+filtros = FiltroMatriz(sector)
+
+# Aplicar filtros uno por uno
+filtros.filtrar_por_entidad("Ciudad de México")
+filtros.filtrar_por_municipio("Benito Juárez")
+filtros.filtrar_por_rango_poblacion(min_pob=100, max_pob=300)
+
+# Ver resultados
+df_final = filtros.ver_df()
+print(df_final)
+
+# Ver historial de filtros
+print("Filtros aplicados:", filtros.ver_historial())
+
+# Obtener agrupaciones
+razon_social_df, nombre_estab_df, total_empresas = filtros.aplicar_agrupaciones()
+print("Total de empresas:", total_empresas)
+
