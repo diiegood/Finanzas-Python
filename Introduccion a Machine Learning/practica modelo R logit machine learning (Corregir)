@@ -145,5 +145,25 @@ Valid%>%count(Cat.Rev.Year)
 
 #para ver las estadisticas resumen de la tabla de entrenamiento 
 
+table_train<-tableby(~revenue_year + Price + year + mes + positive_year + negative_year + Followers_year + 
+                             Reviews_year + positive_n + followers_n + Score + Adventure + Singleplayer + Story.Rich + 
+                             Horror + X3D + Survival + Choices.Matter + Historical + Mystery + Replay.Value + Early.Access + 
+                             Female.Protagonist + Lovecraftian + Gore + Open.World + Multiplayer + Co.op + Indie + Atmospheric +
+                             Violent + Online.Co.Op + Third.Person + Sandbox + Strategy + Difficult + Gore + Soundtrack + Great.Soundtrack + 
+                             First.Person + Simulation + RPG + Character.Customization + Funny + Casual + Sci.fi + Exploration + Action + 
+                             Sexual.Content + Realistic + Nudity + Fantasy + Anime + Building + Turn.Based + Tactical + Management + Psychological + Visual.Novel + 
+                             Psychological.Horror + Moddable + Crafting, data=train)
+
+summary(table_train, title= "Base Train")
+
+OLM_01<-polr(Cat.Rev.Year)
+
+
+#corregir : Min 39:31
+link <- (https://www.youtube.com/watch?v=NbrD-cbHo_c&list=PLlCKfRj1U6Sywq63tIV4fT-qJXoC7nZFP&index=30)
+
+
+#para ver las estadisticas resumen de la tabla de entrenamiento 
+
 38:17 /  #corregir codigo
 
