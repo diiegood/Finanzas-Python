@@ -1,0 +1,56 @@
+"Machine learning" 
+
+"Arboles de decision y Regresion lineal" #la mayoria de las caracteristicas de machine learning son en python
+
+#aprendizaje supervizado el data set debe estar etiquetado  
+
+#se importan las librerias
+import pandas as pd 
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import scale
+from mpl_toolkits.mplot3d import axes3d
+
+#se carga una base de datos de la nube
+df=pd.read_csv("https://www.statlearning.com/s/Advertising.csv", index_col=0)
+df.head(15)
+
+#se grafica una matriz de correlaciones entre las variables.
+#modelo teorico de como funcionan las relaciones en el sistema, sabiendo que variables usar para el modelo teorico
+#observar como funcionan las variables del sistema entre si por medio de un correlograma, para ver las variables
+#que mejor correlacionan dentro del sistema
+ 
+correlaciones = df.corr()
+fig, ax = plt.subplots(nrows= 1, ncols=1, figsize=(16,6))
+sns.heatmap(
+    correlaciones, 
+    annot = True,
+    annot_kws = {"size": 8},
+    vmin = -1,
+    vmax = 1,
+    center = 0,
+    cmap = sns.diverging_palette(20, 220, n = 200),
+    ax = ax)
+
+ax.set_xticklabels(
+    ax.get_xticklabels(),
+    rotation = 45,
+    horizontalalignment = 'right',)
+
+ax.tick_params(labelsize = 12)
+
+#hisogramas y graficas de residuos de los datos
+sns.pairplot(df) 
+
+#para definir variables para el regresor
+"MINUTO 13:18"
+
+
+
+
+
+
+
