@@ -1,0 +1,206 @@
+"Machine learning" 
+
+"Arboles de decision y Regresion lineal" #la mayoria de las caracteristicas de machine learning son en python
+
+#aprendizaje supervizado el data set debe estar etiquetado  
+
+#se importan las librerias
+import pandas as pd 
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import scale
+from mpl_toolkits.mplot3d import axes3d
+
+#se carga una base de datos de la nube
+df=pd.read_csv("https://www.statlearning.com/s/Advertising.csv", index_col=0)
+df.head(15)
+
+#se grafica una matriz de correlaciones entre las variables.
+#modelo teorico de como funcionan las relaciones en el sistema, sabiendo que variables usar para el modelo teorico
+#observar como funcionan las variables del sistema entre si por medio de un correlograma, para ver las variables
+#que mejor correlacionan dentro del sistema
+ 
+correlaciones = df.corr()
+fig, ax = plt.subplots(nrows= 1, ncols=1, figsize=(16,6))
+sns.heatmap(
+    correlaciones, 
+    annot = True,
+    annot_kws = {"size": 8},
+    vmin = -1,
+    vmax = 1,
+    center = 0,
+    cmap = sns.diverging_palette(20, 220, n = 200),
+    ax = ax)
+
+ax.set_xticklabels(
+    ax.get_xticklabels(),
+    rotation = 45,
+    horizontalalignment = 'right',)
+
+ax.tick_params(labelsize = 12)
+
+#hisogramas y graficas de residuos de los datos
+sns.pairplot(df) 
+
+#para definir variables para el regresor
+x = scale(df["TV"], with_mean=True, with_std=False).reshape(1,-1)
+y =df["sales"]
+
+"Es importante tener en cuenta el tamaño de la particion del testeo que se va realizar"
+#por convencion se usa el p value a 0.05, para ver si algo es estadisticamente significativo
+#en machine learning por convencion se utiliza por convencion la particion del data set 
+#de entrenamiento y testeo en 20% lo que contiene el dato de testeo.
+x = scale(df["TV"], with_mean=True, with_std=False).reshape(-1,1)
+y = df["sales"]
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, random_state=0)
+
+#para hacer el modelo ols 
+ols = LinearRegression()
+ols.fit(x_train, y_train)
+
+"Se busca observar como es que los parametros hacen que el error se vuelva lo minimo posible para el conjunto de datos"
+#se iteran diferentes valores de beta 0 y beta 1 , para ver el error esperado dados esos valores.
+
+#se crea un grid de las coordenadas para graficar 
+B0 = np.linspace(ols.intercept_-2, ols.intercept_+2, 50)
+B1 = np.linspace(ols.coef_ -0.02, ols.coef_+0.05, 50)
+xx, yy = np.meshgrid(B0, B1, indexing = "xy")
+Z = np.zeros((B0.size, B1.size))
+
+#calcular los valores de z (RSS) basados en el grid y los coeficientes
+for (i, j), v in np.ndenumerate(Z):
+    Z[i,j] = ((y_train - (xx[i,j] + x_train.ravel() * yy[i,j])) ** 2).sum()/1000
+
+#minimizar RSS
+min_rss = r'$\beta0$, $\beta_1$ for minimized RSS'
+min_rss = np.sum((ols.intercept_+ols.coef_*x_train - y_train.values.reshape(-1,1))**2)/1000
+min_rss
+
+
+###############################################################################
+#para graficar los coeficientes de regresion.
+fig = plt.figure(figsize = (16, 4))
+fig.suptitle('RSS - Regression coeficientes', fontsize = 20)
+
+ax1 = fig.add_subplot(121)
+ax2 = fig.add_subplot(122, projection='3d')
+
+#grafica izquierda
+CS = ax1.contour(xx, yy, Z, cmap=plt.cm.Set1)
+ax1.scatter(ols.intercept_, ols.coef_[0], c='r', label=min_rss)
+ax1.clabel (CS, inline = True, fontsize=10, fmt='%1.1f')
+
+#grafica derecha
+ax2.plot_surface(xx, yy, Z, rstride=3, cstride=3, alpha=0.3)
+ax2.contour(xx, yy, Z, zdir='z', offset=Z.min(), cmap=plt.cm.Set1, aplha=0.4)
+ax2.scatter3D(ols.intercept_, ols.coef_[0], min_rss, c='r', label=min_rss)
+ax2.set_zlabel('rss')
+ax2.set_zlim(Z.min(), Z.max())
+ax2.set_ylim(0.00, 0.07)
+
+#opciones en comun para ambas graficas
+for ax in fig.axes:
+    ax.set_xlabel(r'$\beta_0$', fontsize=17)
+    ax.set_ylabel(r'$\beta_1$', fontsize=17)
+    ax.legend()
+    
+
+###############################################################################
+
+#se crean las coordenadas del grid para graficar:
+B0 = np.linspace(ols.intercept_-2, ols.intercept_+2, 50)
+B1 = np.linspace(ols.coef_-0.02, ols.coef_+0.02, 50)
+xx, yy = np.meshgrid(B0, B1, indexing= "xy")
+Z = np.zeros((B0.size, B1.size))
+
+#calculo de los valores z (RSS) basados en el grid de los coeficientes
+for (i,j), v in np.ndenumerate(Z):
+    Z[i,j] = ((y_test - (xx[i,j]+x_test.ravel()*yy[i,j]))**2).sum()/1000
+
+#minimizar el error RSS
+min_rss1 = r'$\beta0$, $\beta_1$ for minimized RSS'
+min_rss1 = np.sum((ols.intercept_+ols.coef_*x_test - y_test.values.reshape(-1,1))**2)/1000
+min_rss1
+
+
+###############################################################################
+#segunda grafica del error del los coeficientes del testeo
+
+fig = plt.figure(figsize = (15, 6))
+fig.suptitle('RSS - Regression coeficientes test', fontsize = 20)
+
+ax1 = fig.add_subplot(121)
+ax2 = fig.add_subplot(122, projection='3d')
+
+#grafica izquierda
+CS = ax1.contour(xx, yy, Z, cmap=plt.cm.Set1)
+ax1.scatter(ols.intercept_, ols.coef_[0], c='r', label=min_rss)
+ax1.clabel (CS, inline = True, fontsize=10, fmt='%1.1f')
+
+#grafica derecha
+ax2.plot_surface(xx, yy, Z, rstride=3, cstride=3, alpha=0.3)
+ax2.contour(xx, yy, Z, zdir='z', offset=Z.min(), cmap=plt.cm.Set1, aplha=0.4)
+ax2.scatter3D(ols.intercept_, ols.coef_[0], min_rss, c='r', label=min_rss)
+ax2.set_zlabel('rss')
+ax2.set_zlim(Z.min(), Z.max())
+ax2.set_ylim(0.00, 0.07)
+
+#opciones en comun para ambas graficas
+for ax in fig.axes:
+    ax.set_xlabel(r'$\beta_0$', fontsize=17)
+    ax.set_ylabel(r'$\beta_1$', fontsize=17)
+    ax.legend()
+
+###############################################################################
+#segunda regresion multiple
+
+X = df[['radio', 'TV']]
+y = df['sales']
+
+ols.fit(X, y)
+
+# Se crea una grilla para graficar la superficie de predicción
+Radio = np.arange(0, 50)
+TV = np.arange(0, 300)
+B1, B2 = np.meshgrid(Radio, TV, indexing="xy")
+Z = np.zeros_like(B1)
+
+for (i, j), _ in np.ndenumerate(Z):
+    Z[i, j] = ols.intercept_ + B1[i, j] * ols.coef_[0] + B2[i, j] * ols.coef_[1]
+
+# Visualización 3D de la regresión múltiple
+fig = plt.figure(figsize=(10, 6))
+fig.suptitle('Regresión: Sales ~ Radio + TV Advertising', fontsize=20)
+
+ax = fig.add_subplot(111, projection='3d')
+
+ax.plot_surface(B1, B2, Z, rstride=10, cstride=5, alpha=0.4)
+ax.scatter3D(df.radio, df.TV, df.sales, c="r")
+
+ax.set_xlabel('Radio')
+ax.set_xlim(0, 50)
+ax.set_ylabel('TV')
+ax.set_ylim(0, 300)
+ax.set_zlabel('Sales')
+
+#se puede ver en 3ra dimension en un caso multivariado para explicar la misma variable
+#en el caso multivariado se vuelve una tela la linea, donde los puntos deberian estar cerca de esta
+
+"Machine learning"
+#conjunto de modelos parametricos -> se asume una relacion causal o funcion preestablecidas, no importa la interpretabilidad
+#si no que el modelo funcione bastante y se adapte bastante bien a los datos disminuyendo el error
+
+#conjunto de modelos no parametricos -> el modelo perderia interpretabilidad pero no hay relacion causal
+#se disminuye el error que pueda tener, pero la regresion lineal , no se va conocer dependiendo del modelo
+#aveces no va tener la interpretabilidad que se espera.
+
+#lo que interesa que haya un modelo que tenga gran interpretabilidad que se peuda explicar
+#que tengan sentidos los resultados, explicandose de forma sencilla, 
+
+
+
+
+
