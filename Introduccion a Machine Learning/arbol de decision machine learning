@@ -69,10 +69,13 @@ ax2.set_xlabel('log(Salary)')
 #los datos estan concentrados a la izquierda pero tiene cesgo 
 #los datos estan muy hacia la derecha
 
-#se hace la regresion del arbol de decision
-dtree = DecisionTreeRegressor(max_leaf_nodes = 3)
+#se hace la regresion del arbol de decision / saber cuantos nodos o la profundidad que va tener
+dtree = DecisionTreeRegressor(max_leaf_nodes = 3) #profundidad del arbol de decision.
 dtree.fit(X, Y)
 
+###############################################################################
+#grafica que requiere instalar la paqueteria graphviz
+#se busca en internet la grafica graphviz para poder instalarlo directamente de internet para correrlo en python
 dot_data = StringIO()
 export_graphviz(dtree, 
                 out_file=dot_data,
@@ -82,6 +85,29 @@ export_graphviz(dtree,
 
 graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
 Image(graph.create_png())
+###############################################################################
+
+# X0 son los años del jugador con experiencia
+#X1 son los hits del jugador que hace en cada partido
+
+
+#se grafica como funcionan las divisiones para tener los jugadores segun su salario
+df.plot("Years", "Hits", kind= "scatter", color="orange", figsize= (7,6))
+plt.xlim(0,25)
+plt.ylim(ymin = -5)
+plt.xticks([1, 4.5, 24])
+plt.yticks([1, 117.5, 238])
+plt.vlines(x=4.5, ymin=-5, ymax=250, colors='blue', linestyles='dashed')
+plt.hlines(117.5, xmin =4.5, xmax = 250, colors='orange', linestyles = 'dashed')
+plt.annotate('R1', xy=(2,117.5), fontsize='xx-large')
+plt.annotate('R2', xy=(11,60), fontsize="xx-large")
+plt.annotate("R3", xy=(11,170), fontsize="xx-large")
+
+#Este ejemplo tiene una interpretavilidad bastante alta pero   
+#se han usado pocas variables regresoras (experiencia y hits), para predecir el salario
+#entre mas variables regresoras se agreguen mejor sera el modelo mas preciso aunque se pierde mucho mas interpretabilidad.
+
+
 
 
 
