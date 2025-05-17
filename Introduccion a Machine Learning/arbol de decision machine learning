@@ -1,52 +1,87 @@
 "Machine learning" 
+"Regresion de arbol de decision"  #MODELO NO PARAMETRICO 
 
-"Arboles de decision y Regresion lineal" #la mayoria de las caracteristicas de machine learning son en python
+#conjunto de modelos parametricos -> se asume una relacion causal o funcion preestablecidas, no importa la interpretabilidad
+#si no que el modelo funcione bastante y se adapte bastante bien a los datos disminuyendo el error
 
-#aprendizaje supervizado el data set debe estar etiquetado  
+#conjunto de modelos no parametricos -> el modelo perderia interpretabilidad pero no hay relacion causal
+#se disminuye el error que pueda tener, pero la regresion lineal , no se va conocer dependiendo del modelo
+#aveces no va tener la interpretabilidad que se espera, mejores predictores de modelos.
 
-#se importan las librerias
-import pandas as pd 
-import seaborn as sns
+#lo que interesa que haya un modelo que tenga gran interpretabilidad que se peuda explicar
+#que tengan sentidos los resultados, explicandose de forma sencilla, 
+
+#!pip install pydotplus  / libreria para machine learning
+
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import scale
-from mpl_toolkits.mplot3d import axes3d
+import seaborn as sns
+from sklearn.model_selection import train_test_split, cross_val_score
+from IPython.display import Image 
 
-#se carga una base de datos de la nube
-df=pd.read_csv("https://www.statlearning.com/s/Advertising.csv", index_col=0)
-df.head(15)
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier, export_graphviz
+from sklearn.ensemble import (
+    BaggingClassifier, RandomForestClassifier,
+    BaggingRegressor, RandomForestRegressor,
+    GradientBoostingRegressor
+)
+from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
 
-#se grafica una matriz de correlaciones entre las variables.
-#modelo teorico de como funcionan las relaciones en el sistema, sabiendo que variables usar para el modelo teorico
-#observar como funcionan las variables del sistema entre si por medio de un correlograma, para ver las variables
-#que mejor correlacionan dentro del sistema
- 
-correlaciones = df.corr()
-fig, ax = plt.subplots(nrows= 1, ncols=1, figsize=(16,6))
-sns.heatmap(
-    correlaciones, 
-    annot = True,
-    annot_kws = {"size": 8},
-    vmin = -1,
-    vmax = 1,
-    center = 0,
-    cmap = sns.diverging_palette(20, 220, n = 200),
-    ax = ax)
+import six
+import sys
+import pydotplus
+from io import StringIO  # En lugar de six.StringIO
+plt.style.use("ggplot")
 
-ax.set_xticklabels(
-    ax.get_xticklabels(),
-    rotation = 45,
-    horizontalalignment = 'right',)
 
-ax.tick_params(labelsize = 12)
+#se crea una funcion para el arbol
+def print_tree (estimator, features, class_names=None, filled=True):
+    tree = estimator
+    names= features
+    color = filled
+    classn = class_names
+    
+    dot_data = StringIO()
+    export_graphviz(estimator, out_file = dot_data, feature_names = features, class_names = classn,
+                    filled = filled)
+    graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
+    return(graph)
 
-#hisogramas y graficas de residuos de los datos
-sns.pairplot(df) 
 
-#para definir variables para el regresor
-"MINUTO 13:18"
+
+df = pd.read_csv("https://gist.githubusercontent.com/keeganhines/59974f1ebef97bbaa44fb19143f90bad/raw/d9bcf657f97201394a59fffd801c44347eb7e28d/Hitters.csv")
+df = df.dropna()
+df.info()
+df.head(30)
+#la variable a predecir es el salario.
+
+X = df[['Years', 'Hits']] #regresores son los años en la liga jugando y los hits que ha hecho cada jugador
+Y = np.log(df.Salary)
+
+#se grafican las variables de salario y de logaritmo de salario
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize = (11,4))
+ax1.hist(df.Salary)
+ax1.set_xlabel('Salary')
+ax2.hist(Y)
+ax2.set_xlabel('log(Salary)')
+
+#los datos estan concentrados a la izquierda pero tiene cesgo 
+#los datos estan muy hacia la derecha
+
+#se hace la regresion del arbol de decision
+dtree = DecisionTreeRegressor(max_leaf_nodes = 3)
+dtree.fit(X, Y)
+
+dot_data = StringIO()
+export_graphviz(dtree, 
+                out_file=dot_data,
+                filled = True,
+                rounded = True, 
+                special_characters= True)
+
+graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
+Image(graph.create_png())
 
 
 
