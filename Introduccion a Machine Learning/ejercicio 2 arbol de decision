@@ -1,0 +1,101 @@
+###############################################################################
+###############################################################################
+###############################################################################
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split, cross_val_score
+from IPython.display import Image 
+
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier, export_graphviz
+from sklearn.ensemble import (
+    BaggingClassifier, RandomForestClassifier,
+    BaggingRegressor, RandomForestRegressor,
+    GradientBoostingRegressor
+)
+from sklearn.metrics import mean_squared_error, confusion_matrix, classification_report
+
+import six
+import sys
+import pydotplus
+from io import StringIO  # En lugar de six.StringIO
+plt.style.use("ggplot")
+
+#En este ejemplo se tiene una variable dicotomica osea una variable binaria que solo puede tomar dos valores posibles.
+#AHD es la variable dicotomica
+
+"Ejemplo 2"
+
+heart_df = pd.read_csv("https://www.statlearning.com/s/Heart.csv", index_col = 0)
+heart_df = heart_df.dropna()
+heart_df.head()
+
+#se vuelven factores alugunas variables a utilizar
+heart_df.ChestPain = pd.factorize(heart_df.ChestPain)[0]
+heart_df['Thal'] = pd.factorize(heart_df['Thal'])[0]
+
+#se genera el set de datos para los regresores y la variable de respuesta
+X = heart_df.drop("AHD", axis=1) #como regresores se usan todas las variables menos la dicotomica
+Y = pd.factorize(heart_df.AHD)[0] #la variable dicotomica es la variable de respuesta
+
+#se hace la division de los datos entre conjunto de entrenamiento y conjunto de validacion
+x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.5, random_state=0)
+dtree = DecisionTreeClassifier(max_depth=None, max_leaf_nodes=6, max_features=3)
+dtree.fit(x_train, y_train) #entrenamiento del modelo
+
+###############################################################################
+#NO SE PUEDE VER HASTA INSTALAR LA PAQUETERIA
+dot_data = StringIO()
+export_graphviz(dtree, 
+                out_file=dot_data,
+                filled = True,
+                rounded = True, 
+                special_characters= True)
+
+graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
+Image(graph.create_png())
+###############################################################################
+
+#puede que requiera un mayor numero de decisiones para pronosticar mejor
+#pero entre mas complejo el modelo la interpretacion se vuelve mas compleja
+#el coeficiente de gini nos dice que tan bueno es el nodo para predecir
+
+#para evaluar si el modelo fue bueno o no se hace un testeo
+#donde primero se aplican la serie de decisiones a los inputs de testeo (matriz x) de testing
+#con estos valores predecidos se evalua como se comportan con respecto de los valores que realmente tenian estas personas
+#la forma de reportar es con una matriz de confusion con una respuesta bibariada 
+#se evalua que tan bueno es predicendo cuando la persona no tiene una enfermedad que tan acertado es para predecirlo
+#y cuando tiene una enfermedad que tan bueno es el modelo para predecirlo 
+pred = dtree.predict(x_test)
+
+cm = pd.DataFrame(confusion_matrix(y_test, pred). T, index=["No", "Yes"], columns=["No", "Yes"])
+cm.index.name = "Predicted"
+cm.columns.name = "True"
+cm
+
+print(classification_report(y_test, pred)) #porcentaje de precision para medir los valores de prediccion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
