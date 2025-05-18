@@ -4,48 +4,70 @@ import numpy as np
 import re
 
 "Carga del archivo y reduccion a las variables significativas"
-direccion = "J:\\Diego-files\\DENUE-datos\\"
-libreria = "denue_Agricultura_11.csv"
+direccion = "C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\INEGI"
+libreria = "Agricultura_cria_pesca_caza.csv"
 lectura_Datos = os.path.join(direccion, libreria)
 Comercio_al_por_Menor = pd.read_csv(lectura_Datos, encoding='latin1')
+
+#para identificar las propiedades de la matriz donde se va trbajar
+Comercio_al_por_Menor.head(45)
+Comercio_al_por_Menor.tail(45)
+Comercio_al_por_Menor.dtypes #ver tipo de datos de cada variable del data frame
+Comercio_al_por_Menor.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Comercio_al_por_Menor.columns #muestra las columnas 
+Comercio_al_por_Menor.duplicated().sum() #para ver si hay filas duplicadas
+
+#se filtran las columnas que solamente son de importancia para la matriz
 Comercio_al_por_Menor = Comercio_al_por_Menor[['clee', 'nom_estab', 'raz_social', 'per_ocu','codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0) 
 
+#para identificar el total de empresas que hay en el data frame
+Empresas_totales = Comercio_al_por_Menor['nom_estab'].drop_duplicates() 
+Empresas_totales = len(Empresas_totales) #calcular las empresas unicas
+
+
 ###############################################################################
+###############################################################################
+
 "Transformacion de los datos de la variable per_ocu"
-# se cambia de 251 y mas a 251 a 500 para tener un rango. 
+# se cambia de 251 y mas a 251 a 500 para tener un rango, sugerir variable de cambio.
 
 Comercio_al_por_Menor['per_ocu'].unique()
-Comercio_al_por_Menor['per_ocu'] = Comercio_al_por_Menor['per_ocu'].replace({'251 y más personas': '251 a 500 personas'}) 
+Comercio_al_por_Menor['per_ocu'] = Comercio_al_por_Menor['per_ocu'].replace({'251 y más personas': '251 a 1000 personas'}) 
 Comercio_al_por_Menor['per_ocu'].unique()
 
-#Conocer cuantas empresas son del rango de 251 a 1000 personas
-filtro = Comercio_al_por_Menor['per_ocu'] == '251 a 500 personas'
-filtro = Comercio_al_por_Menor[filtro]
-empresas_con_251_mas =  filtro.sum()    
+"Para conocer cuantas empresas estan dentro este rango nuevo que se ha cambiado previamente"
+#genera una columna que busca los valores que tienen el criterio que se desea encontrar
+empresas_251_y_mas = Comercio_al_por_Menor['per_ocu'] == '251 a 500 personas' 
+#genera un nuevo data frame filtrando solo estas empresas que cumplen este requisito
+empresas_251_y_mas= Comercio_al_por_Menor[empresas_251_y_mas]  #se filtra la columna donde esta este valor
 
 ###############################################################################
+###############################################################################
+
 "Transformacion de los datos de variable a dummis"   #OPCIONAL
 
 dummies_per_ocu = pd.get_dummies(Comercio_al_por_Menor['per_ocu'], prefix='per_ocu', drop_first=True) #se crean dummies 
 Comercio_al_por_Menor = pd.concat([Comercio_al_por_Menor, dummies_per_ocu], axis=1) #se agregan las dummies al data frame original
 
 ###############################################################################
-"Se empieza a filtrar el data frame"
 
-# Extracción de valores numéricos desde 'per_ocu' para poder constuir dos columnas
+"Se crean columnas nuevas separando los valores de la columna (per_ocu) para crear 2 columnas nuevas"
+#se crea la columna poblacion minima con los valores de per_ocu siendo el primer valor numerico
+#se crea la columna poblacion maxima con los valores de per_ocu siendo el segundo valor numerico
+
+# Extracción de valores numéricos desde 'per_ocu' donde se crean dos nuevas columnas , poblacion_minima y poblacion_maxima
 Comercio_al_por_Menor[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Menor['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
 
-# Se crean dos columnas nuevas para dividir los parametros de poblacion.
+# Convierte las columnas extraidas a valores numericos reales int o floar, si no se queda como NaN
 Comercio_al_por_Menor['poblacion_minima'] = pd.to_numeric(Comercio_al_por_Menor['poblacion_minima'], errors='coerce')
 Comercio_al_por_Menor['poblacion_maxima'] = pd.to_numeric(Comercio_al_por_Menor['poblacion_maxima'], errors='coerce')
 
+###############################################################################
+
+"Empiezan los filtros del Data Frame"
+
 #1er filtro empresas que no cuenten con razon social
 Comercio_al_por_Menor = Comercio_al_por_Menor[Comercio_al_por_Menor["raz_social"] != 0]
-
-
-
-
-
 
 
 # Ahora sí puedes eliminar 'per_ocu' si ya no la necesitas
@@ -64,8 +86,93 @@ print("Número total de empresas únicas en Agricultura:", empresas_Agricultura)
 
 
 
+###############################################################################
+
+"Filtros introduccion"
+
+#para que me de la informacion de una sola columna, en este caso de la poblacion maxima
+Comercio_al_por_Menor["poblacion_maxima"]
+
+#para que me muestre solo los valores iguales o mayores a cierto numero, mostrando valores solamente boleanos
+poblacion_menosde10 = Comercio_al_por_Menor["poblacion_minima"] <= 10 #muestra solo la columna con boleanos
+poblacion_menosde10df = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] <= 10] #muestra el data frame completo 
+poblacion_menosde10df = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] == 251].count()  #data frame completo pero cuenta los individuos, por variable
+Comercio_al_por_Menor["poblacion_minima"] ==251
+
+Comercio_3 = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_maxima"] >= 100] #genera un data frame de valores con mas de 100
+Comercio_3["poblacion_maxima"] #muestra la columna de poblacion maxima con todos los valores del data frame creado anteriormente
+Comercio_3["poblacion_maxima"].mean() #promedio del data frame creado anteriormente
+
+poblacion_menosde10df = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] <= 10 ].count()  
+Comercio_al_por_Menor_1 = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] <= 30]
 
 
+Comercio_al_por_Menor_2 = Comercio_al_por_Menor[Comercio_al_por_Menor["raz_social"] !=0] #filtra las variables donde su razon social es diferente de cero
+Comercio_al_por_Menor_2 =  Comercio_al_por_Menor_2[Comercio_al_por_Menor["nom_estab"] !="PESCA Y CAPTURA DE OTROS PECES, CRUSTÁCEOS, MOLUSCOS Y OTRAS ESPECIES"]
+p = Comercio_al_por_Menor_2["poblacion_maxima"].describe() #calculo de todos los valores estadisticos de esa columna del data frame
+
+Comercio_al_por_Menor_2 = Comercio_al_por_Menor_2.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+Comercio_al_por_Menor_2 = Comercio_al_por_Menor_2.groupby("raz_social")[['poblacion_minima', 'poblacion_maxima']].sum().reset_index()
+
+df = Comercio_al_por_Menor[Comercio_al_por_Menor_2 & Comercio_al_por_Menor_1] 
+
+ #operador & para que sea verdadero se deben cumplir ambas condiciones
+df = Comercio_al_por_Menor[(Comercio_al_por_Menor["raz_social"]!=0 ) & (Comercio_al_por_Menor["poblacion_maxima"] > 100)]
+
+#condiciones a cumplir
+condicion_uno = Comercio_al_por_Menor["raz_social"] !=0
+condicion_dos = Comercio_al_por_Menor["poblacion_minima"] > 200
+
+#se unene ambos filtros en un data frame
+Comercio_filtros = Comercio_al_por_Menor[condicion_uno & condicion_dos]
+
+#para que solo me aparezca una columna de razon social
+Comercio_filtros = Comercio_al_por_Menor[condicion_uno & condicion_dos] ["raz_social"] #muestra la columna de razon social
+Comercio_filtros = Comercio_al_por_Menor[condicion_uno & condicion_dos] ["poblacion_maxima"] #muestra la poblacion maxima
+
+Comercio_filtros['poblacion_maxima'].mean() #muestra el promedio de la columna de ese data frame
+
+Comercio_al_por_Menor.nom_estab.mode() #para ver que valores se repiten mas
+
+Comercio_al_por_Menor.iloc[1,3] #para localizar valores del data frame conforme a su orden
+#se busca conforme a [columna, renglon]
+
+Comercio_al_por_Menor.iloc[3,[2,2]] #obtener la razon social de los valores
+
+Comercio_al_por_Menor.loc[2]
+
+Comercio_al_por_Menor.loc[2, "per_ocu"] 
+
+#para cambiar el indice del dataframe, y el inplace true es para que se modifique el data frame original
+Comercio_al_por_Menor.set_index("per_ocu", inplace = True) #se pone como indice la variable per_ocu del data frame original
+
+#se selecciona el data frame por [indice[columna 1, columna2]]
+Comercio_al_por_Menor.loc["per_ocu"["raz_social", "nom_estab"]]
+
+import pandas as pd
+
+#para oredenar el data frame por poblacion ocuapada ascendente y se guarde en el data frame original
+Comercio_al_por_Menor.sort_values(by="per_ocu",ascending = True,  inplace = True) #se ordenan los valores por poblacion
+
+Comercio_al_por_Menor.sort_index #acomoda los valores en funcion del indice , pero no cambia el data frame original
+Comercio_al_por_Menor.sort_index(inplace= True) #oredena los valores conforme al indice y lo guarda en el data frame original
+
+#para poner un indice multiple, pone dos categorias pero deben pertenecer al mismo tipo de valor
+Comercio_al_por_Menor_1.sort_index(["id", "per_ocu"], inplace = True)  #corregir
+
+###############################################################################
+#para quitar NaN o valores nulos en el data frame
+
+#para ver que valores son nulos o tienen NaN en esa columna seleccionada
+Comercio_al_por_Menor["raz_social"].isnull()
+Comercio_al_por_Menor["raz_social"].isnull().sum() #suma los valores que tienen la condicion anterior
+
+Comercio_al_por_Menor.dropna().head() #quita las filas que contengan un NaN en alguna variable de ese individuo y muestra los primeros valores de ese df con la correccion
+Comercio_al_por_Menor.dropna(inplace = True)
+
+Comercio_al_por_Menor.dropna(subset = ["nom_estab", "raz_social"], inplace = True) #quita los NaN de esas columnas
+Comercio_al_por_Menor.fillna(0, inplace = True) #cambia los NaN por 0 en el df y modifica el original
+Comercio_al_por_Menor.fillna("sin nombre", inplace = True) #cambia los NaN por sin nombre
 
 
 
