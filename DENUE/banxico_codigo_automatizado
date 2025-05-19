@@ -126,7 +126,6 @@ total_empresas
 ################################################################################
 ################################################################################
 
-
 import pandas as pd
 import os
 import numpy as np
@@ -216,15 +215,12 @@ Comercio_al_por_Menor_filtrado = Comercio_al_por_Menor.groupby('nom_estab')[['po
 #agrupamiento de empresas por razon social
 Comercio_al_por_Menor_filtrado = Comercio_al_por_Menor.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima','clee',"codigo_act", 'nom_estab', 'raz_social', 'nombre_act', 'entidad', 'municipio', 'id']].sum(inplace = True)
 
-#segundo filtro
 
 
 #muestra solo la columna con boleanos /  filtra la pobglacion
 primera_condicion = Comercio_al_por_Menor_filtrado["poblacion_minima"] >= 400 #muestra el data frame completo 
 segunda_condcion = Comercio_al_por_Menor_filtrado["poblacion_maxima"] <= 29097  #data frame completo pero cuenta los individuos, por variable
 df = Comercio_al_por_Menor[primera_condicion & segunda_condcion]
-
-
 
 
 
@@ -241,24 +237,23 @@ poblacion_total = Comercio_al_por_Menor_filtrado[['poblacion_minima', 'poblacion
 poblacion_estadisticas = Comercio_al_por_Menor_filtrado[["poblacion_minima","poblacion_maxima"]].describe()
 
 
+#genera un data frame de filtrado con empresas grandes de este sector
+empresas_grandes = Comercio_al_por_Menor_filtrado[
+    (Comercio_al_por_Menor_filtrado["poblacion_maxima"] >= 1000) & 
+    (Comercio_al_por_Menor_filtrado["poblacion_minima"] >= 400)]
 
+empresas_grandes["poblacion_maxima"] #muestra la columna de poblacion maxima con todos los valores del data frame creado anteriormente
+empresas_grandes["poblacion_minima"].mean()
+empresas_grandes["poblacion_maxima"].mean()
+empresas_grandes["poblacion_maxima"]>10000
 
-
-
-
-
+poblacion = empresas_grandes[empresas_grandes["poblacion_minima"] >1000 ].count() #cuantos individuos cumplen con este requisito
 
 ###############################################################################
 "Filtros introduccion"
 
-#para que me muestre solo los valores iguales o mayores a cierto numero, mostrando valores solamente boleanos
-poblacion_menosde10 = Comercio_al_por_Menor["poblacion_minima"] <= 10 #muestra solo la columna con boleanos
-poblacion_menosde10df = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] <= 10] #muestra el data frame completo 
-poblacion_menosde10df = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] == 251].count()  #data frame completo pero cuenta los individuos, por variable
-Comercio_al_por_Menor["poblacion_minima"] ==251
 
-Comercio_3 = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_maxima"] >= 100] #genera un data frame de valores con mas de 100
-Comercio_3["poblacion_maxima"] #muestra la columna de poblacion maxima con todos los valores del data frame creado anteriormente
+
 empresas_grandes["poblacion_maxima"].mean() #promedio del data frame creado anteriormente
 
 poblacion_menosde10df = Comercio_al_por_Menor[Comercio_al_por_Menor["poblacion_minima"] <= 10 ].count()  
@@ -529,6 +524,13 @@ Comercio_al_por_Menor.dropna(inplace = True)
 Comercio_al_por_Menor.dropna(subset = ["nom_estab", "raz_social"], inplace = True) #quita los NaN de esas columnas
 Comercio_al_por_Menor.fillna(0, inplace = True) #cambia los NaN por 0 en el df y modifica el original
 Comercio_al_por_Menor.fillna("sin nombre", inplace = True) #cambia los NaN por sin nombre
+
+
+
+
+
+
+
 
 
 
