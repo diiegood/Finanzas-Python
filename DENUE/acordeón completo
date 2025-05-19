@@ -175,9 +175,203 @@ Comercio_al_por_Menor.fillna(0, inplace = True) #cambia los NaN por 0 en el df y
 Comercio_al_por_Menor.fillna("sin nombre", inplace = True) #cambia los NaN por sin nombre
 
 
+#para crear un data frame  del nombre de las columnas como string y de los valores contenidos en ellas como int
+Comercio_al_por_Menor_4 = pd.DataFrame({
+    "id": [1, 2, 3],
+    "raz_social": [4, 5, 6],
+    "nom_estab": [7, 8, 9]
+})
+
+
+Comercio_al_por_Menor.apply(len) #cuenta cuantos valores hay por variable y de que tipo son
+
+Comercio_al_por_Menor.apply(len).sum() #suma todos los valores de las columnas 
+#multiplica el numero de filas x numero de columnas
+
+
+#suma todos los valores de las columnas señaladas, para ver cuantos valores hay en total por cada columna llamada
+#suma por columna
+Comercio_al_por_Menor[["poblacion_minima", "poblacion_maxima"]].apply(sum) #debe haber valores del mismo tipo en la matriz pero numericos (int, float)
+
+#suma por fila de izquierda a derecha , de los valores señalados
+Comercio_al_por_Menor[["poblacion_minima", "poblacion_maxima"]].apply(sum, axis=1)
+Comercio_al_por_Menor["poblacion_minima"] **5 #se pueden aplicar operaciones a los valores de cada columna
+
+Comercio_al_por_Menor["per_ocu"].apply(type) #para conocer que tipo de valor tiene esa columna
+
+###############################################################################
+"Funciones de clasificacion"
+
+#crear una funcion que calcule un numero al cuadrado 
+# con el condicional por si un valor de una columna da ese valor haga cierta operacion
+
+def cuadrado(num):
+    if num % 2 == 0:
+        return num ** 2
+    else:
+        return num
+
+#para llamar la funcion con el data frame con la columna llamada en especifico
+Comercio_al_por_Menor["poblacion_minima"].apply(cuadrado)
+
+#se hace una funcion que realice la misma operacion que la funcion anterior 
+Comercio_al_por_Menor["poblacion_maxima"].apply(lambda num: num**2 if num % 2 == 0 else num)
 
 
 
+#se cera otra funcion condicional por si un parametro rebasa cierto umbral se le considere de cierta forma
+def clasificacion(num):
+    if num <10:
+        return "poblacion baja"
+    elif (num >= 10) & (num <=  51):
+        return "poblacion mediana"
+    elif (num >=100) & (num <= 500):
+        return "poblacion alta"
+    else : 
+        return "poblacion no clasificada"
+
+Comercio_al_por_Menor["poblacion_minima"].apply(clasificacion)
+
+#creando en funcion
+
+poblacion_clasificada = Comercio_al_por_Menor["poblacion_minima"].apply(clasificacion)
+
+#replicando la funcion creada de clasificacion pero en una sola funcion.
+Comercio_al_por_Menor["poblacion_categoria"] = Comercio_al_por_Menor["poblacion_minima"].apply(
+    lambda num: "poblacion baja" if num < 10 
+    else "poblacion media" if 10 <= num <= 51 
+    else "poblacion alta"
+)
+
+
+###############################################################################
+
+"Manipulacion de columnas"
+
+#para cambiar de nombre una columna en este caso la de per_ocu a poblacion ocupada, creando en un nuevo data frame
+#pero tambien se puede sobreescribir el anituo para modificarlo permanentemente
+
+df = Comercio_al_por_Menor.rename(columns = {"per_ocu": "poblacion ocupada"})
+df["poblacion ocupada"].unique() #muestra los valores que estan contenidos en esa columna
+
+#para midificar las varriables contenidas en la columna poblacion ocupada
+df["poblacion ocupada"] = df["poblacion ocupada"].replace({"6 a 10 personas": "poquitas personas",
+                                                           "0 a 5 personas": "casi no hay nadie",
+                                                           "11 a 30 personas": "hay algo de gente"})
+df["poblacion ocupada"] #muestra los valores de esa columna
+
+df["poblacion ocupada"].value_counts() #cuenta todos los valores totales por variable de la columna
+"Se puede hacer una tabla de frecuencias con esto"
+
+Comercio_al_por_Menor.info() #informacion detallada sobre el data frame en el que sa va trabajar
+
+###############################################################################
+#estadisticas descriptivas de pandas 
+.count #para ver el numero de observaciones sin NA
+.sum   #suma de los valores
+.mean  #media de valores
+.median #mediana aritmetica de los valores
+.min #minimo 
+.max #maximo 
+.mode #modo
+.abs #valor absoluto
+.prod #producto de los valores
+.std #desviacion estandar
+.var #varianza imparcial
+cummin #minimo acumulativo
+cummax #maximo acumulativo
+cumprod #producto acumulativo
+cumsum #suma acumulada
+
+#para conocer los valores detallados de una columna o de dos columnas
+Comercio_al_por_Menor.agg({"poblacion_maxima": ["min","max","median","count"], 
+                           "poblacion_minima":["min","max","median","var"] }) #los valores deben ser numericos
+
+###############################################################################
+
+#orden para poder agrupar por columnas 
+# FLUJOS DE TRABAJO
+
+#1) filtrar
+#2)agrupar
+#3) aplicar
+#4)combinar
+
+"estos pasos se realizan juntos en pandas"
+
+#PARA HACER AGRUPACIONES
+
+#Filtrar   Comercio_al_por_Menor[["poblacion_minima, "poblacion_maxima"]] , 
+# agrupar por poblacion y luego  calcular para cada grupo
+
+Comercio_al_por_Menor[["poblacion_minma", "poblacion_maxima"]].groupby("nom_estab").mean() #deben ser numericos
+
+###############################################################################
+
+#flujo de trabajo 2
+
+#1) agruapr
+#2) filtrar
+#3) aplicar
+#4) combinar
+
+#promedio de la poblacion maxima de cada nombre del establecimiento
+Comercio_al_por_Menor.groupby("nom_estab")["poblacion_maxima"].mean() 
+
+###############################################################################
+
+#agrupar todo el data frame
+#AGRUPAR POR COLUMNAS
+
+#1) Agrupar
+#2) Filtrar
+#3) Aplicar
+#4) Comnbinar
+
+#no lo puede calcular porque esta mezclado con otro tipo de variables
+Comercio_al_por_Menor.groupby("poblacion_maxima").mean() 
+
+#calcula el valor de solo variables numericas, calculados para todas las variables numericas del data frame completo
+Comercio_al_por_Menor.groupby("poblacion_maxima").mean(numeric_only = True) #solo variables de tipo int o float
+
+#si se quiere filtrar, conforme a la poblacion minima
+Comercio_al_por_Menor.groupby("poblacion_maxima").mean(numeric_only = True)["poblacion_minima"]
+
+"Metodo groupby por dos columnas"
+
+#1) Agrupar
+#2) Filtrar
+#3) Aplicar
+#4) Comnbinar
+
+#se agrupa las variables conforme a dos columnas pero deben ser numericas
+#las primeras dos son las filas y la tercera es el promedio del codigo de la actividad
+Comercio_al_por_Menor.groupby(["poblacion_minima", "poblacion_maxima"])["codigo_act"].mean()
+
+Comercio_al_por_Menor.groupby(["nom_estab", "raz_social"])["poblacion_maxima"].mean()
+
+
+Comercio_al_por_Menor.groupby("nom_estab")["poblacion_maxima"].count()
+Comercio_al_por_Menor.groupby("nom_estab")["nom_estab"].count()
+
+Comercio_al_por_Menor.groupby("nom_estab")[ "poblacion_minima"].count()
+
+Comercio_al_por_Menor["per_ocu"].value_counts() #cuenta cuanto hay de cada variable de esa columna
+
+###############################################################################
+
+#para quitar NaN o valores nulos en el data frame
+
+#para ver que valores son nulos o tienen NaN en esa columna seleccionada
+Comercio_al_por_Menor["raz_social"].isnull()
+Comercio_al_por_Menor["raz_social"].isnull().sum() #suma los valores que tienen la condicion anterior
+
+Comercio_al_por_Menor.dropna().head() #quita las filas que contengan un NaN en alguna variable de ese individuo y muestra los primeros valores de ese df con la correccion
+Comercio_al_por_Menor.dropna(inplace = True)
+
+Comercio_al_por_Menor.dropna(subset = ["nom_estab", "raz_social"], inplace = True) #quita los NaN de esas columnas
+Comercio_al_por_Menor.fillna(0, inplace = True) #cambia los NaN por 0 en el df y modifica el original
+Comercio_al_por_Menor.fillna("sin nombre", inplace = True) #cambia los NaN por sin nombre
 
 
 
