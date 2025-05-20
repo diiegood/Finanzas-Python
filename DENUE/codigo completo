@@ -1,0 +1,175 @@
+import pandas as pd
+import os
+import numpy as np
+import re
+
+"Carga del archivo y reduccion a las variables significativas"
+#dirrecion de los datos / carga de informacion.
+direccion = "J:\\Diego-files\\DENUE-datos\\"
+libreria =  "denue_comercioalpormayor_43.csv" #cambiar la libreria para ver cada sector
+lectura_Datos = os.path.join(direccion, libreria)
+Comercio_al_por_Menor = pd.read_csv(lectura_Datos, encoding='latin1')
+
+"Para ver las caracteristicas de la matriz"
+#para identificar las propiedades de la matriz donde se va trbajar
+Comercio_al_por_Menor.head(45)
+Comercio_al_por_Menor.tail(45)
+Comercio_al_por_Menor.dtypes #ver tipo de datos de cada variable del data frame
+Comercio_al_por_Menor.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Comercio_al_por_Menor.columns #muestra las columnas 
+Comercio_al_por_Menor.duplicated().sum() #para ver si hay filas duplicadas
+
+#se filtran las columnas que solamente son de importancia para la matriz
+Comercio_al_por_Menor = Comercio_al_por_Menor[['clee', 'nom_estab', 'raz_social', 'per_ocu','codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0) 
+
+"Para poder conocer el total de las empresas que hay"
+
+#incluyendo las empresas no tan establecidas o formalizadas (en su mayoria micro o negocio propio)
+Empresas_formales_e_informales = Comercio_al_por_Menor['nom_estab'].drop_duplicates() 
+Empresas_formales_e_informales = len(Empresas_formales_e_informales) #calcular las empresas unicas
+
+#empresas que realmente no se repiten porque tienen diferente razon social
+empresas_formales = Comercio_al_por_Menor['raz_social'].nunique() 
+
+
+###############################################################################
+"Modificacion del data frame"
+
+#Transformaciones de las variables ############################################
+
+# primera Transformacion de los datos de la variable per_ocu.
+Comercio_al_por_Menor['per_ocu'].unique() #para conocer que valores estan contenidos dentro de la columna ("per_ocu")
+Comercio_al_por_Menor['per_ocu'] = Comercio_al_por_Menor['per_ocu'].replace({'251 y más personas': '251 a 1000 personas'}) 
+
+
+# segunda Transformacion de los datos de la variable codigo_act. (este puede incurrir en sesgo de variable por lo que)
+#tomar solo los 4 primeros digitos del codigo SCIAN de actividad ya que son los que estan bien.
+Comercio_al_por_Menor["codigo_act"] = Comercio_al_por_Menor["codigo_act"].astype(str)
+Comercio_al_por_Menor["codigo_act"].unique()
+
+
+#Creacion de columnas ######################################################### 
+
+#Con los valores numericos de la columna per_ocu se crean dos columnas: 
+
+#se crea poblacion minima con los primeros valores numericos de la columna per_ocu
+#se crea poblacion maxima con los segundos valores numericos de la columna per_ocu
+#se crea la columna de rango entre poblacion minima y poblacion maxima
+#se crea la columna de promedio entre poblacion minima y poblacion maxima 
+
+# Extracción de valores numéricos desde 'per_ocu' donde se crean dos nuevas columnas , poblacion_minima y poblacion_maxima
+Comercio_al_por_Menor[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Menor['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+
+# Convierte las columnas extraidas a valores numericos reales int o float, si no se queda como NaN
+Comercio_al_por_Menor['poblacion_minima'] = pd.to_numeric(Comercio_al_por_Menor['poblacion_minima'], errors='coerce')
+Comercio_al_por_Menor['poblacion_maxima'] = pd.to_numeric(Comercio_al_por_Menor['poblacion_maxima'], errors='coerce')
+
+#se borra la columna de (per_ocu)
+#Comercio_al_por_Menor.drop(columns='per_ocu', inplace=True) 
+
+#se crea una columna que promedie los valores de poblacion minima y poblacion maxima
+Comercio_al_por_Menor["promedio"] = (Comercio_al_por_Menor["poblacion_maxima"] + Comercio_al_por_Menor["poblacion_minima"])/2
+
+
+###############################################################################
+"Filtros y las agrupaciones del Data Frame principal"
+
+#1er filtro empresas que no cuenten con razon social
+Comercio_al_por_Menor = Comercio_al_por_Menor[Comercio_al_por_Menor["raz_social"] != 0]
+
+
+"Agrupamientos por nombre de establecimiento, sumando población mínima y máxima"
+#primero aplicar el agrupamiento por nombre del establecimiento
+#despues aplicar otro agrupamiento por nombre de la razon social
+
+#Se agrupan las empresas que comparten la misma variable de nombre establecimiento y se crea un data frame nuevo
+Comercio_al_por_Menor_filtrado = Comercio_al_por_Menor.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima',"promedio",'clee',"codigo_act", 'nom_estab', 'raz_social', 'nombre_act', 'entidad', 'municipio', 'id']].sum(inplace = True)
+
+#agrupamiento de empresas por razon social
+Comercio_al_por_Menor_filtrado = Comercio_al_por_Menor.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima',"promedio",'clee',"codigo_act", 'nom_estab', 'raz_social', 'nombre_act', 'entidad', 'municipio', 'id']].sum(inplace = True)
+
+estadisticas_dataframe = Comercio_al_por_Menor_filtrado.describe()
+
+
+"Filtros para delimitar la clasificacion de las empresas"
+#segun la clasificacion del INEGI.
+
+# condiciones para micro-empresas #############################################
+primera_condicion = (Comercio_al_por_Menor_filtrado["promedio"] > 0) & (Comercio_al_por_Menor_filtrado["promedio"] <= 11) 
+# Aplicamos ambas condiciones al DataFrame original (filtrado)
+micro_empresas = Comercio_al_por_Menor_filtrado[primera_condicion] #de 0 hasta 10 trabajadores
+
+# condiciones para empresas pequeñas ##########################################
+primera_condicion = (Comercio_al_por_Menor_filtrado["promedio"] > 11) & (Comercio_al_por_Menor_filtrado["promedio"] <= 50)
+pequeñas_empresas = Comercio_al_por_Menor_filtrado[primera_condicion] #de 11 a 50 trabajadores
+
+# condiciones para empresas medianas ##########################################
+primera_condicion = (Comercio_al_por_Menor_filtrado["promedio"] > 50) & (Comercio_al_por_Menor_filtrado["promedio"] <= 250)
+medianas_empresas = Comercio_al_por_Menor_filtrado[primera_condicion ] #de 51 a 250 trabajadores
+
+#condiciones para empresas grandes ############################################
+primera_condicion = Comercio_al_por_Menor_filtrado["promedio"] > 250 
+grandes_empresas = Comercio_al_por_Menor_filtrado[primera_condicion ] #de mas de 250 trabajadores
+
+###############################################################################
+###############################################################################
+###############################################################################
+"Comprobacion de agrupacion"
+# Conjunto de valores que no estan dentro de ninguno de los anteriores debe ser 0
+valores_residuales = pd.concat([micro_empresas, pequeñas_empresas, medianas_empresas, grandes_empresas]).index
+valores_residuales = Comercio_al_por_Menor_filtrado.drop(valores_residuales)
+
+valores_residuales = len(valores_residuales)
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Transformacion de los datos de variable a dummis"  
+#Agrupa en el dataframe ya filtrado posteriormente
+
+
+# Dummies según la columna "promedio" actualizada
+Comercio_al_por_Menor_filtrado["empresa_micro"] = (
+    (Comercio_al_por_Menor_filtrado["promedio"] > 0) &
+    (Comercio_al_por_Menor_filtrado["promedio"] <= 11)
+).astype(int)
+
+Comercio_al_por_Menor_filtrado["empresa_pequeña"] = (
+    (Comercio_al_por_Menor_filtrado["promedio"] > 11) &
+    (Comercio_al_por_Menor_filtrado["promedio"] <= 50)
+).astype(int)
+
+Comercio_al_por_Menor_filtrado["empresa_mediana"] = (
+    (Comercio_al_por_Menor_filtrado["promedio"] > 50) &
+    (Comercio_al_por_Menor_filtrado["promedio"] <= 250)
+).astype(int)
+
+Comercio_al_por_Menor_filtrado["empresa_grande"] = (
+    Comercio_al_por_Menor_filtrado["promedio"] > 250
+).astype(int)
+
+
+
+"Descripcion general de los datos"
+
+print("El total de empresas que hay en este sector es de ", Empresas_formales_e_informales)
+print("El total de empresas formalmente establecidas es de ", empresas_formales)
+print("Los parametros poblacionales de la variable de poblacion ocupada por empresa es de ", Comercio_al_por_Menor['per_ocu'].unique())
+
+#poner cuantas variables son de cada conjunto y la ponderacion del sector.
+
+poblacion = empresas_grandes[empresas_grandes["poblacion_minima"] >1000 ].count() #cuantos individuos cumplen con este requisito
+
+poblacion_total = Comercio_al_por_Menor[['poblacion_minima', 'poblacion_maxima']].sum()  #suma todas las poblaciones de los valores minimos y maximos del data frame filtrado
+
+#genera un cuadro con valores estadisticos de las columnas señaladas del data frame
+poblacion_estadisticas = Comercio_al_por_Menor_filtrado[["poblacion_minima","poblacion_maxima"]].describe()
+
+
+#OPCIONAL""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+#muestra la columna de poblacion maxima con todos los valores del data frame creado anteriormente
+empresas_grandes["poblacion_maxima"].std()
+empresas_grandes["poblacion_minima"].describe()
+empresas_grandes["poblacion_maxima"].mean()
+empresas_grandes["poblacion_maxima"]>10000
+
