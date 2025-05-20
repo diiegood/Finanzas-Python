@@ -1,36 +1,4 @@
 "Denue datos"  
-
-###############################################################################
-###############################################################################
-
-sectores = [
-    "denue_Actgobierno_93.csv",
-    "denue_Agricultura_11.csv",
-    "denue_comercioalpormayor_43.csv",
-    "denue_comercioalpormenor1_46111.csv",
-    "denue_comercioalpormenor2_46112-46311.csv",
-    "denue_comercioalpormenor3_46321-46531.csv",
-    "denue_comercioalpormenor4_46591-46911.csv",
-    "denue_construccion_23.csv",
-    "denue_corporativos_55.csv",
-    "denue_generacionenergia_22.csv",
-    "denue_industriasmanufactureras_31-33.csv",
-    "denue_informacionenmediosmasivos_51.csv",
-    "denue_mineria_21.csv",
-    "denue_otroservicios1_81_1.csv",
-    "denue_otroservicios2_81_2.csv",
-    "denue_serviciosalojamiento1_72_1.csv",
-    "denue_serviciosalojamiento2_72_2.csv",
-    "denue_serviciosalud_62.csv",
-    "denue_serviciosapoyonegocios_56.csv",
-    "denue_servicioseducativos_61.csv",
-    "denue_serviciosesparcimiento_71.csv",
-    "denue_serviciosfinancieros_52.csv",
-    "denue_serviciosinmobiliarios_53.csv",
-    "denue_serviciosprofesionales_54.csv",
-    "denue_transportescorreosalmacenamiento_48-49.csv"]
-
-###############################################################################
 ###############################################################################
 
 #librerias
@@ -39,220 +7,7 @@ import os
 import numpy as np
 import re
 
-###############################################################################
-"Funcion de analisis de matriz"
-
-#dirrecion de los datos / carga de informacion.
-direccion = "J:\\Diego-files\\DENUE-datos\\"
-# libreria = "denue_Agricultura_11.csv"  LIBRERIA ORIGINAL
-libreria =  "denue_serviciosalud_62.csv"
-lectura_Datos = os.path.join(direccion, libreria)
-sector = pd.read_csv(lectura_Datos, encoding='latin1')
-
-sector = sector[['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0)
-
-
-#se crea una clase que me analice las caracteristicas de la matriz
-class MatrixStats:
-    def matrix_stats (self, sector):
-        self.first_values = sector.head(45) #muestra los primeros 45 datos de la matriz
-        self.last_values = sector.tail(45) #muestra los ultimos 45 datos de la matriz
-        self.tipos_variable = sector.dtypes #ver tipo de datos de cada variable del data frame
-        self.valor_nulo = sector.isnull().values.any() #ver si hay alguna columna con un valor nulo
-        self.columnas = sector.columns #muestra las columnas 
-        self.duplicados = sector.duplicated().sum() #muestra la cantidad de las filas duplicadas
-        self.poblacion = sector['per_ocu'].unique() #muestra los parametros dentro de la columna "per_ocu"
-        self.dimension = sector.shape
-
-class Conteo:
-    def __init__(self, df):  # Constructor / se crea un objeto 
-        self.sector = df #se guarda un data frame para que los otros metodos de la clase puedan usarlo 
-
-    def empresas_valores_atipicos(self): #clase nueva para ver las empresas con valores arriba de 252 de poblacion
-        filtro = self.sector['per_ocu'] == '251 y más personas' #se filtra la poblacion por columna que cumpla el requisito
-        self.filtrado = self.sector[filtro] #se aplica el filtro al data frame 
-        self.conteo = filtro.sum() #se cuentan cuantos individuos cumplen con esta condicion
-        return self.conteo, self.filtrado #se regresan las funciones importantes / funcion del filtro y la de saber cuantos son.
-    
-    
-class filtro_matriz: #poner mas filtros como de razon social, nombre y sumar las poblaciones, agregarlas y promediarlas al df original.
-    def matriz_columns(self, sector):
-        sector[['poblacion_minima', 'poblacion_maxima']] = sector['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
-        sector.drop(columns = 'per_ocu', inplace = True) 
-        sector['poblacion_minima'] = pd.to_numeric(sector['poblacion_minima'], errors='coerce')
-        sector['poblacion_maxima'] = pd.to_numeric(sector['poblacion_maxima'], errors='coerce')
-        poblacion_total = sector.groupby('nom_estab', as_index=False)[['poblacion_minima', 'poblacion_maxima']].sum()
-        sector['Poblacion_promedio'] = sector[['poblacion_minima', 'poblacion_maxima']].mean(axis=1)
-        empresas_total = len(sector['nom_estab'].drop_duplicates())
-        return sector, poblacion_total, empresas_total #variables regresadas de las que fueron creadas.
-    
-
-###############################################################################
-        
-"Para definir y llamar las clases y funciones creadas"
-
-#se le asigna un valor a la clase y se carga la funcion matriz_stats
-#funciones y valores asignados por cada funcion creada
-stats = MatrixStats()
-stats.matrix_stats(sector) #se le cambia el sector que sera analizado
-
-conteo_instancia = Conteo(sector)
-total_empresas_grandes, filtrados = conteo_instancia.empresas_valores_atipicos()
-
-filtros = filtro_matriz()
-sector_filtrado, poblacion_total, total_empresas = filtros.matriz_columns(sector)
-
-
-###############################################################################
-"Para llamar las clases de las funciones a utilizar"
-
-stats.first_values
-stats.columnas
-stats.duplicados
-stats.poblacion
-stats.dimension
-stats.columnas
-
-total_empresas_grandes
-filtrados
-
-sector_filtrado
-poblacion_total
-total_empresas
-
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-import pandas as pd
-import os
-import numpy as np
-import re
-
-"Carga del archivo y reduccion a las variables significativas"
-#dirrecion de los datos / carga de informacion.
-direccion = "J:\\Diego-files\\DENUE-datos\\"
-libreria =  "denue_comercioalpormayor_43.csv" #cambiar la libreria para ver cada sector
-lectura_Datos = os.path.join(direccion, libreria)
-Comercio_al_por_Menor = pd.read_csv(lectura_Datos, encoding='latin1')
-
-
-#para identificar las propiedades de la matriz donde se va trbajar
-Comercio_al_por_Menor.head(45)
-Comercio_al_por_Menor.tail(45)
-Comercio_al_por_Menor.dtypes #ver tipo de datos de cada variable del data frame
-Comercio_al_por_Menor.isnull().values.any() #ver si hay alguna columna con un valor nulo
-Comercio_al_por_Menor.columns #muestra las columnas 
-Comercio_al_por_Menor.duplicated().sum() #para ver si hay filas duplicadas
-
-#se filtran las columnas que solamente son de importancia para la matriz
-Comercio_al_por_Menor = Comercio_al_por_Menor[['clee', 'nom_estab', 'raz_social', 'per_ocu','codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0) 
-
-"Transformaciones de las variables"
-
-# primera Transformacion de los datos de la variable per_ocu.
-Comercio_al_por_Menor['per_ocu'].unique() #para conocer que valores estan contenidos dentro de la columna ("per_ocu")
-Comercio_al_por_Menor['per_ocu'] = Comercio_al_por_Menor['per_ocu'].replace({'251 y más personas': '251 a 1000 personas'}) 
-Comercio_al_por_Menor['per_ocu'].unique() #para conocer los valores contenidos en esta columna despues del cambio 
-
-# segunda Transformacion de los datos de la variable codigo_act. (este puede incurrir en sesgo de variable por lo que)
-#tomar solo los 4 primeros digitos del codigo SCIAN de actividad ya que son los que estan bien.
-Comercio_al_por_Menor["codigo_act"] = Comercio_al_por_Menor["codigo_act"].astype(str)
-Comercio_al_por_Menor["codigo_act"].unique()
-
-###############################################################################
-"Para poder conocer el total de las empresas que hay"
-
-#incluyendo las empresas no tan establecidas o formalizadas (en su mayoria micro o negocio propio)
-Empresas_totales = Comercio_al_por_Menor['nom_estab'].drop_duplicates() 
-Empresas_totales = len(Empresas_totales) #calcular las empresas unicas
-
-#empresas que realmente no se repiten porque tienen diferente razon social
-empresas_totales_formalizadas = Comercio_al_por_Menor['raz_social'].nunique() 
-
-###############################################################################
-###############################################################################
-###############################################################################
-
-"Transformacion de los datos de variable a dummis"   #OPCIONAL o ultimo paso despues de agrupar
-
-dummies_per_ocu = pd.get_dummies(Comercio_al_por_Menor['per_ocu'], prefix='per_ocu', drop_first=True) #se crean dummies 
-Comercio_al_por_Menor = pd.concat([Comercio_al_por_Menor, dummies_per_ocu], axis=1) #se agregan las dummies al data frame original
-
-###############################################################################
-###############################################################################
-###############################################################################
-
-"Se crean columnas nuevas separando los valores de la columna (per_ocu) para crear 2 columnas nuevas"
-
-#se crea la columna poblacion minima con los valores de per_ocu siendo el primer valor numerico
-#se crea la columna poblacion maxima con los valores de per_ocu siendo el segundo valor numerico
-
-# Extracción de valores numéricos desde 'per_ocu' donde se crean dos nuevas columnas , poblacion_minima y poblacion_maxima
-Comercio_al_por_Menor[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Menor['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
-
-# Convierte las columnas extraidas a valores numericos reales int o floar, si no se queda como NaN
-Comercio_al_por_Menor['poblacion_minima'] = pd.to_numeric(Comercio_al_por_Menor['poblacion_minima'], errors='coerce')
-Comercio_al_por_Menor['poblacion_maxima'] = pd.to_numeric(Comercio_al_por_Menor['poblacion_maxima'], errors='coerce')
-Comercio_al_por_Menor.drop(columns='per_ocu', inplace=True) #se borra la columna de (per_ocu)
-
-###############################################################################
-"Empiezan los filtros y las agrupaciones del Data Frame principal"
-
-#1er filtro empresas que no cuenten con razon social
-Comercio_al_por_Menor = Comercio_al_por_Menor[Comercio_al_por_Menor["raz_social"] != 0]
-
-
-"Agrupamientos por nombre de establecimiento, sumando población mínima y máxima"
-#primero aplicar el agrupamiento por nombre del establecimiento
-#despues aplicar otro agrupamiento por nombre de la razon social
-
-#Se agrupan las empresas que comparten la misma variable de nombre establecimiento y se crea un data frame nuevo
-Comercio_al_por_Menor_filtrado = Comercio_al_por_Menor.groupby('nom_estab')[['poblacion_minima', 'poblacion_maxima','clee',"codigo_act", 'nom_estab', 'raz_social', 'nombre_act', 'entidad', 'municipio', 'id']].sum(inplace = True)
-
-#agrupamiento de empresas por razon social
-Comercio_al_por_Menor_filtrado = Comercio_al_por_Menor.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima','clee',"codigo_act", 'nom_estab', 'raz_social', 'nombre_act', 'entidad', 'municipio', 'id']].sum(inplace = True)
-
-
-
-#muestra solo la columna con boleanos /  filtra la pobglacion
-primera_condicion = Comercio_al_por_Menor_filtrado["poblacion_minima"] >= 400 #muestra el data frame completo 
-segunda_condcion = Comercio_al_por_Menor_filtrado["poblacion_maxima"] <= 29097  #data frame completo pero cuenta los individuos, por variable
-df = Comercio_al_por_Menor[primera_condicion & segunda_condcion]
-
-
-
-#se crea una nueva columna llamada rango en el dataframe de Comercio al por menor filtrado
-Comercio_al_por_Menor_filtrado["rango"] = Comercio_al_por_Menor_filtrado["poblacion_maxima"]-Comercio_al_por_Menor_filtrado["poblacion_minima"]
-
-
-
-# Calcular la poblacion promedio de cada empresa
-#suma todas las poblaciones de los valores minimos y maximos del data frame filtrado
-poblacion_total = Comercio_al_por_Menor_filtrado[['poblacion_minima', 'poblacion_maxima']].sum() 
-
-#genera un cuadro con valores estadisticos de las columnas señaladas del data frame
-poblacion_estadisticas = Comercio_al_por_Menor_filtrado[["poblacion_minima","poblacion_maxima"]].describe()
-
-
-#genera un data frame de filtrado con empresas grandes de este sector
-empresas_grandes = Comercio_al_por_Menor_filtrado[
-    (Comercio_al_por_Menor_filtrado["poblacion_maxima"] >= 1000) & 
-    (Comercio_al_por_Menor_filtrado["poblacion_minima"] >= 400)]
-
-empresas_grandes["poblacion_maxima"] #muestra la columna de poblacion maxima con todos los valores del data frame creado anteriormente
-empresas_grandes["poblacion_minima"].mean()
-empresas_grandes["poblacion_maxima"].mean()
-empresas_grandes["poblacion_maxima"]>10000
-
-poblacion = empresas_grandes[empresas_grandes["poblacion_minima"] >1000 ].count() #cuantos individuos cumplen con este requisito
-
-###############################################################################
 "Filtros introduccion"
-
-
 
 empresas_grandes["poblacion_maxima"].mean() #promedio del data frame creado anteriormente
 
@@ -531,9 +286,228 @@ Comercio_al_por_Menor.fillna("sin nombre", inplace = True) #cambia los NaN por s
 
 
 
+###############################################################################
+###############################################################################
+"Funcion de analisis de matriz"
+
+#dirrecion de los datos / carga de informacion.
+direccion = "J:\\Diego-files\\DENUE-datos\\"
+libreria =  "denue_Agricultura_11.csv" #cambiar la libreria para ver cada sector
+lectura_Datos = os.path.join(direccion, libreria)
+sector = pd.read_csv(lectura_Datos, encoding='latin1')
+sector = sector[['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act', 'nombre_act', 'entidad', 'municipio', 'id']].fillna(0)
+empresas_totales_sector = len(sector['nom_estab'].drop_duplicates()) #muestra el total de empresas que hay sin repetir el nombre
 
 
+###############################################################################
+"Primera clase, con funcion para ver el estado o caracteristicas de la matriz"
+
+class MatrixStats:
+    def matrix_stats (self, sector):
+        self.first_values = sector.head(45) #muestra los primeros 45 datos de la matriz
+        self.last_values = sector.tail(45) #muestra los ultimos 45 datos de la matriz
+        self.tipos_variable = sector.dtypes #ver tipo de datos de cada variable del data frame
+        self.valor_nulo = sector.isnull().values.any() #ver si hay alguna columna con un valor nulo
+        self.col = sector.columns #muestra las columnas 
+        self.duplicados = sector.duplicated().sum() #muestra la cantidad de las filas duplicadas
+        self.poblacion = sector['per_ocu'].unique() #muestra los parametros dentro de la columna "per_ocu"
+        self.dimension = sector.shape
+        
+        
+############################################################################### 
+"Segunda clase fon funciones para ver que empresas tienen los valores mas grandes de poblacion (251 y mas)"
+
+class Conteo:
+    def __init__(self, df):  # Constructor / se crea un objeto 
+        self.sector = df #se guarda un data frame para que los otros metodos de la clase puedan usarlo 
+
+    def empresas_valores_atipicos(self): #clase nueva para ver las empresas con valores arriba de 252 de poblacion
+        filtro = self.sector['per_ocu'] == '251 y más personas' #se filtra la poblacion por columna que cumpla el requisito
+        filtrado = self.sector[filtro] #se aplica el filtro al data frame 
+        conteo = filtro.sum() #se cuentan cuantos individuos cumplen con esta condicion
+        return conteo, filtrado #se regresan las funciones importantes / funcion del filtro y la de saber cuantos son.
+
+    
+###############################################################################
+"Tercera clase con los filtros que seran aplicados al data frame original"
+
+#filtros utilizados:
+        #1er filtro agrupa todas las unidades que pertenezcan dentro de una misma razon social en uno solo agrupando la poblacion maxima y minima
+        #2do filtro agrupa todas las unidades que pertenezcan dentro de un mismo nombre de establecimiento
+
+#promediar la poblacion de la poblacion maxima y minima
+#crear dummies para delimitar 3 grupos poblaciones
+#poner mas filtros como de razon social, nombre y sumar las poblaciones, agregarlas y promediarlas al df original.
+    
+class filtro_matriz:
+    
+    def __init__ (self, sector):
+         self.original = sector.copy() #copia del sector original para poder resetear
+         self.sector = sector.copy()   #copia del sector la cual sera modificada con los filtros aplicados
+         
+        #para extraer los valores de la poblacion ocupada y crear dos columnas independientes
+         self.sector[['poblacion_minima', 'poblacion_maxima']] = sector['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+         self.sector['poblacion_minima'] = pd.to_numeric(sector['poblacion_minima'], errors='coerce')
+         self.sector['poblacion_maxima'] = pd.to_numeric(sector['poblacion_maxima'], errors='coerce')
+         self.sector.drop(columns = 'per_ocu', inplace = True)   #elimina la columna de per_ocu dentro del data frame
 
 
+    def agrupaciones(self):
+        primer_filtro = self.sector.groupby('raz_social', as_index=False)[['poblacion_min', 'poblacion_max']].sum() #1er filtro
+        segundo_filtro = self.sector.groupby('nom_estab', as_index= False)[['poblacion_min', 'poblacion_max']].sum()#2do filtro
+        empresas_totales = self.sector['nom_estab'].nunique() #para quitar todas las empresas por nombre de establecimiento que no se parezcan
+        #sector['Poblacion_promedio'] = sector[['poblacion_minima', 'poblacion_maxima']].mean(axis=1) #calcula el prmedio de las columnas en una nueva  
+        #para promediar las columnas de los valores y crear solo una columna
+        #sector['Poblacion_promedio'] = sector[['poblacion_min', 'poblacion_max']].mean(axis=1)
+        
+        return primer_filtro, segundo_filtro, empresas_totales #variables regresadas de las que fueron creadas.
+    
+
+###############################################################################
+"Para llamar las clases de las funciones a utilizar" #primera clase 
+
+#para llamar funciones y valores asignadas a esta clase de estados de la matriz
+stats = MatrixStats()
+stats.matrix_stats(sector)
+
+#para validar las funciones de la clase de estados de la matriz
+stats.first_values
+stats.duplicados
+stats.poblacion
+stats.dimension
+stats
+
+###############################################################################
+"Para llamar las clases de las funciones a utilizar" #segunda clase 
+
+#para llamar la clase con las funciones de conteo de empresas con valores de 251 y mas
+conteo_instancia = Conteo(sector)
+total_empresas_grandes, filtrados = conteo_instancia.empresas_valores_atipicos()
+
+#para validar las funciones de esta clase de conteo
+total_empresas_grandes
+filtrados
+
+###############################################################################
+"Para llamar las clases de las funciones a utilizar" #tercera clase 
+
+#para llamar la clase con las funciones de filtrado del data frame
+filtros = filtro_matriz(sector)
+primer_filtro, segundo_filtro, empresas_totales  = filtros.agrupaciones()
+
+#funciones de la clase de filtros (corregir tiene bastantes errores)
+primer_filtro
+segundo_filtro
+empresas_totales
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+#estadisticas descriptivas de pandas 
+.count #para ver el numero de observaciones sin NA
+.sum   #suma de los valores
+.mean  #media de valores
+.median #mediana aritmetica de los valores
+.min #minimo 
+.max #maximo 
+.mode #modo
+.abs #valor absoluto
+.prod #producto de los valores
+.std #desviacion estandar
+.var #varianza imparcial
+cummin #minimo acumulativo
+cummax #maximo acumulativo
+cumprod #producto acumulativo
+cumsum #suma acumulada
+
+#para conocer los valores detallados de una columna o de dos columnas
+Comercio_al_por_Menor.agg({"poblacion_maxima": ["min","max","median","count"], 
+                           "poblacion_minima":["min","max","median","var"] }) #los valores deben ser numericos
+
+###############################################################################
+
+#orden para poder agrupar por columnas 
+# FLUJOS DE TRABAJO
+
+#1) filtrar
+#2) agrupar
+#3) aplicar
+#4)combinar
+
+"estos pasos se realizan juntos en pandas"
+
+#PARA HACER AGRUPACIONES
+
+#Filtrar   Comercio_al_por_Menor[["poblacion_minima, "poblacion_maxima"]] , 
+# agrupar por poblacion y luego  calcular para cada grupo
+
+Comercio_al_por_Menor[["poblacion_minma", "poblacion_maxima"]].groupby("nom_estab").mean() #deben ser numericos
+
+###############################################################################
+
+#flujo de trabajo 2
+
+#1) agruapr
+#2) filtrar
+#3) aplicar
+#4) combinar
+
+#promedio de la poblacion maxima de cada nombre del establecimiento
+Comercio_al_por_Menor.groupby("nom_estab")["poblacion_maxima"].mean() 
+
+###############################################################################
+
+#agrupar todo el data frame
+#AGRUPAR POR COLUMNAS
+
+#1) Agrupar
+#2) Filtrar
+#3) Aplicar
+#4) Comnbinar
+
+#no lo puede calcular porque esta mezclado con otro tipo de variables
+Comercio_al_por_Menor.groupby("poblacion_maxima").mean() 
+
+#calcula el valor de solo variables numericas, calculados para todas las variables numericas del data frame completo
+Comercio_al_por_Menor.groupby("poblacion_maxima").mean(numeric_only = True) #solo variables de tipo int o float
+
+#si se quiere filtrar, conforme a la poblacion minima
+Comercio_al_por_Menor.groupby("poblacion_maxima").mean(numeric_only = True)["poblacion_minima"]
+
+"Metodo groupby por dos columnas"
+
+#1) Agrupar
+#2) Filtrar
+#3) Aplicar
+#4) Comnbinar
+
+#se agrupa las variables conforme a dos columnas pero deben ser numericas
+#las primeras dos son las filas y la tercera es el promedio del codigo de la actividad
+Comercio_al_por_Menor.groupby(["poblacion_minima", "poblacion_maxima"])["codigo_act"].mean()
+
+Comercio_al_por_Menor.groupby(["nom_estab", "raz_social"])["poblacion_maxima"].mean()
 
 
+Comercio_al_por_Menor.groupby("nom_estab")["poblacion_maxima"].count()
+Comercio_al_por_Menor.groupby("nom_estab")["nom_estab"].count()
+
+Comercio_al_por_Menor.groupby("nom_estab")[ "poblacion_minima"].count()
+
+Comercio_al_por_Menor["per_ocu"].value_counts() #cuenta cuanto hay de cada variable de esa columna
+
+###############################################################################
+
+#para quitar NaN o valores nulos en el data frame
+
+#para ver que valores son nulos o tienen NaN en esa columna seleccionada
+Comercio_al_por_Menor["raz_social"].isnull()
+Comercio_al_por_Menor["raz_social"].isnull().sum() #suma los valores que tienen la condicion anterior
+
+Comercio_al_por_Menor.dropna().head() #quita las filas que contengan un NaN en alguna variable de ese individuo y muestra los primeros valores de ese df con la correccion
+Comercio_al_por_Menor.dropna(inplace = True)
+
+Comercio_al_por_Menor.dropna(subset = ["nom_estab", "raz_social"], inplace = True) #quita los NaN de esas columnas
+Comercio_al_por_Menor.fillna(0, inplace = True) #cambia los NaN por 0 en el df y modifica el original
+Comercio_al_por_Menor.fillna("sin nombre", inplace = True) #cambia los NaN por sin nombre
