@@ -1,0 +1,725 @@
+#Serie de tiempo  /  tipo de cambio
+
+
+import numpy as np  #conocer bien la libreria
+import pandas as pd #conocer bien la libereria
+import matplotlib.pyplot as plt #conocer bien la libreria
+import scipy.stats as st #conocer bien la libereria
+import importlib
+from statsmodels.tsa.stattools import acf
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt, ExponentialSmoothing
+import seaborn as sns
+from scipy.stats import norm, shapiro, anderson, jarque_bera, probplot
+
+
+#se cargan los datos
+directorio ='C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'   #ruta de consulta donde se alojan los datos
+path = directorio  #se genera una funcion dond esta la ruta, el nombre del archivo y su fomrato
+raw_data = pd.read_csv(path)
+
+raw_data = raw_data[["Fecha","Cierre","Apertura"]].fillna(0)
+raw_data
+
+#para convertirla a serie de tiempo:
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)  # Cambia a True si las fechas están en formato DD/MM/YYYY
+# Renombrar columna para facilitar uso
+raw_data['fecha'] = raw_data['Fecha']  # Crea una columna con nombre en minúsculas (más coherente con el resto del código)
+# Asignar la columna 'Cierre' a una nueva columna 'cierre' en minúsculas
+raw_data['cierre'] = raw_data['Cierre']
+# Ordenar por fecha
+raw_data = raw_data.sort_values(by='fecha', ascending=True)
+# Calcular la columna de cierre anterior (desplazada)
+raw_data['close_previous'] = raw_data['cierre'].shift(1)
+# Calcular rendimiento diario
+raw_data['rendimiento'] = raw_data['cierre'] / raw_data['close_previous'] - 1
+# Eliminar filas con NaN (por el shift)
+raw_data = raw_data.dropna()
+# Reiniciar índice
+raw_data = raw_data.reset_index(drop=True)
+# Mostrar el resultado final
+print(raw_data.head())
+
+
+
+# Asegurar que la columna 'fecha' sea el índice (si no lo hiciste ya)
+raw_data.set_index('fecha', inplace=True)
+# Crear el gráfico
+plt.figure(figsize=(12, 6))
+plt.plot(raw_data['cierre'], label='Tipo de cambio USD/MXN', color='blue')
+# Personalizar el gráfico
+plt.title('Evolución del tipo de cambio USD/MXN')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+# Mostrar
+plt.show()
+
+
+"Suavizamiento"
+#Suavizamiento exponencial simple
+#Suavizamiento exponencial doble
+#Metodo Holt Winters
+#pronostico puntual y por intervalos
+
+"Suavizamiento exponecial simple"
+
+# Ajustar modelo SES
+ses_model = SimpleExpSmoothing(raw_data['cierre']).fit(smoothing_level=0.2, optimized=False)
+ses_pred = ses_model.fittedvalues
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['cierre'], label='Original')
+plt.plot(ses_pred, label='Suavizamiento Exponencial Simple', color='orange')
+plt.title('Suavizamiento Exponencial Simple')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+"Suavizamiento exponencial doble" #Holt
+
+from statsmodels.tsa.holtwinters import Holt
+
+# Ajustar modelo Holt
+holt_model = Holt(raw_data['cierre']).fit(smoothing_level=0.2, smoothing_slope=0.1, optimized=False)
+holt_pred = holt_model.fittedvalues
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['cierre'], label='Original')
+plt.plot(holt_pred, label='Suavizamiento Exponencial Doble (Holt)', color='green')
+plt.title('Suavizamiento Exponencial Doble - Holt')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+"Suavizamiento Holt Winters "
+# Ajustar modelo Holt-Winters (sin estacionalidad explícita, para datos diarios)
+hw_model = ExponentialSmoothing(
+    raw_data['cierre'],
+    trend='add',
+    seasonal=None,  # Cambia a 'add' o 'mul' si hay estacionalidad
+    damped_trend=True
+).fit()
+
+hw_pred = hw_model.fittedvalues
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['cierre'], label='Original')
+plt.plot(hw_pred, label='Holt-Winters', color='red')
+plt.title('Método de Holt-Winters')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+###############################################################################
+
+
+"Calculo de normalidad"
+
+"Variables aleatorias"
+
+"calculo de todas las distribuciones"
+
+import numpy as np
+import pandas as pd
+import matplotlib as mpl
+import scipy 
+import importlib
+import matplotlib.pyplot as plttrat
+from scipy.stats import skew, kurtosis, chi2 
+
+size = 10**6
+grados_libertad = 9
+distribucion = 'normal' #tipo de distribucion
+dist_type = 'simulated RV' #real cuystom
+
+#calculo de distribuciones con condicionales.
+if distribucion == 'normal':
+    x = np.random.standard_normal(size)
+    x_description = dist_type + ' ' + distribucion
+elif distribucion == 'exponential':
+    x = np.random.standard_exponential(size)
+    x_description = dist_type + ' ' + distribucion
+elif distribucion == 'uniform':
+    x = np.random.uniform(0,1,size)
+    x_description = dist_type + ' ' + distribucion
+elif distribucion == 'student':
+    x = np.random.standard_t(df= grados_libertad , size = size  )
+    x_description = dist_type + ' ' + distribucion + '| grados de libertad = ' + str(grados_libertad) 
+elif distribucion == 'chi-square':
+    x = np.random.chisquare(df= grados_libertad, size=size)
+    x_description = dist_type + ' ' + distribucion + '| grados de libertad = ' + str(grados_libertad) 
+    
+"Meta crear un test de normalidad de Jaeque Bera"
+
+#calculo de metricas estadisticas
+media_x = np.mean(x) #momento 1
+desviacion_estandar_x = np.std(x) #momento 2
+skewness_x = skew(x) #momento 3
+curtosis_x = kurtosis(x) #momento 4
+test_jarque_bera = size/6*(skewness_x ** 2 + 1/4 * curtosis_x ** 2) #test de normalidad
+p_value_x = 1 - chi2.cdf(test_jarque_bera, df = 2) #p value
+normal_X =(p_value_x > 0.05) #debe ser un jarque bera > 6 
+
+"El p-value es un parametro que sirve para descartar o no la hipotesis nula"
+"por lo que mide la consistencia de los datos con respecto a la prueba"
+"Si p-value > 0.05 hipotesis alternativa, se rechaza la hipotesis nula, por lo que hay diferencia significativa"
+"Si p-value < 0.05 hipotesis nula aceptada, no se puede concluir que hay una diferencia significativa"
+"superior a 0.05 no significativo / inferior a 0.05 significativo"
+
+#analisis de datos 
+print(x_description)
+print("la media de la variable es" , media_x)
+print("la desviacion estandar es ", desviacion_estandar_x)
+print("la skewness es ", skewness_x)
+print("la curtosis es ", curtosis_x)
+print("el valor arrojado del test de normalidad es ", test_jarque_bera)
+print("el p value es ", p_value_x)
+print("es una normal? " , normal_X)
+
+
+#analisis de datos 2 / otra forma de escribirlos es: 
+print(x_description)
+print("la media de la variable es" + str(media_x))
+print("la desviacion estandar es " + str(desviacion_estandar_x))
+print("la skewness es " + str(skewness_x))
+print("la curtosis es " + str(curtosis_x))
+print("el valor arrojado del test de normalidad es " + str(test_jarque_bera))
+print("el p value es " + str(p_value_x))
+print("es una normal? "  + str(normal_X))
+
+
+#graficacion del histograma
+plt.figure()
+plt.hist(x, bins=100)
+plt.title(x_description)
+plt.show()
+
+
+###############################################################################
+
+"Prueba de normalidad"
+
+# Definir el directorio donde se encuentran los archivos
+directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'  
+path = directorio + ric + ".csv" # Leer el archivo CSV
+raw_data = pd.read_csv(path)  # Entrada para leer csv
+
+#mu */- 1.64 * sigma para  90% confiaza
+#mu +/- 1.96 * sigma para  95% confianza
+
+###############################################################################
+#creacion de la serie de tiempo
+#creacion del data frame y los vectores de precios para el rendimiento
+t = pd.DataFrame()  # Crear un data frame vacio
+
+# Proceso de datos para los calculos
+#si voy a meter una accion americana o extrangera cambiar Fecha a / Date  y Cierre a / Close
+t["date"] = pd.to_datetime(raw_data["Fecha"], dayfirst=True )  # Convertir la columna "Date" a serie de tiempo
+t["close"] = raw_data["Cierre"]  # Asignar la columna "Close"
+t = t.sort_values(by="date", ascending=True)  # Ordenar por fecha
+t["close_previous"] = t["close"].shift(1)  # Crear columna del cierre anterior
+
+# Calcular el rendimiento del activo
+t["return_close"] = t["close"] / t["close_previous"] - 1
+t = t.dropna()  # Eliminar filas con valores NaN
+t = t.reset_index(drop=True)  # Reiniciar el Ã­ndice
+
+######################## Funcion del objeto simulador #########################
+
+class SimulationInputs:
+    def __init__(self):
+        self.df = None
+        self.scale = None
+        self.mean = None
+        self.std = None
+        self.rv_type = None
+        self.size = None
+        self.decimals = None
+
+class Simulator:
+    # Constructor
+    def __init__(self, inputs):
+        self.inputs = inputs
+        self.str_title = None
+        self.vector = None
+        self.mean = None
+        self.volatility = None
+        self.skewness = None
+        self.kurtosis = None
+        self.jb_stat = None
+        self.p_value = None
+        self.is_normal = None
+        
+    def generate_vector(self):
+        self.str_title = self.inputs.rv_type
+        if self.inputs.rv_type == 'standard_normal':
+            self.vector = np.random.standard_normal(self.inputs.size)
+        elif self.inputs.rv_type == 'normal':
+            self.vector = np.random.normal(self.inputs.mean, self.inputs.std, self.inputs.size)
+        elif self.inputs.rv_type == 'student':
+            self.vector = np.random.standard_t(df=self.inputs.df, size=self.inputs.size)
+            self.str_title += f' df={self.inputs.df}'
+        elif self.inputs.rv_type == 'uniform':
+            self.vector = np.random.uniform(size=self.inputs.size)
+        elif self.inputs.rv_type == 'exponential':
+            self.vector = np.random.exponential(scale=self.inputs.scale, size=self.inputs.size)
+            self.str_title += f' scale={self.inputs.scale}'
+        elif self.inputs.rv_type == 'chi-squared':
+            self.vector = np.random.chisquare(df=self.inputs.df, size=self.inputs.size)
+            self.str_title += f' df={self.inputs.df}'
+            
+    def compute_stats(self):
+        self.mean = st.tmean(self.vector)
+        self.volatility = st.tstd(self.vector)
+        self.skewness = st.skew(self.vector)
+        self.kurtosis = st.kurtosis(self.vector)
+        self.jb_stat = self.inputs.size / 6 * (self.skewness**2 + 1/4 * self.kurtosis**2)
+        self.p_value = 1 - st.chi2.cdf(self.jb_stat, df=2)
+        self.is_normal = (self.p_value > 0.05)  # Equivalente a jb < 6
+        
+    def plot(self):
+        self.str_title += f'\nmean={np.round(self.mean, self.inputs.decimals)} | volatility={np.round(self.volatility, self.inputs.decimals)}' \
+                          f'\nskewness={np.round(self.skewness, self.inputs.decimals)} | kurtosis={np.round(self.kurtosis, self.inputs.decimals)}' \
+                          f'\nJB stat={np.round(self.jb_stat, self.inputs.decimals)} | p-value={np.round(self.p_value, self.inputs.decimals)}' \
+                          f'\nis_normal={self.is_normal}'
+        plt.figure()
+        plt.hist(self.vector, bins=100)
+        plt.title(self.str_title)
+        plt.show()
+
+################################ Inputs para simulacion #######################
+inputs = SimulationInputs()
+inputs.rv_type = ric + '| real time '
+inputs.decimals = 5  # Decimales a mostrar
+
+# Calculos y simulacion.
+sim = Simulator(inputs)
+sim.vector = t['return_close'].values # Generar vector
+sim.inputs.size = len(sim.vector)
+sim.str_title = sim.inputs.rv_type
+sim.compute_stats()  # Calcular estadisticas
+sim.plot()  # Graficar
+
+#valores calculados
+rendimiento_diario = sim.mean #calculo de la media
+rendimiento_diario = rendimiento_diario * 100
+rendimiento_anual = sim.mean * 252 #se calcula de la media anualizada (se multiplica por los dias de mercado 252)
+volatilidad_diaria =sim.volatility #calculo de volatilidad
+volatilidad_diaria = volatilidad_diaria * 100
+volatilidad_anual = sim.volatility * np.sqrt(252)  #calculo de la volatilidad anualizada
+#volatilidad * raiz (T) o  tambien (volatilidad * 16 (raiz cuadrada de 256 = 16))
+
+
+"para el calculo sharpe" #el cociente debe ser 2 o mayor en una estrategia de inversion.
+#se pide que sea mayor a 2 porque entonces, los rendimientos que se obtienen, van a ser positivos.
+#ya que en 2 todo el intervalo de confianza va ser positivo 
+#( sharpe =  mu / sigma )
+#sharpe mayor a 2 es suponer que los rendimientos son normales 
+#por lo tanto el intervalo de confianza es totalmente positivo
+
+#Segun el despeje:
+
+"mu / sigma >2 "
+"mu > 2 * sigma "
+"mu - 2 sigma > 0 "  #mu - 2 sigma es positivo
+
+#Por lo tanto con el sharpe > 2 ,  el rendimiento que se ofrece es positivo en un 95% de los casos (intervalo de confianza)
+#siendo diferente al calculado anteriormente, que es el de mean * 252 (media anaulizada) , siendo mas la media aproximada
+#sharpe ratio, se usa como parametro para tener mayor precision sobre el rendimiento real, teniendo en cuenta los intervalos de confianza
+#suponiendo que los rendimientos son normales o siguen un movimiento browniano
+
+
+
+#se calcula media anualizada /  volatilidad anualizada
+sharpe_ratio = sim.mean *252 / (sim.volatility*np.sqrt(252))
+sharpe_ratio
+
+#analisis de metricas
+print("Se tiene un rendimiento diario de " , rendimiento_diario, "%")
+print("Se tiene una volatilidad diaria de ", volatilidad_diaria,"%")
+print("Tenemos un rendimiento esperado anual aproximado de ", rendimiento_anual ,"%" )
+print("Dada la volatilidad anual del activo en", volatilidad_anual, "%")
+print("Tenemos un sharpe ratio de ", sharpe_ratio, "%")
+print("Tiene skewness positiva por que la gran mayoria de los dias son positivos")
+print("Tiene media positiva porque las ganancias suelen ser positivas")
+print("La curtosis en exceso es positiva, tiene colas muy largas tiene muchas anomalias en cuanto a los precios mas positivos ")
+#este parametro sirve para ver que tan significativa es la media comparada con la volatilidad
+
+sharpe = sharpe_ratio *100
+
+print("Se interpreta por cada unidada de riesgo que se aumenta 1% de volatilidad extra o riesgo, se va ganar un", sharpe_ratio ,"% de rendimiento extra")
+
+
+#se busca que sea mayor a 1 para poder tener un rendimiento arriba del punto de riesgo, justificando el riesgo
+
+#Sharpe de mas de 2 / sea 5 o 10 es excelente entre mayor mejor.
+#porque el intervalo de confianza es mas pequeño por lo que hay mayor certeza sobre la media a largo plazo
+
+#Parametros importantes
+
+#media como parametro de media aproxiamada
+#sharpe ratio como parametro de media real , teniendo en cuenta el intervalo de confianza
+#volatilidad
+
+###############################################################################
+
+#para construir la serie de tiempo , es para el comportamiento del activo de su precio a lo largo del tiempo, no del rendimiento
+# / x =  tiempo (fecha) , y = precio (precio cierre) , grid = para que se vean rallitas en la grafica (True)
+
+plt.figure()
+
+#funcionalidad de dataframe .plot, para graficar diferentes tipos de graficas:
+    #kind = "line", "bar", "hist", "area", "pie", "scatter", "hexbin", "box", "density", "kde"
+t.plot(kind='line', x='date', y='close', grid=True, color='orange',
+       label=ric, title='Serie de tiempo de precio cierre ' + ric)
+
+plt.show()
+
+#comparar SPY con el ^SPY / indice vs tracker , para que que tanto lo replica realmente.
+#si se mueve el SPY se espera que se mueva el tracker ETF ( ^SPY)
+
+###############################################################################
+"Para los correlogramas"
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.stattools import acf
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt, ExponentialSmoothing
+
+serie = raw_data['Cierre']
+
+ses_model = SimpleExpSmoothing(serie).fit(smoothing_level=0.2, optimized=False)
+ses_fitted = ses_model.fittedvalues
+
+# Double Exponential Smoothing (Holt)
+holt_model = Holt(serie).fit(smoothing_level=0.2, smoothing_slope=0.1, optimized=False)
+holt_fitted = holt_model.fittedvalues
+
+# Holt-Winters (sin estacionalidad)
+hw_model = ExponentialSmoothing(serie, trend='add', seasonal=None, damped_trend=True).fit()
+hw_fitted = hw_model.fittedvalues
+
+
+def plot_correlograma(serie, titulo, lags=30):
+    plt.figure(figsize=(10, 4))
+    plot_acf(serie.dropna(), lags=lags, alpha=0.05)
+    plt.title(titulo)
+    plt.tight_layout()
+    plt.show()
+
+
+plot_correlograma(serie, "Correlograma - Serie Original (Cierre USD/MXN)")
+plot_correlograma(ses_fitted, "Correlograma - Suavizamiento Exponencial Simple")
+plot_correlograma(holt_fitted, "Correlograma - Suavizamiento Exponencial Doble (Holt)")
+plot_correlograma(hw_fitted, "Correlograma - Método Holt-Winters")
+
+
+###############################################################################
+"Para las pruebas de normalidad"
+
+x = raw_data['Cierre'].values
+
+# --- Shapiro-Wilk ---
+stat_shapiro, p_shapiro = shapiro(x[:5000])  # Máximo 5000 observaciones
+
+# --- Anderson-Darling ---
+result_ad = anderson(x)
+
+# --- Jarque-Bera ---
+stat_jb, p_jb = jarque_bera(x)
+
+# ===============================
+# 📃 RESULTADOS
+# ===============================
+print("==== PRUEBA DE NORMALIDAD ====")
+print("\n🔹 Shapiro-Wilk:")
+print(f"Estadístico: {stat_shapiro:.4f}, p-valor: {p_shapiro:.4f}")
+print("¿Distribución normal? ", "Sí" if p_shapiro > 0.05 else "No")
+
+print("\n🔹 Anderson-Darling:")
+print(f"Estadístico: {result_ad.statistic:.4f}")
+for i in range(len(result_ad.critical_values)):
+    print(f"  Nivel de significancia {result_ad.significance_level[i]}%: {result_ad.critical_values[i]}")
+print("¿Distribución normal?", "No" if result_ad.statistic > result_ad.critical_values[2] else "Sí")
+
+print("\n🔹 Jarque-Bera:")
+print(f"Estadístico: {stat_jb:.4f}, p-valor: {p_jb:.4f}")
+print("¿Distribución normal? ", "Sí" if p_jb > 0.05 else "No")
+
+###############################################################################
+
+x = raw_data['Cierre'].values
+
+# ===============================
+# 🧪 PRUEBAS DE NORMALIDAD
+# ===============================
+# Shapiro-Wilk (limitado a 5000 datos)
+stat_shapiro, p_shapiro = shapiro(x[:5000])
+
+# Anderson-Darling
+result_ad = anderson(x)
+
+# Jarque-Bera
+stat_jb, p_jb = jarque_bera(x)
+
+# ===============================
+# 📊 HISTOGRAMA CON CURVA NORMAL
+# ===============================
+plt.figure(figsize=(10, 5))
+sns.histplot(x, bins=50, kde=False, color='lightblue', stat='density', label='Datos reales')
+
+# Curva normal teórica (media y std de la muestra)
+mu, std = np.mean(x), np.std(x)
+xmin, xmax = plt.xlim()
+x_norm = np.linspace(xmin, xmax, 100)
+plt.plot(x_norm, norm.pdf(x_norm, mu, std), 'r--', label='Normal teórica')
+
+plt.title("Histograma del Precio de Cierre USD/MXN con Distribución Normal")
+plt.xlabel("Precio de cierre")
+plt.ylabel("Densidad")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ===============================
+# 📈 QQ PLOT
+# ===============================
+plt.figure(figsize=(6, 6))
+probplot(x, dist="norm", plot=plt)
+plt.title("QQ Plot - Precio de Cierre USD/MXN")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ===============================
+# 📃 RESULTADOS ESTADÍSTICOS
+# ===============================
+print("==== RESULTADOS DE PRUEBAS DE NORMALIDAD ====\n")
+
+print("🔹 Shapiro-Wilk:")
+print(f"  Estadístico = {stat_shapiro:.4f}, p-valor = {p_shapiro:.4f}")
+print("  ¿Distribución normal?:", "Sí ✅" if p_shapiro > 0.05 else "No ❌")
+
+print("\n🔹 Anderson-Darling:")
+print(f"  Estadístico = {result_ad.statistic:.4f}")
+for i in range(len(result_ad.critical_values)):
+    print(f"    Nivel de significancia {result_ad.significance_level[i]}%: {result_ad.critical_values[i]}")
+print("  ¿Distribución normal?:", "No ❌" if result_ad.statistic > result_ad.critical_values[2] else "Sí ✅")
+
+print("\n🔹 Jarque-Bera:")
+print(f"  Estadístico = {stat_jb:.4f}, p-valor = {p_jb:.4f}")
+print("  ¿Distribución normal?:", "Sí ✅" if p_jb > 0.05 else "No ❌")
+
+###############################################################################
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from arch import arch_model
+
+raw_data['log_ret'] = np.log(raw_data['Cierre'] / raw_data['Cierre'].shift(1))
+returns = raw_data['log_ret'].dropna() * 100  # % rendimientos
+
+# ===============================
+# 🔧 MODELO ARCH(1)
+# ===============================
+arch_modelo = arch_model(returns, vol='ARCH', p=1)
+arch_fit = arch_modelo.fit(disp='off')
+arch_cond_vol = arch_fit.conditional_volatility
+
+# ===============================
+# 🔧 MODELO GARCH(1,1)
+# ===============================
+garch_modelo = arch_model(returns, vol='GARCH', p=1, q=1)
+garch_fit = garch_modelo.fit(disp='off')
+garch_cond_vol = garch_fit.conditional_volatility
+
+# ===============================
+# 📈 GRÁFICAS
+# ===============================
+plt.figure(figsize=(14, 5))
+plt.plot(returns.index, returns, label='Rendimientos log (%)', color='gray')
+plt.title('Serie de Rendimientos USD/MXN')
+plt.ylabel('Rendimiento (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ARCH
+plt.figure(figsize=(14, 5))
+plt.plot(arch_cond_vol, label='Volatilidad Condicional - ARCH(1)', color='blue')
+plt.title('Volatilidad estimada con ARCH(1)')
+plt.ylabel('Volatilidad (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# GARCH
+plt.figure(figsize=(14, 5))
+plt.plot(garch_cond_vol, label='Volatilidad Condicional - GARCH(1,1)', color='red')
+plt.title('Volatilidad estimada con GARCH(1,1)')
+plt.ylabel('Volatilidad (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ===============================
+# 📃 RESUMEN DE MODELOS
+# ===============================
+print("\n=== ARCH(1) Summary ===")
+print(arch_fit.summary())
+
+print("\n=== GARCH(1,1) Summary ===")
+print(garch_fit.summary())
+
+###############################################################################
+
+"ARMA Y ARIMA"
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.arima.model import ARIMAResults
+
+# Ajustar modelo ARMA(2,2)
+# ===============================
+arma_model = ARIMA(returns, order=(2, 0, 2))
+arma_fit = arma_model.fit()
+
+# ===============================
+# Ajustar modelo ARIMA(2,1,2)
+# ===============================
+arima_model = ARIMA(returns, order=(2, 1, 2))
+arima_fit = arima_model.fit()
+
+# ===============================
+# Graficar rendimientos y predicciones
+# ===============================
+plt.figure(figsize=(14, 6))
+plt.plot(returns.index, returns, label='Rendimientos logarítmicos reales', color='gray')
+
+# Predicción ARMA in-sample
+arma_pred = arma_fit.predict(start=returns.index[0], end=returns.index[-1])
+plt.plot(arma_pred.index, arma_pred, label='ARMA(2,2)', color='blue')
+
+# Predicción ARIMA in-sample (nivel)
+arima_pred = arima_fit.predict(start=returns.index[0], end=returns.index[-1], typ='levels')
+plt.plot(arima_pred.index, arima_pred, label='ARIMA(2,1,2)', color='red')
+
+plt.title('Modelos ARMA y ARIMA sobre Rendimientos Logarítmicos')
+plt.xlabel('Fecha')
+plt.ylabel('Rendimiento logarítmico')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ===============================
+# Mostrar resumen de modelos
+# ===============================
+print("=== Resumen ARMA(2,2) ===")
+print(arma_fit.summary())
+
+print("\n=== Resumen ARIMA(2,1,2) ===")
+print(arima_fit.summary())
+
+
+##############################################################################
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+from statsmodels.tsa.stattools import adfuller, kpss
+
+raw_data['log_ret'] = np.log(raw_data['Cierre'] / raw_data['Cierre'].shift(1))
+returns = raw_data['log_ret'].dropna()
+
+# ===============================
+# Prueba Augmented Dickey-Fuller (ADF)
+# ===============================
+adf_result = adfuller(returns)
+print('Augmented Dickey-Fuller Test:')
+print(f'  Estadístico ADF: {adf_result[0]:.4f}')
+print(f'  p-valor: {adf_result[1]:.4f}')
+print(f'  Número de retardos usados: {adf_result[2]}')
+print(f'  Número de observaciones usadas: {adf_result[3]}')
+print('  Valores críticos:')
+for key, value in adf_result[4].items():
+    print(f'    {key}: {value:.4f}')
+print('---------------------------------------')
+
+# ===============================
+# Prueba KPSS
+# ===============================
+kpss_result = kpss(returns, regression='c', nlags="auto")
+print('KPSS Test:')
+print(f'  Estadístico KPSS: {kpss_result[0]:.4f}')
+print(f'  p-valor: {kpss_result[1]:.4f}')
+print('  Valores críticos:')
+for key, value in kpss_result[3].items():
+    print(f'    {key}: {value:.4f}')
+print('---------------------------------------')
+
+# ===============================
+# Graficar serie y ACF
+# ===============================
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+# Serie temporal
+axes[0].plot(returns.index, returns, color='blue')
+axes[0].set_title('Rendimientos logarítmicos USD/MXN')
+axes[0].set_ylabel('Rendimiento log (%)')
+axes[0].grid(True)
+
+# Función de autocorrelación (ACF)
+sm.graphics.tsa.plot_acf(returns, lags=40, ax=axes[1])
+axes[1].set_title('Función de autocorrelación (ACF)')
+
+plt.tight_layout()
+plt.show()
+
+###############################################################################
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.stats.diagnostic import acorr_ljungbox
+
+
+lb_test = acorr_ljungbox(returns, lags=[10, 20], return_df=True)
+print("Test de Ljung-Box (autocorrelación en rendimientos):")
+print(lb_test)
+print("\nInterpretación: Si p-value es bajo (<0.05), hay autocorrelación significativa.")
+
+# Graficar autocorrelación para visualización
+from statsmodels.graphics.tsaplots import plot_acf
+plt.figure(figsize=(10,5))
+plot_acf(returns, lags=40)
+plt.title("Función de Autocorrelación (ACF) de los rendimientos")
+plt.show()
+
+print("Prueba de Ruido Blanco con Ljung-Box:")
+print(lb_test)
