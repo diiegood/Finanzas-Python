@@ -1,15 +1,64 @@
+"Filtrado de datos de INEGI" ##################################################
+###############################################################################
+"Nociones principales"
+#Comercio_al_por_Mayor es la matriz del sector limpia sobre la cual se va trabajar
+#Comercio_al_por_Mayor_informal es un data frame de todas las empresas informales (matriz de residuos)
+#Comercio_al_por_Mayor_original es la matriz orignal sin modificar
+#estadisticas_daframe son las estadisticas de la matriz limpia (Comercio_al_por_Mayor)
+
+#empresas formales se consideran aquellas que poseen razon social
+#empresas informales se consideran las que no poseen razon social por lo que muchas veces son pequeños (tiendas, )
+
+"Para cargar multiples librerias y generar una sola matriz" 
+
 import pandas as pd
 import os
 import numpy as np
 import re
 
-direccion = "J:\\Diego-files\\DENUE-datos\\bases_sucias"
-libreria =  "denue_serviciosesparcimiento_71.csv" #cambiar la libreria para ver cada sector
+direccion = "J:\Diego-files\DENUE-datos\DENUE-0525\Bases-sucias"
+librerias = ["denue_Otros_Servicios_81_1.csv",
+             "denue_Otros_Servicios_81_2.csv",
+             ]
+
+Comercio_al_por_Menor_lista = []
+
+for archivo in librerias:
+    lectura_Datos = os.path.join(direccion, archivo) 
+    Comercio_al_por_menor1 = pd.read_csv(lectura_Datos, encoding='latin1')
+    Comercio_al_por_Menor_lista.append(Comercio_al_por_menor1) #funcion para agregar a la lista vacia los datos
+    
+
+#se combinan los data frames en uno
+Comercio_al_por_Mayor = pd.concat(Comercio_al_por_Menor_lista, ignore_index=True)
+Comercio_al_por_Mayor_original = pd.concat(Comercio_al_por_Menor_lista, ignore_index=True)
+
+###############################################################################
+###############################################################################
+"Para cargar una sola lectura de datos"
+
+import pandas as pd
+import os
+import numpy as np
+import re
+
+#para cargar una sola libreria
+direccion = "J:\Diego-files\DENUE-datos\DENUE-0525\Bases-sucias"
+libreria =  "denue_Actividades_gubernamentales_93.csv" #cambiar la libreria para ver cada sector
+
 lectura_Datos = os.path.join(direccion, libreria)
 Comercio_al_por_Mayor = pd.read_csv(lectura_Datos, encoding='latin1')  #matriz que sera modificada 
 Comercio_al_por_Mayor_original = pd.read_csv(lectura_Datos, encoding='latin1') #matriz original 
 
-###############################################################################
+
+#OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+"Aqui empieza el codigo"#OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+
+#data frame con todas las empresas informales(bruto, falta filtrar)
+Comercio_al_por_Mayor_informal = Comercio_al_por_Mayor_original[
+    Comercio_al_por_Mayor_original['raz_social'].isna()
+][['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act',
+    'nombre_act', 'entidad', 'municipio', 'id']]
 
 
 "Analisis de la matriz original"
@@ -28,6 +77,13 @@ Comercio_al_por_Mayor = Comercio_al_por_Mayor[['clee', 'nom_estab', 'raz_social'
 
 "Para poder conocer el total de las empresas que hay"
 #el primero cuenta los individuos que no se repiten por variable de nombre de establecimiento, pero pueden tener la misma razon social
+
+#incluyendo las empresas no tan establecidas o formalizadas (en su mayoria micro o negocio propio)
+Empresas_formales_e_informales = Comercio_al_por_Mayor_original['nom_estab'].drop_duplicates() 
+Empresas_formales_e_informales = len(Empresas_formales_e_informales) #calcular las empresas unicas
+
+#empresas que realmente no se repiten porque tienen diferente razon social
+empresas_formales = Comercio_al_por_Mayor_original['raz_social'].nunique() 
 
 
 ###############################################################################
@@ -125,10 +181,8 @@ valores_residuales = len(valores_residuales)
 ###############################################################################
 ###############################################################################
 
-
 "Transformacion de los datos de variable a dummis"  
 #Agrupa en el dataframe ya filtrado posteriormente
-
 
 # Dummies según la columna "promedio" actualizada
 
@@ -158,25 +212,27 @@ Comercio_al_por_Mayor["empresa_grande"] = (
 
 ###############################################################################
 ###############################################################################
+"Para exportar a Excel los data frames creados con las matrices posteriormente creadas de:"
 
-
-
-"Para exportar a Excel"
+#matriz limpia del sector con el total empresas que son formales de ese sector (primera hoja de excel)
+#matriz de empresas grandes de ese sector   (segunda hoja de excel) 
+#matriz de empresas medianas de ese sector  (tercera hoja de excel)
+#matriz de empresas pequeñas  de ese sector (cuarta hoja de excel)
+#matriz de empresas micro de ese sector     (quinta hoja de excel)
 
 import openpyxl
 import pandas as pd
 
 # Ruta de salida del archivo Excel
-ruta_salida = "J:\\Diego-files\\DENUE-datos\\bases_limpias\\DENUE_Servicios_esparcimiento_cultural.xlsx"
+ruta_salida = "J:\Diego-files\DENUE-datos\DENUE-0525\Bases-limpias\DENUE_Actividades_gubernamentales.xlsx"
 
 # Exportar varios DataFrames a un mismo archivo Excel en diferentes hojas
 with pd.ExcelWriter(ruta_salida, engine='openpyxl') as writer:
-    Comercio_al_por_Mayor.to_excel(writer, sheet_name='Servicios_esparcimiento_cultural', index=True)
+    Comercio_al_por_Mayor.to_excel(writer, sheet_name='Actividades_gubernamentales', index=True)
     grandes_empresas.to_excel(writer, sheet_name='Grandes Empresas', index=True)
     medianas_empresas.to_excel(writer, sheet_name='Medianas Empresas', index=True)
     pequeñas_empresas.to_excel(writer, sheet_name='Pequeñas Empresas', index=True)
     micro_empresas.to_excel(writer, sheet_name='Micro Empresas', index=True)
-
 
 
 #°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
@@ -185,23 +241,45 @@ with pd.ExcelWriter(ruta_salida, engine='openpyxl') as writer:
 
 
 "VERFICICAION DE LOS DATOS" ###################################################
+#Se observa un valor de la columna  para ver si coinciden con las columnas anteriores
+#Creacion de data frame nuevo sin modificar , salvo las filtrando columnas necesarias y agregando nuevas necesarias.
+
+
 Comercio_al_por_Mayor_original['per_ocu'].unique() #para conocer que valores estan contenidos dentro de la columna ("per_ocu")
 Comercio_al_por_Mayor_original['per_ocu'] = Comercio_al_por_Mayor_original['per_ocu'].replace({'251 y más personas': '251 a 500 personas'}) 
 
-Comercio_al_por_Mayor_original = Comercio_al_por_Mayor_original[['clee', 'nom_estab', 'raz_social', 'per_ocu','codigo_act', 
-                                               'nombre_act', 'entidad', 'municipio', 'id']].fillna(0) 
+#se realiza unn nuevo acomodo de la matriz con columnas de importancia
+Comercio_al_por_Mayor_original = Comercio_al_por_Mayor_original[['clee', 'nom_estab', 'raz_social', 
+                                                                 'per_ocu','codigo_act','nombre_act', 
+                                                                 'entidad', 'municipio', 'id']].fillna(0) 
+
+#se crean dos columnas del la matriz original con la poblacion maxima y minima para que sea comparable con las anteriores
 Comercio_al_por_Mayor_original[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Mayor_original['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
 
 
-"Verificacion de datos"
-#para ver cuantos bimbos hay en el data frame
-Market  = Comercio_al_por_Mayor_original[Comercio_al_por_Mayor_original["raz_social"] == "02DCC0038B "]
+###############################################################################
+###############################################################################
 
-Market_filtrado = Market.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima',"promedio","codigo_act", 'nom_estab', 'raz_social', 'nombre_act']].sum(inplace = True)
+#para verificar que no se repitan datos se filtra un valor por si solo, creando una matriz que filtre solo datos que lo tengan contenido  
+#para corroborrar si todos los valores del dato dan el numero total de los otros data frames y que no este agrupando de mas.
+#a su vez encontrar valores raros y poder identificarlos mas facilmente para ver si se estan filtrando o agrupando bien.
 
-Market['poblacion_minima'] = pd.to_numeric(Market['poblacion_minima'], errors='coerce')
-Market['poblacion_maxima'] = pd.to_numeric(Market['poblacion_maxima'], errors='coerce')
-Market["promedio"] = (Market["poblacion_maxima"] + Market["poblacion_minima"])/2
+dato_especificado = Comercio_al_por_Mayor_original[Comercio_al_por_Mayor_original["raz_social"] == "02DCC0038B "] #se filtra por razon social un valor especifico
+
+dato_especificado = dato_especificado.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima',
+                                             "promedio","codigo_act", 'nom_estab', 'raz_social', 
+                                             'nombre_act']].sum(inplace = True)    #se agrupa conteniendo esas columnas en el data frame
+
+
+#se generan nuevas columnas donde nos tenga los datos de la poblacion maxima,  minima y se calcula el promedio. 
+#(para ver si coincide con los cuadros limpios)
+dato_especificado['poblacion_minima'] = pd.to_numeric(dato_especificado['poblacion_minima'], errors='coerce')
+dato_especificado['poblacion_maxima'] = pd.to_numeric(dato_especificado['poblacion_maxima'], errors='coerce')
+dato_especificado["promedio"] = (dato_especificado["poblacion_maxima"] + dato_especificado["poblacion_minima"])/2
+
+
+
+
 
 
 
