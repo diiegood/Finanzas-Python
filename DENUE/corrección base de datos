@@ -1,0 +1,56 @@
+import pandas as pd
+import os
+import numpy as np
+from io import StringIO
+import csv  # Necesario para opciones de quote
+
+#para cargar una sola libreria
+direccion = "J:\Diego-files\Europa 2023.tsv"
+
+lectura_Datos = os.path.join(direccion)
+Europa_2023 = pd.read_csv(lectura_Datos)  
+Europa_2023_original = pd.read_csv(lectura_Datos)  
+Europa_2023.tail(45)
+Europa_2023.columns
+Europa_2023.dtypes
+
+#se separa la columna grande en varias columnas: 
+Europa_2023['geo\TIME_PERIOD\t'].unique()
+columna = r'geo\TIME_PERIOD\t'
+print(type(Europa_2023[columna]))  
+print(Europa_2023[columna].apply(type).value_counts())
+
+# Divide la columna en múltiples columnas usando el tabulador como separador
+nuevas_columnas = Europa_2023['geo\TIME_PERIOD\t'].astype(str).str.split('\t', expand=True)
+# Opcional: renombrar columnas con nombres más claros
+nuevas_columnas.columns = ['geo\Time period', '2015', '2016', '2017', '2018', '2019', '2021', '2023']
+# Combinar con el DataFrame original si quieres
+Europa_2023 = pd.concat([Europa_2023, nuevas_columnas], axis=1)
+
+Europa_2023.replace(':', np.nan, inplace=True)
+
+for col in ['2015', '2016', '2017', '2018', '2019', '2021', '2023']:
+    Europa_2023[col] = pd.to_numeric(Europa_2023[col])
+
+#para remplazar por NaN los valores de :
+columna = r'geo\TIME_PERIOD\t'
+# Convertir la columna a string
+Europa_2023[columna] = Europa_2023[columna].astype(str) #para conocer que valores estan contenidos dentro de la columna ("per_ocu")
+Europa_2023['geo\TIME_PERIOD\t'] = Europa_2023['geo\Time period', '2015', '2016', '2017', '2018', '2019', '2021', '2023'].replace({':': 'NaN'}) 
+
+
+Europa_2023.drop(columns='geo\TIME_PERIOD\t', inplace=True) 
+Europa_2023.head(45)
+Europa_2023.tail(45)
+
+
+###############################################################################
+
+"Para exportar a excel"
+ruta_salida = "J:\\Diego-files\\Europa 2023.xlsx"
+
+# Exportar varias hojas en un mismo archivo
+with pd.ExcelWriter(ruta_salida, engine='openpyxl') as writer:
+    Europa_2023.to_excel(writer, sheet_name='Europa 2023', index=True)
+
+###############################################################################
