@@ -1,0 +1,398 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+# Carga y preparación de datos (como tú ya tienes)
+directorio = 'C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'
+raw_data = pd.read_csv(directorio)
+
+raw_data = raw_data[["Fecha", "Cierre"]].fillna(0)
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)
+raw_data = raw_data.sort_values(by='Fecha', ascending=True)
+
+raw_data['Cierre previo'] = raw_data['Cierre'].shift(1)
+raw_data['rendimiento_log'] = raw_data['Cierre'] / raw_data['Cierre previo'] - 1
+raw_data = raw_data.dropna()
+raw_data = raw_data.reset_index(drop=True)
+raw_data = raw_data.drop("Cierre previo", axis=1)
+raw_data.set_index('Fecha', inplace=True)
+
+# Visualizamos la serie de rendimiento
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['rendimiento_log'])
+plt.title('Rendimiento diario USD/MXN')
+plt.show()
+
+# Para modelar ARIMA, chequeamos ACF y PACF
+fig, ax = plt.subplots(2,1, figsize=(12,8))
+plot_acf(raw_data['rendimiento_log'], ax=ax[0], lags=40)
+plot_pacf(raw_data['rendimiento_log'], ax=ax[1], lags=40)
+plt.show()
+
+# Ajuste del modelo ARIMA
+# Empezamos con un modelo ARIMA(1,0,1) básico (puedes ajustar los parámetros)
+modelo = ARIMA(raw_data['rendimiento_log'], order=(1,0,1))
+resultado = modelo.fit()
+
+# Resumen del modelo
+print(resultado.summary())
+
+# Graficar los valores observados y ajustados (fitted)
+plt.figure(figsize=(12,5))
+plt.plot(raw_data.index, raw_data['rendimiento_log'], label='Observado')
+plt.plot(raw_data.index, resultado.fittedvalues, color='red', label='Fitted')
+plt.title('Modelo ARMA(1,0,1) - Rendimiento logarítmico')
+plt.legend()
+plt.show()
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scipy.stats as stats
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch
+from scipy.stats import jarque_bera
+
+# --- Carga y preparación de datos ---
+directorio = 'C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'
+raw_data = pd.read_csv(directorio)
+
+raw_data = raw_data[["Fecha", "Cierre"]].fillna(0)
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)
+raw_data = raw_data.sort_values(by='Fecha', ascending=True)
+
+raw_data['Cierre previo'] = raw_data['Cierre'].shift(1)
+raw_data['rendimiento_log'] = raw_data['Cierre'] / raw_data['Cierre previo'] - 1
+raw_data = raw_data.dropna()
+raw_data = raw_data.reset_index(drop=True)
+raw_data = raw_data.drop("Cierre previo", axis=1)
+raw_data.set_index('Fecha', inplace=True)
+
+# --- Visualizamos la serie de rendimiento ---
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['rendimiento_log'])
+plt.title('Rendimiento diario USD/MXN')
+plt.show()
+
+# --- Chequeo ACF y PACF ---
+fig, ax = plt.subplots(2, 1, figsize=(12, 8))
+plot_acf(raw_data['rendimiento_log'], ax=ax[0], lags=40)
+plot_pacf(raw_data['rendimiento_log'], ax=ax[1], lags=40)
+plt.show()
+
+# --- Ajuste del modelo ARIMA(9,2,12) ---
+modelo = ARIMA(raw_data['rendimiento_log'], order=(9, 2, 12))
+resultado = modelo.fit()
+
+# --- Resumen del modelo ---
+print(resultado.summary())
+
+# --- Información del modelo ---
+log_likelihood = resultado.llf
+num_params = resultado.df_model + 1
+aic = resultado.aic
+
+print("\n--- Evaluación del Modelo ARIMA(9,2,12) ---")
+print(f"Log-verosimilitud (ln(L))   : {log_likelihood:.3f}")
+print(f"Número de parámetros (k)    : {num_params}")
+print(f"AIC                         : {aic:.3f}")
+
+# --- Gráfico de observados vs ajustados ---
+plt.figure(figsize=(12,5))
+plt.plot(raw_data.index, raw_data['rendimiento_log'], label='Observado')
+plt.plot(raw_data.index, resultado.fittedvalues, color='red', label='Fitted')
+plt.title('Modelo ARIMA(9,2,12) - Rendimiento logarítmico')
+plt.legend()
+plt.show()
+
+# ======================
+# Diagnóstico de residuos
+# ======================
+residuos = resultado.resid
+
+# Ljung-Box
+lb_test = acorr_ljungbox(residuos, lags=[1], return_df=True)
+print("\nLjung-Box test (lag=1):")
+print(lb_test)
+
+# Jarque-Bera
+jb_stat, jb_pval = jarque_bera(residuos)
+print(f"\nJarque-Bera test: JB stat = {jb_stat:.2f}, p-value = {jb_pval:.3f}")
+
+# ARCH test
+arch_stat, arch_pval, _, _ = het_arch(residuos)
+print(f"\nARCH Test: stat = {arch_stat:.2f}, p-value = {arch_pval:.3f}")
+
+# Skewness y Kurtosis
+skew_val = residuos.skew()
+kurt_val = residuos.kurtosis()
+print(f"\nSkewness  = {skew_val:.2f}")
+print(f"Kurtosis  = {kurt_val:.2f}")
+
+# === Gráficos
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scipy.stats as stats
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch
+from scipy.stats import jarque_bera
+
+# --- Cargar y preparar datos ---
+directorio = 'C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'
+raw_data = pd.read_csv(directorio)
+
+raw_data = raw_data[["Fecha", "Cierre"]].fillna(0)
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)
+raw_data = raw_data.sort_values(by='Fecha', ascending=True)
+
+raw_data['Cierre previo'] = raw_data['Cierre'].shift(1)
+raw_data['rendimiento_log'] = raw_data['Cierre'] / raw_data['Cierre previo'] - 1
+raw_data = raw_data.dropna().reset_index(drop=True).drop("Cierre previo", axis=1)
+raw_data.set_index('Fecha', inplace=True)
+
+# --- Ajustar modelo ARIMA ---
+modelo = ARIMA(raw_data['rendimiento_log'], order=(9, 2, 12))
+resultado = modelo.fit()
+
+# --- Residuos del modelo ---
+residuos = resultado.resid
+
+# === PRUEBAS ESTADÍSTICAS ===
+# Ljung-Box
+lb_test = acorr_ljungbox(residuos, lags=[1], return_df=True)
+
+# Jarque-Bera
+jb_stat, jb_pval = jarque_bera(residuos)
+
+# ARCH test
+arch_stat, arch_pval, _, _ = het_arch(residuos)
+
+# Skewness y Kurtosis
+skew_val = residuos.skew()
+kurt_val = residuos.kurtosis()
+
+# === MOSTRAR RESULTADOS DE LAS PRUEBAS ===
+print("📊 Pruebas estadísticas de los residuos:")
+print(f"➡ Ljung-Box (lag 1): Q={lb_test['lb_stat'].iloc[0]:.3f}, p-value={lb_test['lb_pvalue'].iloc[0]:.3f}")
+print(f"➡ Jarque-Bera: JB={jb_stat:.3f}, p-value={jb_pval:.3f}")
+print(f"➡ ARCH test: Stat={arch_stat:.3f}, p-value={arch_pval:.3f}")
+print(f"➡ Skewness = {skew_val:.2f}, Kurtosis = {kurt_val:.2f}")
+
+# === GRÁFICAS ===
+plt.figure(figsize=(16, 12))
+
+# Residuos
+plt.subplot(3, 2, 1)
+plt.plot(residuos, label='Residuos')
+plt.axhline(0, color='black', linewidth=1)
+plt.title('Serie de residuos')
+plt.legend()
+
+# Histograma + KDE
+plt.subplot(3, 2, 2)
+sns.histplot(residuos, kde=True, stat="density", color='skyblue')
+plt.title('Histograma + KDE de residuos')
+
+# ACF
+plt.subplot(3, 2, 3)
+plot_acf(residuos, lags=40, ax=plt.gca())
+plt.title('ACF de residuos')
+
+# PACF
+plt.subplot(3, 2, 4)
+plot_pacf(residuos, lags=40, ax=plt.gca())
+plt.title('PACF de residuos')
+
+# Q-Q plot
+plt.subplot(3, 2, 5)
+stats.probplot(residuos, dist="norm", plot=plt)
+plt.title('Q-Q plot de residuos')
+
+# Boxplot para detectar outliers y simetría
+plt.subplot(3, 2, 6)
+sns.boxplot(x=residuos, color='lightgreen')
+plt.title('Boxplot de residuos')
+
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+###############################################################################
+
+import numpy as np 
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch, normal_ad
+from scipy.stats import jarque_bera
+import seaborn as sns
+
+# Carga y preparación de datos
+directorio = 'C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'
+raw_data = pd.read_csv(directorio)
+
+raw_data = raw_data[["Fecha", "Cierre"]].fillna(0)
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)
+raw_data = raw_data.sort_values(by='Fecha', ascending=True)
+
+raw_data['Cierre previo'] = raw_data['Cierre'].shift(1)
+raw_data['rendimiento_log'] = raw_data['Cierre'] / raw_data['Cierre previo'] - 1
+raw_data = raw_data.dropna()
+raw_data = raw_data.reset_index(drop=True)
+raw_data = raw_data.drop("Cierre previo", axis=1)
+raw_data.set_index('Fecha', inplace=True)
+
+# Ajuste del modelo ARIMA(9,2,12) como en tu ejemplo
+modelo = ARIMA(raw_data['rendimiento_log'], order=(9,2,12))
+resultado = modelo.fit()
+
+# Residuos del modelo
+residuos = resultado.resid
+
+# --- 1. Test Ljung-Box para autocorrelación ---
+lb_test = acorr_ljungbox(residuos, lags=[1], return_df=True)
+print("Ljung-Box test:")
+print(lb_test)
+
+# --- 2. Test Jarque-Bera para normalidad ---
+jb_stat, jb_pvalue = jarque_bera(residuos)
+print(f"\nJarque-Bera test stat: {jb_stat:.2f}, p-value: {jb_pvalue:.3f}")
+
+# --- 3. Test de heterocedasticidad ARCH ---
+arch_test = het_arch(residuos)
+print(f"\nARCH test stat: {arch_test[0]:.2f}, p-value: {arch_test[1]:.3f}")
+
+# --- 4. Skewness y Kurtosis ---
+skewness = residuos.skew()
+kurtosis = residuos.kurtosis()
+print(f"\nSkewness: {skewness:.2f}")
+print(f"Kurtosis: {kurtosis:.2f}")
+
+# --- Gráficos ---
+
+plt.figure(figsize=(14,10))
+
+plt.subplot(3,2,1)
+plt.plot(residuos)
+plt.title('Residuos del modelo')
+plt.axhline(0, color='black', lw=1)
+
+plt.subplot(3,2,2)
+sns.histplot(residuos, kde=True, stat='density')
+plt.title('Histograma y KDE de residuos')
+
+plt.subplot(3,2,3)
+plot_acf(residuos, lags=40, ax=plt.gca())
+plt.title('ACF residuos')
+
+plt.subplot(3,2,4)
+plot_pacf(residuos, lags=40, ax=plt.gca())
+plt.title('PACF residuos')
+
+plt.subplot(3,2,5)
+# Q-Q plot para normalidad
+import scipy.stats as stats
+stats.probplot(residuos, dist="norm", plot=plt)
+plt.title('Q-Q plot residuos')
+
+plt.tight_layout()
+plt.show()
+
+
+###############################################################################
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import scipy.stats as stats
+from arch import arch_model
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+from statsmodels.stats.diagnostic import acorr_ljungbox, het_arch
+from scipy.stats import jarque_bera
+
+# --- Cargar y preparar datos ---
+directorio = 'C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'
+raw_data = pd.read_csv(directorio)
+
+raw_data = raw_data[["Fecha", "Cierre"]].fillna(0)
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)
+raw_data = raw_data.sort_values(by='Fecha', ascending=True)
+raw_data['Cierre previo'] = raw_data['Cierre'].shift(1)
+raw_data['rendimiento_log'] = raw_data['Cierre'] / raw_data['Cierre previo'] - 1
+raw_data = raw_data.dropna().reset_index(drop=True).drop("Cierre previo", axis=1)
+raw_data.set_index('Fecha', inplace=True)
+
+# --- Ajustar modelo GARCH(1,1) ---
+modelo_garch = arch_model(raw_data['rendimiento_log'], vol='Garch', p=1, q=1, dist='normal')
+resultado_garch = modelo_garch.fit(disp='off')
+
+# --- Residuos estandarizados ---
+residuos = resultado_garch.std_resid.dropna()
+
+# === Pruebas estadísticas ===
+lb_test = acorr_ljungbox(residuos, lags=[1], return_df=True)
+jb_stat, jb_pval = jarque_bera(residuos)
+arch_stat, arch_pval, _, _ = het_arch(residuos)
+skew_val = residuos.skew()
+kurt_val = residuos.kurtosis()
+
+# === Mostrar resultados ===
+print("📊 Pruebas estadísticas de los residuos (GARCH):")
+print(f"➡ Ljung-Box (lag 1): Q={lb_test['lb_stat'].iloc[0]:.3f}, p-value={lb_test['lb_pvalue'].iloc[0]:.3f}")
+print(f"➡ Jarque-Bera: JB={jb_stat:.3f}, p-value={jb_pval:.3f}")
+print(f"➡ ARCH test: Stat={arch_stat:.3f}, p-value={arch_pval:.3f}")
+print(f"➡ Skewness = {skew_val:.2f}, Kurtosis = {kurt_val:.2f}")
+
+# === GRÁFICAS ===
+plt.figure(figsize=(16, 12))
+
+# Residuos
+plt.subplot(3, 2, 1)
+plt.plot(residuos)
+plt.axhline(0, color='black', linewidth=1)
+plt.title('Residuos estandarizados del modelo GARCH')
+
+# Histograma + KDE
+plt.subplot(3, 2, 2)
+sns.histplot(residuos, kde=True, stat="density", color='skyblue')
+plt.title('Histograma + KDE de residuos')
+
+# ACF
+plt.subplot(3, 2, 3)
+plot_acf(residuos, lags=40, ax=plt.gca())
+plt.title('ACF de residuos')
+
+# PACF
+plt.subplot(3, 2, 4)
+plot_pacf(residuos, lags=40, ax=plt.gca())
+plt.title('PACF de residuos')
+
+# Q-Q plot
+plt.subplot(3, 2, 5)
+stats.probplot(residuos, dist="norm", plot=plt)
+plt.title('Q-Q plot de residuos')
+
+# Boxplot
+plt.subplot(3, 2, 6)
+sns.boxplot(x=residuos, color='lightgreen')
+plt.title('Boxplot de residuos')
+
+plt.tight_layout()
+plt.show()
