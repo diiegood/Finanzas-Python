@@ -1,0 +1,332 @@
+#Serie de tiempo  /  tipo de cambio
+
+import numpy as np  #conocer bien la libreria
+import pandas as pd #conocer bien la libereria
+import matplotlib.pyplot as plt #conocer bien la libreria
+import scipy.stats as st #conocer bien la libereria
+import importlib
+from statsmodels.tsa.stattools import acf
+from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.holtwinters import SimpleExpSmoothing, Holt, ExponentialSmoothing
+import seaborn as sns
+from scipy.stats import norm, shapiro, anderson, jarque_bera, probplot
+from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.stattools import adfuller
+
+
+###############################################################################
+"Se cargan los datos"
+
+directorio ='C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\USD_MXN.csv'   #ruta de consulta donde se alojan los datos
+path = directorio  #se genera una funcion dond esta la ruta, el nombre del archivo y su fomrato
+raw_data = pd.read_csv(path)
+
+raw_data = raw_data[["Fecha","Cierre"]].fillna(0)
+raw_data
+
+###############################################################################
+
+"Para convertirlo a serie de tiempo"
+
+raw_data['Fecha'] = pd.to_datetime(raw_data['Fecha'], dayfirst=True)  # Cambia a True si las fechas están en formato DD/MM/YYYY
+raw_data = raw_data.sort_values(by='Fecha', ascending=True) #se ordenan los valores por fecha
+raw_data['Cierre previo'] = raw_data['Cierre'].shift(1) #se calcula el cierre anterior
+raw_data['rendimiento log'] = raw_data['Cierre'] / raw_data['Cierre previo'] - 1 # se calcula el rendimeinto diario
+raw_data = raw_data.dropna() # Eliminar filas con NaN 
+raw_data = raw_data.reset_index(drop=True) # Reiniciar índice
+raw_data = raw_data.drop("Cierre previo", axis=1) 
+raw_data.head(45)
+raw_data.set_index('Fecha', inplace=True) #se indexa la fecha
+
+
+"Para graficar"
+
+plt.figure(figsize=(12, 6))
+#plt.plot(raw_data['Cierre'], label='Tipo de cambio USD/MXN', color='blue')
+plt.plot(raw_data['rendimiento log'], label='Rendimeinto USD/MXN', color='red') #rendimeinto logaritmico
+
+# Personalizar el gráfico
+plt.title('Evolución del tipo de cambio USD/MXN')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre')
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+# Mostrar
+plt.show()
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Suavizamiento"
+#Suavizamiento exponencial simple
+#Suavizamiento exponencial doble
+#Metodo Holt Winters aditivo y mulitplicativo
+
+steps = 10
+
+
+# Suponiendo que raw_data ya existe y tiene la columna 'Cierre'
+
+# Ajustar modelo SES
+ses_model = SimpleExpSmoothing(raw_data['Cierre']).fit(smoothing_level=0.2, optimized=False)
+ses_pred = ses_model.fittedvalues
+ses_forecast = ses_model.forecast(steps)
+
+# Crear una nueva columna con las predicciones
+raw_data['SES_Pred'] = ses_pred
+
+# Crear columna de error (valor real - predicción)
+raw_data['Error_SES'] = raw_data['Cierre'] - raw_data['SES_Pred']
+
+# Calcular promedio del error absoluto
+promedio_error_abs = raw_data['Error_SES'].abs().mean()
+print(f"Promedio del Error Absoluto (SES): {promedio_error_abs:.4f}")
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['Cierre'], label='Original')
+plt.plot(ses_pred, label='Suavizamiento Exponencial Simple', color='orange')
+plt.title('Suavizamiento Exponencial Simple')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+"Suavizamiento exponencial doble" #Holt
+
+
+from statsmodels.tsa.holtwinters import Holt
+
+# Ajustar modelo Holt
+holt_model = Holt(raw_data['Cierre']).fit(smoothing_level=0.2, smoothing_slope=0.1, optimized=False)
+holt_pred = holt_model.fittedvalues
+
+# Agregar columna de predicción y error
+raw_data['Holt_Pred'] = holt_pred
+raw_data['Error_Holt'] = raw_data['Cierre'] - raw_data['Holt_Pred']
+
+# Calcular promedio del error absoluto
+promedio_error_holt = raw_data['Error_Holt'].abs().mean()
+print(f"Promedio del Error Absoluto (Holt): {promedio_error_holt:.4f}")
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['Cierre'], label='Original')
+plt.plot(holt_pred, label='Suavizamiento Exponencial Doble (Holt)', color='green')
+plt.title('Suavizamiento Exponencial Doble - Holt')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+"Holt Winters Aditivo"
+
+# Modelo Holt-Winters con estacionalidad aditiva
+hw_add_model = ExponentialSmoothing(
+    raw_data['Cierre'],
+    trend='add',
+    seasonal='add',
+    seasonal_periods=7,  # Ajusta según tu frecuencia
+    damped_trend=True
+).fit()
+
+hw_add_pred = hw_add_model.fittedvalues
+
+# Agregar columnas de predicción y error
+raw_data['HW_Add_Pred'] = hw_add_pred
+raw_data['Error_HW_Add'] = raw_data['Cierre'] - raw_data['HW_Add_Pred']
+
+# Promedio del error absoluto
+promedio_error_hw_add = raw_data['Error_HW_Add'].abs().mean()
+print(f"Promedio del Error Absoluto (Holt-Winters Aditivo): {promedio_error_hw_add:.4f}")
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['Cierre'], label='Original')
+plt.plot(hw_add_pred, label='Holt-Winters Aditivo', color='purple')
+plt.title('Método Holt-Winters con Estacionalidad Aditiva')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+"Holt Winters Multiplicativo"
+
+# Modelo Holt-Winters con estacionalidad multiplicativa
+hw_mul_model = ExponentialSmoothing(
+    raw_data['Cierre'],
+    trend='add',
+    seasonal='mul',
+    seasonal_periods=7,  # Ajusta según tu frecuencia
+    damped_trend=True
+).fit()
+
+hw_mul_pred = hw_mul_model.fittedvalues
+
+# Agregar columnas de predicción y error
+raw_data['HW_Mul_Pred'] = hw_mul_pred
+raw_data['Error_HW_Mul'] = raw_data['Cierre'] - raw_data['HW_Mul_Pred']
+
+# Promedio del error absoluto
+promedio_error_hw_mul = raw_data['Error_HW_Mul'].abs().mean()
+print(f"Promedio del Error Absoluto (Holt-Winters Multiplicativo): {promedio_error_hw_mul:.4f}")
+
+# Graficar
+plt.figure(figsize=(12, 5))
+plt.plot(raw_data['Cierre'], label='Original')
+plt.plot(hw_mul_pred, label='Holt-Winters Multiplicativo', color='brown')
+plt.title('Método Holt-Winters con Estacionalidad Multiplicativa')
+plt.xlabel('Fecha')
+plt.ylabel('Cierre USD/MXN')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+"Para exportar a excel el data frame"
+
+import openpyxl
+import pandas as pd
+
+# Ruta de salida del archivo Excel como raw string
+ruta_salida = r"C:\Users\creep\OneDrive\Escritorio\Suavizamiento.xlsx"
+
+# Exportar DataFrame a Excel
+with pd.ExcelWriter(ruta_salida, engine='openpyxl') as writer:
+    raw_data.to_excel(writer, sheet_name='Tecnicas de Suavizamiento')
+
+
+###############################################################################
+
+
+
+###############################################################################
+"Modelo S-Arima"
+
+import statsmodels.api as sm
+
+modelo_arima = sm.tsa.statespace.SARIMAX(
+    raw_data['Cierre'],
+    order=(1, 1, 1), #parametros no estacionales (AR - I - MA) #se modifica el tipo de orden de cada uno
+    seasonal_order=(0, 1, 0, 12) #parametros estacionales ()
+)
+
+resultados_SARIMA = modelo_arima.fit()
+resultados_SARIMA.summary()
+
+#AIC  indice de informacion de Akaike / entre menor sea el indice mejor es el modelo
+#
+
+###############################################################################
+
+"Modelo ARIMA"
+
+modelo_arima = sm.tsa.statespace.SARIMAX(
+    raw_data['Cierre'],
+    order=(1, 1, 1),             # Parámetros ARIMA: AR(1), diferencia(1), MA(1)
+    seasonal_order=(0, 1, 0, 12) # Estacionalidad: SAR(0), diff(1), SMA(0), periodo 12 (mensual)
+)
+
+resultados_ARIMA = modelo_arima.fit()
+resultados_ARIMA.summary()
+
+###############################################################################
+
+"Modelo ARMA"
+
+
+from statsmodels.tsa.arima.model import ARIMA
+import matplotlib.pyplot as plt
+
+# Usamos una serie estacionaria (por ejemplo, rendimiento logarítmico)
+serie = raw_data['Cierre'].dropna()
+
+# ARMA(p, q) es lo mismo que ARIMA(p, 0, q)
+modelo_arma = ARIMA(serie, order=(2, 0, 1))  # ejemplo: AR(2), MA(1)
+
+# Ajustar el modelo
+resultados = modelo_arma.fit()
+
+# Mostrar resumen
+print(resultados.summary())
+
+# Diagnóstico de residuos
+resultados.plot_diagnostics(figsize=(12, 8))
+plt.show()
+
+
+###############################################################################
+
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from arch import arch_model
+
+raw_data['log_ret'] = np.log(raw_data['Cierre'] / raw_data['Cierre'].shift(1))
+returns = raw_data['log_ret'].dropna() * 100  # % rendimientos
+
+# ===============================
+# 🔧 MODELO ARCH(1)
+# ===============================
+arch_modelo = arch_model(returns, vol='ARCH', p=1)
+arch_fit = arch_modelo.fit(disp='off')
+arch_cond_vol = arch_fit.conditional_volatility
+
+# ===============================
+# 🔧 MODELO GARCH(1,1)
+# ===============================
+garch_modelo = arch_model(returns, vol='GARCH', p=1, q=1)
+garch_fit = garch_modelo.fit(disp='off')
+garch_cond_vol = garch_fit.conditional_volatility
+
+# ===============================
+# 📈 GRÁFICAS
+# ===============================
+plt.figure(figsize=(14, 5))
+plt.plot(returns.index, returns, label='Rendimientos log (%)', color='gray')
+plt.title('Serie de Rendimientos USD/MXN')
+plt.ylabel('Rendimiento (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ARCH
+plt.figure(figsize=(14, 5))
+plt.plot(arch_cond_vol, label='Volatilidad Condicional - ARCH(1)', color='blue')
+plt.title('Volatilidad estimada con ARCH(1)')
+plt.ylabel('Volatilidad (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# GARCH
+plt.figure(figsize=(14, 5))
+plt.plot(garch_cond_vol, label='Volatilidad Condicional - GARCH(1,1)', color='red')
+plt.title('Volatilidad estimada con GARCH(1,1)')
+plt.ylabel('Volatilidad (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ===============================
+# 📃 RESUMEN DE MODELOS
+# ===============================
+print("\n=== ARCH(1) Summary ===")
+print(arch_fit.summary())
+
+print("\n=== GARCH(1,1) Summary ===")
+print(garch_fit.summary())
+
+###############################################################################
