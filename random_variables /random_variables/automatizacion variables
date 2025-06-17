@@ -1,0 +1,115 @@
+#codigo_calculo
+
+"Codigo para automatizacion de proceso de calculo" 
+
+#contenido:
+
+#crear una serie de tiempo del activo con las columnas de interes del data frame original
+#generar el calculo de las variables requeridas
+
+###############################################################################
+
+#librerias
+import numpy as np
+import pandas as pd 
+import matplotlib as plt
+import scipy.stats as st
+import importlib
+
+benchmark = "^SPY"
+security = "^VIX"
+
+
+"Explicacion"
+#en este caso se crea una serie de tiempo con los precios de las acciones descargadas
+#se genera un data frame vacio el cual sera la serie de tiempo, donde se pondran los datos
+#los datos de las columnas del data frame activo que nos interesen estaran dentro de la serie de tiempo
+#la serie de tiempo es la variable time_series.
+
+#primera funcion generacion de serie de tiempo del activo:
+def serie_tiempo(ric):
+    directorio = "" #ubicacion del archivo
+    ruta = directorio + ric + "csv"
+    activo = pd.read_csv(ruta) #es el data frame de los precios historicos
+    time_series = pd.DataFrame() #se crea un data frame vacio donde se van a poner los datos
+    time_series["fecha"] = pd.to_datetime(activo["Date"], dayfirst = True) #Se crea la serie de tiempo
+    time_series["precio_cierre"] = activo["Close"] 
+    #se ordenan los datos por ascendente 
+    time_series = time_series.sort_values(by = "date", ascending = True)   
+    #desplaza los valores 1 lugar hacia abajo de tabla y quitando un valor 
+    time_series["cierre_previo"] = time_series["precio_cierre"].shift(1) 
+    time_series["retornos"] = time_series["cierre"] / ["cierre_precio"] - 1
+    time_series = time_series.dropna() #se le quitan los NaN
+    #se quita el indice y vuelve a los valores numericos
+    time_series = time_series.reset_index(drop = True) #se desindexa la fecha
+    return time_series
+
+#A continucacion para pdoer hacer el modelo CAPM vamos a hacer una regresion
+#por lo que de la serie de tiempo se deben tranformar a dos variables una independiente
+#y  otra dependiente , por lo que se debe sincronizar los datos de la serie creada
+#en este caso el benchmark es el indice bursatil en el que se va comparar el activo
+#mientras que el security es el activo que se usara para la comparacion.
+
+"Este codigo va encadenado al anterior porque usa la funcion creada serie de tiempo"
+"para poder llamar 2 variables en serie de tiempo el benchmark y el security para el modelo CAPM"
+
+def regresion_serie_tiempo(becnchmark, security): # falta definir las variables de benchmark y de security
+    serie_x = serie_tiempo(benchmark) #variable independiente es el indice
+    serie_y = serie_tiempo(security) #variable dependiente es el activo
+    seriemarcas_x = list(serie_x["fecha"].values) #genera una lista del data frame serie_x
+    seriemarcas_y = list(serie_y["fecha"].values) #genera una lista del data frame serie_y
+    tiempo_comun = list(set(seriemarcas_x) & set(seriemarcas_y)) #interseccion de conjuntos de fechas que comparten ambos
+    serie_x = serie_x[serie_x["fecha"].isin(tiempo_comun)] #obtener los valores del data frame_x que tiene en comun con el y
+    serie_x = serie_x.sort_values(by = "fecha", ascending = True) #se ordena las fechas por orden ascendente
+    serie_x = serie_x.reset_index(drop = True) #se quita el indexado de las fechas
+    serie_y = serie_y[serie_y["fecha"].isin(tiempo_comun)] #obtener los valores del data frame_y que tiene en comun con el x
+    serie_y = serie_y.sort_values(by = "fecha", ascending = True) #se ordena las fechas por orden ascendente
+    serie_y = serie_y.reset_index(drop = True) #se quita el indexado de las fechas
+    
+    #se genera el data frame vacio dodnde se va llenar las siguientes columnas:
+    serie_tiempo = pd.DataFrame() 
+    serie_tiempo["fecha"] = serie_x["fecha"]
+    serie_tiempo["cierre_x"] = serie_x["cierre"]
+    serie_tiempo["cierre_y"] = serie_y["cierre"]
+    serie_tiempo["retorno_x"] = serie_x["retornos"]
+    serie_tiempo["retorno_y"] = serie_y ["retornos"]
+    return serie_tiempo
+
+#Se genera una clase que va calcular la distribucion de los datos de las series de tiempo previas
+#donde consiste en un cosntructor que va a calcular los momentos de orden 1,2,3,4 ademas de realizar
+#prubeas de normalidad, sharpe_Ratio, Var a un intervalo de 95% de confianza. 
+
+"Introduccion a la creacion de clases"
+
+#1) se crea un objeto llamado distribucion_serie
+#2) alllamar a este objeto automaticamente se llama a __init__ con las variables usadas y sus valores
+class distribucion_serie :
+    
+    def __init__(self, ric, decimals = 5):  #variables que van a ser usadas en este objeto creado
+        self.ric = ric
+        self.decimals = decimals
+        self.str_title = None
+        self.serie_tiempo = None
+        self.vector = None
+        self.media_anual = None 
+        self.volatilidad_anual = None
+        self.sharpe_ratio = None
+        self.VaR_95 = None
+        self.skewness = None
+        self.kurtosis = None
+        self.jarque_bera = None
+        self.p_value = None
+        self.is_nornal = None
+        
+    def serie_tiempo (self): #se carga la funcion previamente creada pero esta se auto-llama
+        self.serie_tiempo = serie_tiempo(self.ric)
+        self.vector = self.serietiempo["retornos"].values
+        self.size = len(self.vector)
+        self.str_title = self.ric + "| real data "
+        
+    def grafica_serietiempo(self):
+        plt.figure()
+        self.
+        
+    
+23:19 practica
