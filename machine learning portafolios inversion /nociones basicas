@@ -1,0 +1,95 @@
+#EDHEC Course basis
+
+purchase_price = 10 
+sales_price = 12
+profit = sales_price - purchase_price
+pct_return = profit/sales_price
+pct_return
+profit
+
+
+print("profit from the trade was", profit)
+print("and the return was", pct_return)
+print(pct_return * 100, "percent")
+
+
+###############################################################################
+
+"Lab session prices to returns"
+
+import numpy as np
+import pandas as pd
+
+prices_a = np.array( [8.70, 8.91, 8.71]) #se convierte en vector
+prices_a
+
+prices_a[1:]/prices_a[:-1]-1 #transformacion de los valores de los precios
+
+prices = pd.DataFrame({
+    "BLUE": [8.70, 8.91, 8.71, 8.43, 8.73],
+    "ORANGE": [10.66, 11.08, 10.71, 11.59, 12.11]
+})
+
+print(prices)
+
+prices.iloc[1:] #se le quita el primer valor del dataframe anteriormente creado
+
+prices.iloc[-1:] #deja solo el ultimo valor del dataframe
+prices.iloc[:-1] #quita el ultimo valor del data frame
+
+prices.iloc[1:]/prices.iloc[:-1] - 1 #divide el ultimo valor sobre los ultimos valores y le resta 1
+
+
+prices.iloc[1:].values/prices.iloc[:-1] - 1 #muestra una transformacion logaritmica de los datos
+
+prices.iloc[1:]/prices.iloc[:-1].values - 1 #aunque se cambie la operacion sigue saliendo exactamente lo mismo
+
+prices.shift(1) #quita el ultimo precio y lo pone al principio agregando un NaN
+
+#para calcular los retornos esperados de las acciones
+returns = prices / prices.shift(1)-1
+returns
+
+returns = prices.pct_change() #queda exactamente el mismo valor que se tenia anteriormente
+returns
+
+#para leer un csv
+
+prices_stock = pd.read_csv("C:\\Users\\creep\\.spyder-py3\\stocks\\NAFTRAC.csv")
+prices_stock = prices_stock[["Price", "Open"]]
+returns = prices.pct_change(); returns #se calcula el rendimiento logaritmico de las acciones
+
+returns.mean()
+returns.std()
+returns.plot.bar()
+returns.plot()
+
+#counpounding returs, se agrega un +1 
+returns +1
+
+#expresiones iguales
+
+np.prod(returns +1)
+(returns+1).prod()
+
+(returns+1).prod()-1 #se le quita el +1 que se habia puesto posteriormente
+(((returns + 1).prod()-1)*100).round(2)
+
+#para anualizar los retornos ##################################################
+
+rm = 0.01
+(1+rm)**12 - 1
+
+rq = 0.04
+(1+rq)**4 - 1
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Calculo de volatilidad y riesgo"
+
+
+
+
