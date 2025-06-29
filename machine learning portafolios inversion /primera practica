@@ -1,0 +1,77 @@
+#EDDHEC / introduccion a la construccion y el analisis de carteras con Python
+
+#practica con activo real
+
+import yfinance as yf
+import pandas as pd 
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as  plt
+
+###############################################################################
+"Cargar datos"
+
+#prices = pd.read_csv("direccion/nombre_archivo.csv")
+
+###############################################################################
+
+directorio = 'C:\\Users\\creep\\.spyder-py3\\stocks\\'
+ric = "NAFTRAC"  
+path = directorio + ric + '.csv'  # Ruta del archivo CSV
+accion_datos = pd.read_csv(path) 
+
+
+accion_datos_a = pd.read_csv(path) 
+accion_datos_a = accion_datos_a[["Price"]].head(100).copy()
+#accion_datos_a = accion_datos["Price"]
+
+
+#se filtra el data frame original a que solo muestre los ultimos 100 datos
+accion_datos = accion_datos[["Price"]].head(100).copy()
+accion_datos
+
+accion_datos["Rendimientos"] = accion_datos["Price"].pct_change() #se genera un nuevo vector de rendimientos 
+accion_datos
+
+#se elimina el NaN del data frame
+accion_datos.dropna()
+accion_datos
+
+"Se calcula la volatilidad" ###################################################
+#la desviacion estandar y la varianza no dan el mismo numero
+
+#Desviacion estandar ##########################################################
+
+#la desviacion estndar calcula la media y divide la suma por el numero total de observaciones y le resta -1
+volatilidad = accion_datos["Rendimientos"].std()  #calculo con desviacion estandar de la muestra , supone que es una muestra de una distribucion mas grande
+
+volatilidad_anualizada =  volatilidad * np.sqrt(252)
+volatilidad_anualizada = volatilidad_anualizada * 100 #en este calcula dividiendo entre n
+
+#varianza #####################################################################
+
+returns = accion_datos_a["Price"].iloc[1:].values/accion_datos_a["Price"].iloc[:-1] - 1
+
+#se calcula la desviacion estandar de la poblacion es mas precisa 
+
+deviations = returns - returns.mean() #se calculan las desviaciones con respecto a la media
+squared_deviations = deviations ** 2  #se ecalculan las desviaciones al cuadrado
+variance = squared_deviations.mean()  #se calcula la varianza siendo la media de las desviaciones al cuadrado
+#se quiere dividir entre el numero de observaciones
+
+volatility = np.sqrt(variance) #se calcula la desviacion estandar poblacional, numero de observaciones -1
+volatility
+
+volatility_anualizada =  volatility * np.sqrt(252)
+volatility_anualizada = volatility_anualizada * 100
+
+"Da dos valores diferentes porque el primero la calcula muestral y el segundo poblacional"
+
+number_of_obs = 99
+variance = squared_deviations.sum()/(number_of_obs-1)
+
+
+7:16
+
+
+
