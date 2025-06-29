@@ -16,14 +16,36 @@ print(pct_return * 100, "percent")
 ###############################################################################
 
 "Lab session prices to returns"
+#calcular los retornos de los precios
 
 import numpy as np
 import pandas as pd
+import matplotlib as plt
 
-prices_a = np.array( [8.70, 8.91, 8.71]) #se convierte en vector
+#calculo del retorno del precio 
+
+"calculo "
+#el retornor del precio es igual a el el precio de hoy restando el precio de ayer dividido sobre el precio de ayer
+#o tambien se puede calcular como el precio de hoy sobre el precio de ayer menos uno.
+
+precio_ayer = 21.02
+precio_hoy = 20.94
+retorno = ( precio_hoy - precio_ayer  ) / precio_ayer
+retorno_opcional = ( precio_hoy / precio_ayer ) - 1
+
+
+prices_a = np.array( [8.72, 8.91, 8.51, 8.66]) #se convierte en vector
 prices_a
 
-prices_a[1:]/prices_a[:-1]-1 #transformacion de los valores de los precios
+#indicadores de poisicion del vector (python cuenta desde cero)
+prices_a[:1] #muestra solo el numero antes de la posicion 1 del vector (valor)
+prices_a[1:] #muestra los numeros empezando por la posicion 1 del vector (lista)
+prices_a[1]  #muestra el numero de la poscion 1 del vector  (valor)
+
+prices_a[1:]/prices_a[:1]-1 #tranformacion de los precios en retornos
+#precios de la posicion 1 divididos entre los precios de la posicion 1 restando 1 #se aplica la formula
+#de retorno opcional.
+
 
 prices = pd.DataFrame({
     "BLUE": [8.70, 8.91, 8.71, 8.43, 8.73],
@@ -89,6 +111,40 @@ rq = 0.04
 ###############################################################################
 
 "Calculo de volatilidad y riesgo"
+
+#la volatilidad es la desviacion estandar y la varianza del activo 
+
+#volatilidad / desviacion estandar o varianza
+#rendimiento / media aritmetica
+
+media = 0.0005
+volatilidad = 0.015
+dias_de_mercado = 252
+
+#es el retorno del activo es la media aritmetica
+media_anualizada = media * dias_de_mercado
+media_anualizada = media_anualizada * 100
+
+#es la volatilidad del activo la desviacion estandar
+volatilidad_anualizada = volatilidad * np.sqrt(dias_de_mercado)
+volatilidad_anualizada = volatilidad_anualizada * 100
+
+#ratio de retorno por riesgo . #mide que tan seguro o rentable es invertir en dicho activo
+#es el exceso de retorno del activo que se pudo haber obtenido sin volatilidad / libre de riesgo
+ratio_retorno_riesgo =media_anualizada / volatilidad_anualizada
+ratio_retorno_riesgo
+
+"Sharpe ratio"  
+#es el rendimiento del activo - rendimiento libre de riesgo ambos divido sobre la volatilidad del activo
+
+retorno = 0.15 #rendimiento anualizado del activo
+tasa_libre_riesgo = 0.08 #rendimiento anualizado de los cetes 
+desviacion_estandar = 0.16 #volatilidad del activo
+
+sharpe_ratio = (retorno - tasa_libre_riesgo ) / desviacion_estandar
+sharpe_ratio
+
+"Medida DrawDown"
 
 
 
