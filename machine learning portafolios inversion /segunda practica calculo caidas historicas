@@ -1,0 +1,122 @@
+"Ejercicio 2 "
+
+import pandas as pd 
+
+data = pd.read_csv("C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
+               header = 0, index_col=0, parse_dates = True, na_values= 99.99)
+
+#se cargan los datos del csv
+#se le puso que la columna de indice pusiera valores de cero
+#que analice las fechas como verdaderas
+#indexo las fechas 
+
+"Filtrado y manipulacion de columnas"
+
+activo = data[["Lo 10","Hi 10"]] #se filtra el data frame original a solo dos columnas
+activo.columns = ["Small Cap", "Large Cap"] #se cambian de nombre las columnas anteriores
+activo = activo / 100 #se dividen entre 100 los valores
+
+activo.plot.line() #se grafican los rendimientos de los activos
+
+activo.head(45) #muestro los primeros 45 valores del data frame
+activo.index #muestra los valores indexados
+#el formato lo tiene como int64, se busca cambiar a formato de fecha y hora 
+
+"Transoformacion a serie de tiempo"
+
+#se le cambia el formato de int 64 a fecha empezando por año
+activo.index = pd.to_datetime(activo.index, format="%Y%m")  
+activo.index = activo.index.to_period("M") #convierte la serie a periodo mensual
+activo.head(35)
+activo.index
+activo.info()
+
+###############################################################################
+###############################################################################
+
+"Medida ajustada al riesgo"  #Max Drawdown
+#1 - calcular el indice de la cartera
+#2 - calcular los picos previos
+#3 - calcular drawndown -  como un valor de porcentaje en comparancion al pico previo
+
+"Primero se calcula el indice de riqueza, siendo esto el valor de cartera acumulado en el tiempo "
+
+# se calcula el crecimiento a lo largo del tiempo de esos 1000 USD, 
+# atraves del interes compuesto de la rentabilidad del activo
+
+#calculamos lel crecimiento del dinero a lo largo del tiempo con las tasas de rentabilidad previamente calculadas
+wealth_index = 1000 * (1+activo["Large Cap"]).cumprod()
+wealth_index.head()
+
+wealth_index.plot.line()
+
+#calculo de rendimientos maximos 
+rendimientos_maximos = wealth_index.cummax()
+rendimientos_maximos.plot() #se grafican los rendimientos maximos
+
+"Se calculan las caidas maximas de rendimiento comparando con los maximos historicos anteriores"
+#se calcula rendimiento perdido en el momneto restando el maximo anterior
+drawdown = (wealth_index - rendimientos_maximos)/rendimientos_maximos
+drawdown.plot() #se grafican las caidas maximas de rendimiento
+drawdown
+
+drawdown.head() #son numeros negativos porque representan caidas de rendimeinto
+drawdown.min() #indica el valor maximo de la caida 
+
+"Drawdown es la reduccion en si misma de la serie temporal"
+
+serie_dosmil = drawdown["2000":] #caidas de rendimiento comparado con el maximo desde los años 2000
+drawdown["2000":].min()   #indica la maxima caida desde 2000 en numero
+drawdown["2000":].idxmin() #indica el  año al que corresponde a la caida del valor anterior
+
+
+drawdown.idxmin() #el tiempo con la mayor caida de la serie de tiempo previa
+
+###############################################################################
+
+"Funcion para calcular el Drawdown"
+
+# Caida de las acciones con menor capitalizacion
+
+#wealth index  / indice de cartera es el rendimiento de lo que crece el dinero a traves del tiempo
+#previoous peaks son los maximos historicos anteriores 
+#se calcula el deawdown conforme a la comparacion de la caida acutal con los maximos historicos
+
+#se hace una cadena de documentacion con  6 de """ """" separados en dos renglones
+def drawdown(return_series: pd.Series): #se le dice a python que se espera una serie aqui
+    """
+    Takes a time series of asset returns
+    Computes and returns a DataFrame that contains:
+    indice de cartera 
+    the previos peaks
+    percent drawdowns
+    """
+    indice_cartera = 1000*(1+return_series).cumprod()
+    previous_peaks = indice_cartera.cummax()
+    drawdown = (indice_cartera - previous_peaks) / previous_peaks
+    return pd.DataFrame({
+        "Cartera": indice_cartera,
+        "Max hist": previous_peaks,
+        "Drawdown": drawdown})
+
+#para probar la funcion:
+    
+drawdown(activo["Small Cap"]).head() 
+#calcula un data frame con las columnas anteriores de el data frame activo
+
+#comparar cifras de dos tada frames distiontos ################################
+
+drawdown(activo["Large Cap"]) [["Cartera", "Max hist"]].head()
+drawdown(activo["Large Cap"]) [["Cartera", "Max hist"]].plot()
+
+#mostrando un periodo especifico
+drawdown(activo[:"1975"]["Small Cap"]) [["Cartera", "Max hist"]].plot()
+drawdown(activo["Small Cap"]).head() #primeros valores
+drawdown(activo["Small Cap"]) ["Drawdown"].min() #muestra el minimo
+drawdown(activo["Small Cap"]) ["Drawdown"].idxmin()
+
+drawdown(activo[:"1975"]["Large Cap"]) [["Cartera", "Max hist"]].plot()
+drawdown(activo["Large Cap"]).head() #primeros valores
+drawdown(activo["Large Cap"]) ["Drawdown"].min() #muestra el minimo
+drawdown(activo["Large Cap"]) ["Drawdown"].idxmin()
+
