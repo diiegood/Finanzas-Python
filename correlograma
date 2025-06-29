@@ -1,0 +1,72 @@
+"Correlograma con tipo de cambio"
+
+import yfinance as yf
+import pandas as pd 
+import seaborn as sns
+import matplotlib.pyplot as  plt
+
+tickers = ["GBPUSD=X", "EURUSD=X", "AUDUSD=X", "GBPUSD=X"] #las divisas a analizar
+
+#para descargar los datos:
+data = yf.download(tickers , start= '2022-01-01', end = '2025-06-01')["Close"]
+
+#se convierten los datos a precios de fin de mes
+precios_mensuales = data.resample("M").last()
+
+#se calculan los retornos mensuales
+retornos_mensuales = precios_mensuales.pct_change().dropna()
+
+#se genera la matriz de correlaciones:
+matriz_correlaciones = retornos_mensuales.corr()
+
+###############################################################################
+#se imprimen los datos
+
+print("Correlaciones mensuales de diferentes divisas")
+print(matriz_correlaciones)
+
+
+#imprimir el mapa de calor de las correlaciones
+plt.figure(figsize=(10,7))
+sns.heatmap(matriz_correlaciones, annot=True, cmap= "coolwarm", vmin=-1, vmax=1)
+plt.title("Matiz de Correlaciones en relacion a las ganancias de tipo de cambio mensual")
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+import yfinance as yf
+import pandas as pd 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Lista de divisas frente al dólar estadounidense
+tickers = ["MXNUSD=X", "EURUSD=X", "CADUSD=X", "GBPUSD=X"]
+
+# Descargar precios de cierre diarios
+data = yf.download(tickers, start='2020-01-01', end='2025-06-01')["Close"]
+
+# Convertir a precios de cierre de fin de mes
+precios_mensuales = data.resample("M").last()
+
+# Calcular retornos porcentuales mensuales
+retornos_mensuales = precios_mensuales.pct_change().dropna()
+
+# Calcular matriz de correlaciones
+matriz_correlaciones = retornos_mensuales.corr()
+
+# Imprimir matriz de correlaciones
+print("Correlaciones mensuales de diferentes divisas frente al USD")
+print(matriz_correlaciones)
+
+# Graficar mapa de calor de correlaciones
+plt.figure(figsize=(10, 7))
+sns.heatmap(matriz_correlaciones, annot=True, cmap="coolwarm", vmin=-1, vmax=1)
+plt.title("Matriz de correlaciones de retornos mensuales de tipos de cambio", fontsize=14)
+plt.xticks(rotation=45)
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.show()
+
