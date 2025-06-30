@@ -133,8 +133,8 @@ Comercio_al_por_Mayor['poblacion_maxima'] = pd.to_numeric(Comercio_al_por_Mayor[
 
 #se crea una columna que promedie los valores de poblacion minima y poblacion maxima
 Comercio_al_por_Mayor["promedio"] = (Comercio_al_por_Mayor["poblacion_maxima"] + Comercio_al_por_Mayor["poblacion_minima"])/2
-Comercio_al_por_Mayor["optimista"] = (Comercio_al_por_Mayor["promedio"] + Comercio_al_por_Mayor["poblacion_minima"])/2
-Comercio_al_por_Mayor["pesimista"] = (Comercio_al_por_Mayor["promedio"] + Comercio_al_por_Mayor["poblacion_maxima"])/2
+Comercio_al_por_Mayor["pesimista"] = (Comercio_al_por_Mayor["promedio"] + Comercio_al_por_Mayor["poblacion_minima"])/2
+Comercio_al_por_Mayor["optimista"] = (Comercio_al_por_Mayor["promedio"] + Comercio_al_por_Mayor["poblacion_maxima"])/2
 
 ###############################################################################
 "Filtros y las agrupaciones del Data Frame principal"
@@ -298,6 +298,3 @@ dato_especificado["promedio"] = (dato_especificado["poblacion_maxima"] + dato_es
 
 
 ################################################################################
-
-
-
