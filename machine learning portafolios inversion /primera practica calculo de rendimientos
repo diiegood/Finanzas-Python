@@ -67,11 +67,31 @@ volatility_anualizada = volatility_anualizada * 100
 
 "Da dos valores diferentes porque el primero la calcula muestral y el segundo poblacional"
 
-number_of_obs = 99
+#se pone como parametro el numero de observaciones de la forma de la matriz con la posicion 0 del parametro
+n = accion_datos_a.shape[0] 
+number_of_obs = n
 variance = squared_deviations.sum()/(number_of_obs-1)
+volatility = variance ** 0.5 #Se calcula la raiz de la varianza
+
+#se calcula la volatilidad mensual
+returns.std()*np.sqrt(12)
+returns.std()*(12**0.5)
+
+###############################################################################
+
+accion_datos.shape #tamaño de la matriz de accion_datos 
+
+#quintil es dividir la distribucion Z en 5 partes / 5 quintiles 0.2 cada uno de tamaño
+
+#grafica de los retornos
+returns.plot()
+
+riskfree_rate = 0.03
+rendimiento_anualizado = returns.mean()
+rendimiento_anualizado = rendimiento_anualizado * 252
 
 
-7:16
-
+exceso_rendimiento = rendimiento_anualizado - riskfree_rate
+exceso_rendimiento
 
 
