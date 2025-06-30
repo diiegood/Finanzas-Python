@@ -120,3 +120,20 @@ drawdown(activo["Large Cap"]).head() #primeros valores
 drawdown(activo["Large Cap"]) ["Drawdown"].min() #muestra el minimo
 drawdown(activo["Large Cap"]) ["Drawdown"].idxmin()
 
+###############################################################################
+
+"Funcion nueva para improtar libreria"
+
+def obtener_retornos():
+    """
+    Cargar la base de datos de los retornos de la capitalizacion de mercado de los deciles
+    """
+    datos = pd.read_csv("C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
+                        header = 0, index_col = 0, na_values= -99.99)
+    activos = datos[["Lo 10", "Hi 10"]]
+    activos.columns = [["Small Cap", "Large Cap"]]
+    activos = activos / 100
+    activos.index = pd.to_datetime(activo.index, format="%Y%m").to_period("M")
+    return activos
+    
+###############################################################################
