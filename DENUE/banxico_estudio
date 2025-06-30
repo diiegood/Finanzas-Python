@@ -184,47 +184,6 @@ estadisticas_pequeñas = pequeñas_empresas.describe()
 estadisticas_micro = micro_empresas.describe()
 
 
-# Función para calcular intervalo de confianza de la media
-def intervalo_confianza_media(df, nivel_confianza=0.95):
-    resultados = {}
-    for columna in df.select_dtypes(include=[np.number]).columns:
-        datos = df[columna].dropna()
-        n = len(datos)
-        media = np.mean(datos)
-        sem = stats.sem(datos)  # error estándar
-        h = sem * stats.t.ppf((1 + nivel_confianza) / 2., n-1)
-        intervalo = (media - h, media + h)
-        resultados[columna] = {
-            'media': media,
-            f'IC {nivel_confianza*100:.0f}%': intervalo
-        }
-    return pd.DataFrame(resultados).T
-
-# Función para graficar histogramas de cada columna numérica
-def graficar_histogramas(df, titulo_grupo):
-    columnas_numericas = df.select_dtypes(include=[np.number]).columns
-    for columna in columnas_numericas:
-        plt.figure(figsize=(6, 4))
-        plt.hist(df[columna].dropna(), bins=20, color='skyblue', edgecolor='black')
-        plt.title(f'Histograma de {columna} - {titulo_grupo}')
-        plt.xlabel(columna)
-        plt.ylabel('Frecuencia')
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
-
-# Procesar y graficar por grupo de empresas
-for nombre, df in {
-    'Grandes empresas': grandes_empresas,
-    'Medianas empresas': medianas_empresas,
-    'Pequeñas empresas': pequeñas_empresas,
-    'Micro empresas': micro_empresas
-}.items():
-    print(f"\nIntervalo de confianza - {nombre}")
-    ic = intervalo_confianza_media(df)
-    print(ic)
-    graficar_histogramas(df, nombre)
-
 
 ###############################################################################
 ###############################################################################
@@ -267,6 +226,8 @@ Comercio_al_por_Mayor["empresa_grande"] = (
     Comercio_al_por_Mayor["promedio"] > 250
 ).astype(int)
 
+
+°°cargar a excel°°
 
 ###############################################################################
 ###############################################################################
@@ -334,6 +295,9 @@ dato_especificado = dato_especificado.groupby('raz_social')[['poblacion_minima',
 dato_especificado['poblacion_minima'] = pd.to_numeric(dato_especificado['poblacion_minima'], errors='coerce')
 dato_especificado['poblacion_maxima'] = pd.to_numeric(dato_especificado['poblacion_maxima'], errors='coerce')
 dato_especificado["promedio"] = (dato_especificado["poblacion_maxima"] + dato_especificado["poblacion_minima"])/2
+
+
+################################################################################
 
 
 
