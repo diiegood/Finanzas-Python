@@ -1,0 +1,125 @@
+"Derivados   Black and Scholes"
+#practica de calculadora de opciones para paridad 
+#long call
+#short call
+#long put
+#short put
+
+
+"Se crea la funcion para calcular las tasas (r / q ), para calcular D1 y D2 "
+"Se crea la funcion para calcular el Call"
+#funcion de long call
+import numpy as np
+from scipy.stats import norm
+def IPN_BS_call(Spot, K, r, q, sigma, tenor): 
+    #se convierte las tasas a continuas exponencialmente por el modelo de Black Scholes....
+    r=(np.log(1+r*tenor/360))*(360/tenor)
+    q=(np.log(1+q*tenor/360))*(360/tenor)
+
+    #se genera d1 y d2....
+    d1 = ((np.log(Spot / K)) + (((r - q) + ((sigma * sigma) / 2)) * (tenor / 360))) / (sigma * (tenor / 360) ** (0.5))
+    d2 = ((np.log(Spot / K)) + (((r - q) - ((sigma * sigma) / 2)) * (tenor / 360))) / (sigma * (tenor / 360) ** (0.5))
+
+    #se define la funcion de pago....
+    IPN_BS_call = Spot * np.exp(-q * tenor / 360) * norm.cdf(d1,0,1) - K * np.exp(-r * tenor / 360) * norm.cdf(d2,0,1) 
+    return round(IPN_BS_call,4)
+
+
+IPN_BS_call(20.15, 20.3505, 0.0396721, 0.0003050, 0.20, 91)
+
+"Se crea la funcion para calcular el put"
+#funcion de long put
+def IPN_BS_put(Spot, K, r, q, sigma, tenor): 
+    #se convierte las tasas a continuas exponencialmente por el modelo de Black Scholes....
+    r=(np.log(1+r*tenor/360))*(360/tenor)
+    q=(np.log(1+q*tenor/360))*(360/tenor)
+
+    #se genera d1 y d2....
+    d1 = ((np.log(Spot / K)) + (((r - q) + ((sigma * sigma) / 2)) * (tenor / 360))) / (sigma * (tenor / 360) ** (0.5))
+    d2 = ((np.log(Spot / K)) + (((r - q) - ((sigma * sigma) / 2)) * (tenor / 360))) / (sigma * (tenor / 360) ** (0.5))
+
+    #se define la funcion de pago....
+    IPN_BS_put = K * np.exp(-r * tenor / 360) * norm.cdf(-d2,0,1) - Spot * np.exp(-q * tenor / 360) * norm.cdf(-d1,0,1) 
+    return round(IPN_BS_put,4)
+
+IPN_BS_put(20.15, 20.3505, 0.0396721, 0.0003050, 0.20, 91)
+
+#parametros para generar la funcion de calculadora de python para valuacion de opciones#
+"Se establecen los parametros que se va preguntar para poder llamar la calculadora."
+
+import numpy as np
+import matplotlib as plt
+import matplotlib.pyplot as plt
+
+print('Empieza calculadora de pago de la funcion de Black Scholes')
+print("-"*80)
+print('digite el precio spot del activo subyacente')
+spot= float(input())
+print("-"*80)
+print('digite el precio strike(k) del activo subyacente')
+k= float(input())
+print("-"*80)
+print('Digita la volatilidad anualizada del activo subyacente')
+sigma= float(input())
+print("-"*80)
+print('Digita el tenor del contrato (dias/360)')
+tenor= float(input())
+print("-"*80)
+print('Digita la tasa domestica(r) simple al plazo')
+r= float(input())
+print("-"*80)
+print('Digita la tasa extranjera(q) simple al plazo')
+q= float(input())
+print("-"*80)
+print('valor del call $',IPN_BS_call(spot, k, r, q, sigma, tenor))
+premium_c=IPN_BS_call(spot, k, r, q, sigma, tenor)
+print('valor del put $',IPN_BS_call(spot, k, r, q, sigma, tenor))
+premium_p=IPN_BS_put(spot, k, r, q, sigma, tenor)
+
+#se genera el vector de precios del subyacente...
+precios_subyacente=np.arange(spot*0.5, spot*1.5,1)
+precios_subyacente
+
+long_call=np.where(precios_subyacente>k, precios_subyacente-k, 0)-premium_c
+long_call
+
+long_call=np.where(precios_subyacente>k, precios_subyacente-k, 0)-premium_c
+fig, ax=plt.subplots()
+
+ax.plot(precios_subyacente, long_call)
+
+
+short_call=long_call*(-1)
+short_call
+
+fig, ax=plt.subplots()
+
+ax.plot(precios_subyacente, short_call)
+
+
+short_call
+long_call
+
+long_put=np.where(precios_subyacente<k, k-precios_subyacente, 0)-premium_p
+long_put
+
+fig, ax=plt.subplots()
+
+ax.plot(precios_subyacente, long_put)
+
+short_put=long_put*(-1)
+short_put
+
+fig, ax=plt.subplots()
+
+ax.plot(precios_subyacente, short_put)
+
+
+
+
+
+
+
+
+
+
