@@ -416,7 +416,7 @@ plt.show()
 
 ###############################################################################
 
-"Intervalo de Confianza"
+"Intervalo de Confianza"  #95% - 1.96 /  99% 2.576   / 90%  1.645   / 70% - 1.150
 
 grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
 
@@ -427,34 +427,33 @@ valores = grandes_empresas["promedio"].values
 media = np.mean(valores)
 std = np.std(valores, ddof=1)  # Desviación estándar muestral
 n = len(valores)
-z = 1.96  # Valor z para 95%
+z = 1.150  # Valor del intervalo
 
 # Calcular margen de error
 margen_error = z * (std / np.sqrt(n))
 
 # Intervalo de confianza
-ic_95 = (media - margen_error, media + margen_error)
+ic_99 = (media - margen_error, media + margen_error)
 
 # Crear DataFrame con el resultado
 ic_df = pd.DataFrame({
     "media": [media],
-    "limite_inferior_95": [ic_95[0]],
-    "limite_superior_95": [ic_95[1]],
+    "limite_inferior_99": [ic_99[0]],
+    "limite_superior_99": [ic_99[1]],
     "margen_error": [margen_error],
     "n": [n]
 })
 
 print(ic_df)
 
-"Grafica"
-
+# Gráfica
 plt.figure(figsize=(8, 5))
-plt.axvline(ic_95[0], color='red', linestyle='--', label='Límite Inferior 95%')
+plt.axvline(ic_99[0], color='red', linestyle='--', label='Límite Inferior 99%')
 plt.axvline(media, color='blue', linestyle='-', label='Media')
-plt.axvline(ic_95[1], color='green', linestyle='--', label='Límite Superior 95%')
+plt.axvline(ic_99[1], color='green', linestyle='--', label='Límite Superior 99%')
 
 plt.hist(valores, bins=30, alpha=0.3, color='gray', edgecolor='black')
-plt.title('Intervalo de Confianza del 95% sobre "promedio"')
+plt.title('Intervalo de Confianza del 99% sobre "promedio"')
 plt.xlabel('Promedio')
 plt.ylabel('Frecuencia')
 plt.legend()
@@ -462,6 +461,132 @@ plt.grid(True)
 plt.show()
 
 "Estadistica inferencial calcular el intervalo de confianza"
+
+"Modelo tipo Var"
+
+# Asegurar que no hay NaN
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+valores = grandes_empresas["promedio"].values
+
+# Calcular VaR izquierdo (2.5%) y derecho (97.5%)
+var_izquierdo = np.percentile(valores, 2.5)
+var_derecho = np.percentile(valores, 97.5)
+
+# Crear DataFrame con estos valores
+var_df = pd.DataFrame({
+    "VaR": ["Izquierdo 2.5%", "Derecho 97.5%"],
+    "Valor": [var_izquierdo, var_derecho]
+})
+
+print(var_df)
+
+# Graficar la distribución y marcar los VaR
+plt.figure(figsize=(10, 6))
+plt.hist(valores, bins=40, alpha=0.5, color='skyblue', edgecolor='black', label='Distribución')
+
+# Líneas verticales para VaR
+plt.axvline(var_izquierdo, color='red', linestyle='--', label=f'VaR Izquierdo 2.5% ({var_izquierdo:.2f})')
+plt.axvline(var_derecho, color='green', linestyle='--', label=f'VaR Derecho 97.5% ({var_derecho:.2f})')
+
+plt.title("Modelo VaR - Colas izquierda y derecha (2.5%)")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Modelo tipo VaR"  #percentil 2.5 y percentil 97.5
+
+# Quitar NaN en 'promedio'
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+valores = grandes_empresas["promedio"].values
+
+# Calcular VaR izquierdo (2.5%) y derecho (97.5%)
+var_izquierdo = np.percentile(valores, 2.5)
+var_derecho = np.percentile(valores, 97.5)
+
+# Crear DataFrame para cola izquierda (valores <= var_izquierdo)
+cola_izquierda_df = grandes_empresas[grandes_empresas["promedio"] <= var_izquierdo]
+
+# Crear DataFrame para cola derecha (valores >= var_derecho)
+cola_derecha_df = grandes_empresas[grandes_empresas["promedio"] >= var_derecho]
+
+print("Cola izquierda (≤ 2.5% VaR):")
+print(cola_izquierda_df.head())
+print("\nCola derecha (≥ 97.5% VaR):")
+print(cola_derecha_df.head())
+
+# Graficar
+plt.figure(figsize=(12, 6))
+plt.hist(valores, bins=40, alpha=0.5, color='skyblue', edgecolor='black', label='Distribución completa')
+
+# Resaltar cola izquierda
+plt.hist(cola_izquierda_df["promedio"], bins=20, alpha=0.7, color='red', label='Cola Izquierda (≤ 2.5%)')
+
+# Resaltar cola derecha
+plt.hist(cola_derecha_df["promedio"], bins=20, alpha=0.7, color='green', label='Cola Derecha (≥ 97.5%)')
+
+# Líneas de VaR
+plt.axvline(var_izquierdo, color='darkred', linestyle='--', label=f'VaR Izquierdo 2.5% ({var_izquierdo:.2f})')
+plt.axvline(var_derecho, color='darkgreen', linestyle='--', label=f'VaR Derecho 97.5% ({var_derecho:.2f})')
+
+plt.title('Distribución de Promedios con Colas Izquierda y Derecha (2.5%)')
+plt.xlabel('Promedio')
+plt.ylabel('Frecuencia')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+###############################################################################
+
+"Modelo tipo VaR"  #percentil 5 y percentil 95
+
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+valores = grandes_empresas["promedio"].values
+
+# Calcular VaR izquierdo (5%) y derecho (95%)
+var_izquierdo_5 = np.percentile(valores, 5)
+var_derecho_95 = np.percentile(valores, 95)
+
+# Crear DataFrame para cola izquierda (valores <= var_izquierdo_5)
+cola_izquierda_5_df = grandes_empresas[grandes_empresas["promedio"] <= var_izquierdo_5]
+
+# Crear DataFrame para cola derecha (valores >= var_derecho_95)
+cola_derecha_95_df = grandes_empresas[grandes_empresas["promedio"] >= var_derecho_95]
+
+print("Cola izquierda (≤ 5% VaR):")
+print(cola_izquierda_5_df.head())
+print("\nCola derecha (≥ 95% VaR):")
+print(cola_derecha_95_df.head())
+
+# Graficar
+plt.figure(figsize=(12, 6))
+plt.hist(valores, bins=40, alpha=0.5, color='skyblue', edgecolor='black', label='Distribución completa')
+
+# Resaltar cola izquierda
+plt.hist(cola_izquierda_5_df["promedio"], bins=20, alpha=0.7, color='red', label='Cola Izquierda (≤ 5%)')
+
+# Resaltar cola derecha
+plt.hist(cola_derecha_95_df["promedio"], bins=20, alpha=0.7, color='green', label='Cola Derecha (≥ 95%)')
+
+# Líneas de VaR
+plt.axvline(var_izquierdo_5, color='darkred', linestyle='--', label=f'VaR Izquierdo 5% ({var_izquierdo_5:.2f})')
+plt.axvline(var_derecho_95, color='darkgreen', linestyle='--', label=f'VaR Derecho 95% ({var_derecho_95:.2f})')
+
+plt.title('Distribución de Promedios con Colas Izquierda y Derecha (5%)')
+plt.xlabel('Promedio')
+plt.ylabel('Frecuencia')
+plt.legend()
+plt.grid(True)
+plt.show()
 
 
 
