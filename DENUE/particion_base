@@ -1,0 +1,604 @@
+"Filtrado de datos de INEGI" ##################################################
+###############################################################################
+"Nociones principales"
+#Comercio_al_por_Mayor es la matriz del sector limpia sobre la cual se va trabajar
+#Comercio_al_por_Mayor_informal es un data frame de todas las empresas informales (matriz de residuos)
+#Comercio_al_por_Mayor_original es la matriz orignal sin modificar
+#estadisticas_daframe son las estadisticas de la matriz limpia (Comercio_al_por_Mayor)
+
+#empresas formales se consideran aquellas que poseen razon social
+#empresas informales se consideran las que no poseen razon social por lo que muchas veces son pequeños (tiendas, )
+
+"Para cargar multiples librerias y generar una sola matriz" 
+
+import pandas as pd
+import os
+import numpy as np
+import re
+import pandas as pd
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+
+
+direccion = "J:\Diego-files\DENUE-datos\DENUE-0525\Bases-sucias"
+librerias = ["denue_Otros_Servicios_81_1.csv",
+             "denue_Otros_Servicios_81_2.csv",
+             ]
+
+Comercio_al_por_Menor_lista = []
+
+for archivo in librerias:
+    lectura_Datos = os.path.join(direccion, archivo) 
+    Comercio_al_por_menor1 = pd.read_csv(lectura_Datos, encoding='latin1')
+    Comercio_al_por_Menor_lista.append(Comercio_al_por_menor1) #funcion para agregar a la lista vacia los datos
+    
+
+#se combinan los data frames en uno
+Comercio_al_por_Mayor = pd.concat(Comercio_al_por_Menor_lista, ignore_index=True)
+Comercio_al_por_Mayor_original = pd.concat(Comercio_al_por_Menor_lista, ignore_index=True)
+
+###############################################################################
+###############################################################################
+"Para cargar una sola lectura de datos"
+
+
+import pandas as pd
+import os
+import numpy as np
+import re
+import pandas as pd
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+
+
+#para cargar una sola libreria
+direccion = "J:\Diego-files\INEGI\Base de datos muestreo -INEGI\DENUE-0525\Bases-sucias"
+libreria =  "denue_Comercio_al_por_Mayor_43.csv" #cambiar la libreria para ver cada sector
+
+lectura_Datos = os.path.join(direccion, libreria)
+Comercio_al_por_Mayor = pd.read_csv(lectura_Datos, encoding='latin1')  #matriz que sera modificada 
+Comercio_al_por_Mayor_original = pd.read_csv(lectura_Datos, encoding='latin1') #matriz original 
+
+#OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+"Aqui empieza el codigo"#OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+
+#data frame con todas las empresas informales(bruto, falta filtrar)
+Comercio_al_por_Mayor_informal = Comercio_al_por_Mayor_original[
+    Comercio_al_por_Mayor_original['raz_social'].isna()
+][['clee', 'nom_estab', 'raz_social', 'per_ocu', 'codigo_act',
+    'nombre_act', 'entidad', 'municipio', 'id']]
+
+
+"Analisis de la matriz original"
+
+Comercio_al_por_Mayor.head(45)#primeros 45 valores
+Comercio_al_por_Mayor.tail(45) #ultimos 45 valores
+Comercio_al_por_Mayor.dtypes #ver tipo de datos de cada variable del data frame
+Comercio_al_por_Mayor.isnull().values.any() #ver si hay alguna columna con un valor nulo
+Comercio_al_por_Mayor.columns #muestra las columnas 
+Comercio_al_por_Mayor.duplicated().sum() #para ver si hay filas duplicadas
+
+
+#se filtran las columnas que solamente son de importancia para la matriz
+Comercio_al_por_Mayor = Comercio_al_por_Mayor[['clee', 'nom_estab', 'raz_social', 'per_ocu','codigo_act', 
+                                               'nombre_act', 'entidad', 'municipio', 'id']].fillna(0) 
+
+"Para poder conocer el total de las empresas que hay"
+#el primero cuenta los individuos que no se repiten por variable de nombre de establecimiento, pero pueden tener la misma razon social
+
+#incluyendo las empresas no tan establecidas o formalizadas (en su mayoria micro o negocio propio)
+Empresas_formales_e_informales = Comercio_al_por_Mayor_original['nom_estab'].drop_duplicates() 
+Empresas_formales_e_informales = len(Empresas_formales_e_informales) #calcular las empresas unicas
+
+#empresas que realmente no se repiten porque tienen diferente razon social
+empresas_formales = Comercio_al_por_Mayor_original['raz_social'].nunique() 
+
+
+###############################################################################
+"Modificacion del data frame"
+
+#Transformaciones de las variables ############################################
+
+# primera Transformacion de los datos de la variable per_ocu.
+Comercio_al_por_Mayor['per_ocu'].unique() #para conocer que valores estan contenidos dentro de la columna ("per_ocu")
+Comercio_al_por_Mayor['per_ocu'] = Comercio_al_por_Mayor['per_ocu'].replace({'251 y más personas': '251 a 500 personas'}) 
+
+
+# segunda Transformacion de los datos de la variable codigo_act. (este puede incurrir en sesgo de variable por lo que)
+#tomar solo los 4 primeros digitos del codigo SCIAN de actividad ya que son los que estan bien.
+Comercio_al_por_Mayor["codigo_act"] = Comercio_al_por_Mayor["codigo_act"].astype(str)
+Comercio_al_por_Mayor["codigo_act"].unique()
+
+
+#Creacion de columnas ######################################################### 
+
+#Con los valores numericos de la columna per_ocu se crean dos columnas: 
+
+#se crea poblacion minima con los primeros valores numericos de la columna per_ocu
+#se crea poblacion maxima con los segundos valores numericos de la columna per_ocu
+#se crea la columna de rango entre poblacion minima y poblacion maxima
+#se crea la columna de promedio entre poblacion minima y poblacion maxima 
+
+# Extracción de valores numéricos desde 'per_ocu' donde se crean dos nuevas columnas , poblacion_minima y poblacion_maxima
+Comercio_al_por_Mayor[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Mayor['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+
+# Convierte las columnas extraidas a valores numericos reales int o float, si no se queda como NaN
+Comercio_al_por_Mayor['poblacion_minima'] = pd.to_numeric(Comercio_al_por_Mayor['poblacion_minima'], errors='coerce')
+Comercio_al_por_Mayor['poblacion_maxima'] = pd.to_numeric(Comercio_al_por_Mayor['poblacion_maxima'], errors='coerce')
+
+#se borra la columna de (per_ocu)
+#Comercio_al_por_Menor.drop(columns='per_ocu', inplace=True) 
+
+#se crea una columna que promedie los valores de poblacion minima y poblacion maxima
+Comercio_al_por_Mayor["promedio"] = (Comercio_al_por_Mayor["poblacion_maxima"] + Comercio_al_por_Mayor["poblacion_minima"])/2
+Comercio_al_por_Mayor["pesimista"] = (Comercio_al_por_Mayor["promedio"] + Comercio_al_por_Mayor["poblacion_minima"])/2
+Comercio_al_por_Mayor["optimista"] = (Comercio_al_por_Mayor["promedio"] + Comercio_al_por_Mayor["poblacion_maxima"])/2
+
+###############################################################################
+"Filtros y las agrupaciones del Data Frame principal"
+
+#1er filtro empresas que no cuenten con razon social
+Comercio_al_por_Mayor = Comercio_al_por_Mayor[Comercio_al_por_Mayor["raz_social"] != 0]
+
+
+"Agrupamientos por nombre de establecimiento, sumando población mínima y máxima"
+#despues aplicar otro agrupamiento por nombre de la razon social
+#Columnas de Municipio, Entidad, id, no se suman proque son valores que difieren del la localidad de cada sucursal de la empresa general 
+
+# Agrupamiento de empresas por razón social (esto sobrescribe el anterior DataFrame) / SOLO EMPRESAS FORMALES ESTABLECIDAS
+Comercio_al_por_Mayor = Comercio_al_por_Mayor.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima', 'promedio',"optimista", "pesimista"]].sum()
+# Columnas con valores que no quiero que se sumen para posteriormente agruparlas
+columnas_agregadas = Comercio_al_por_Mayor_original.groupby('raz_social')[['codigo_act', 'nom_estab', 'nombre_act']].first()
+Comercio_al_por_Mayor = Comercio_al_por_Mayor.join(columnas_agregadas) # Unir ambos DataFrames
+
+
+###############################################################################
+
+"Filtros para delimitar la clasificacion de las empresas"
+#segun la clasificacion del INEGI.
+
+# condiciones para micro-empresas #############################################
+primera_condicion = (Comercio_al_por_Mayor["promedio"] > 0) & (Comercio_al_por_Mayor["promedio"] < 11) 
+# Aplicamos ambas condiciones al DataFrame original (filtrado)
+micro_empresas = Comercio_al_por_Mayor[primera_condicion] #de 0 hasta 10 trabajadores
+
+# condiciones para empresas pequeñas ##########################################
+primera_condicion = (Comercio_al_por_Mayor["promedio"] >= 11) & (Comercio_al_por_Mayor["promedio"] <= 50)
+pequeñas_empresas = Comercio_al_por_Mayor[primera_condicion] #de 11 a 50 trabajadores
+
+# condiciones para empresas medianas ##########################################
+primera_condicion = (Comercio_al_por_Mayor["promedio"] > 50) & (Comercio_al_por_Mayor["promedio"] <= 250)
+medianas_empresas = Comercio_al_por_Mayor[primera_condicion ] #de 51 a 250 trabajadores
+
+#condiciones para empresas grandes ############################################
+primera_condicion = Comercio_al_por_Mayor["promedio"] > 250 
+grandes_empresas = Comercio_al_por_Mayor[primera_condicion ] #de mas de 250 trabajadores
+
+"Analisis de cada data frame"
+
+estadisticas_grandes = grandes_empresas.describe()
+estadisticas_medianas = medianas_empresas.describe() 
+estadisticas_pequeñas = pequeñas_empresas.describe()
+estadisticas_micro = micro_empresas.describe()
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+"Comprobacion de agrupacion"
+# Conjunto de valores que no estan dentro de ninguno de los anteriores debe ser 0
+valores_residuales = pd.concat([micro_empresas, pequeñas_empresas, medianas_empresas, grandes_empresas]).index
+valores_residuales = Comercio_al_por_Mayor.drop(valores_residuales)
+
+valores_residuales = len(valores_residuales)
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Transformacion de los datos de variable a dummis"  
+#Agrupa en el dataframe ya filtrado posteriormente
+
+# Dummies según la columna "promedio" actualizada
+
+#dummi generada con base a los valores de las micro-empresas
+Comercio_al_por_Mayor["empresa_micro"] = (
+    (Comercio_al_por_Mayor["promedio"] > 0) &
+    (Comercio_al_por_Mayor["promedio"] <= 11)
+).astype(int)
+
+#dummi generada con base a los valores de las empresas pequeñas
+Comercio_al_por_Mayor["empresa_pequeña"] = (
+    (Comercio_al_por_Mayor["promedio"] > 11) &
+    (Comercio_al_por_Mayor["promedio"] <= 50)
+).astype(int)
+
+#dummi generada con base a los valores de las empresas medianas
+Comercio_al_por_Mayor["empresa_mediana"] = (
+    (Comercio_al_por_Mayor["promedio"] > 50) &
+    (Comercio_al_por_Mayor["promedio"] <= 250)
+).astype(int)
+
+#dummi generada con base a los valores de las empresas grandes
+Comercio_al_por_Mayor["empresa_grande"] = (
+    Comercio_al_por_Mayor["promedio"] > 250
+).astype(int)
+
+
+°°cargar a excel°°
+
+###############################################################################
+###############################################################################
+"Para exportar a Excel los data frames creados con las matrices posteriormente creadas de:"
+
+#matriz limpia del sector con el total empresas que son formales de ese sector (primera hoja de excel)
+#matriz de empresas grandes de ese sector   (segunda hoja de excel) 
+#matriz de empresas medianas de ese sector  (tercera hoja de excel)
+#matriz de empresas pequeñas  de ese sector (cuarta hoja de excel)
+#matriz de empresas micro de ese sector     (quinta hoja de excel)
+
+import openpyxl
+import pandas as pd
+
+# Ruta de salida del archivo Excel
+ruta_salida = "J:\Diego-files\DENUE-datos\DENUE-0525\Bases-limpias\DENUE_Actividades_gubernamentales.xlsx"
+
+# Exportar varios DataFrames a un mismo archivo Excel en diferentes hojas
+with pd.ExcelWriter(ruta_salida, engine='openpyxl') as writer:
+    Comercio_al_por_Mayor.to_excel(writer, sheet_name='Actividades_gubernamentales', index=True)
+    grandes_empresas.to_excel(writer, sheet_name='Grandes Empresas', index=True)
+    medianas_empresas.to_excel(writer, sheet_name='Medianas Empresas', index=True)
+    pequeñas_empresas.to_excel(writer, sheet_name='Pequeñas Empresas', index=True)
+    micro_empresas.to_excel(writer, sheet_name='Micro Empresas', index=True)
+
+
+#°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+#°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°
+
+
+"VERFICICAION DE LOS DATOS" ###################################################
+#Se observa un valor de la columna  para ver si coinciden con las columnas anteriores
+#Creacion de data frame nuevo sin modificar , salvo las filtrando columnas necesarias y agregando nuevas necesarias.
+
+
+Comercio_al_por_Mayor_original['per_ocu'].unique() #para conocer que valores estan contenidos dentro de la columna ("per_ocu")
+Comercio_al_por_Mayor_original['per_ocu'] = Comercio_al_por_Mayor_original['per_ocu'].replace({'251 y más personas': '251 a 500 personas'}) 
+
+#se realiza unn nuevo acomodo de la matriz con columnas de importancia
+Comercio_al_por_Mayor_original = Comercio_al_por_Mayor_original[['clee', 'nom_estab', 'raz_social', 
+                                                                 'per_ocu','codigo_act','nombre_act', 
+                                                                 'entidad', 'municipio', 'id']].fillna(0) 
+
+#se crean dos columnas del la matriz original con la poblacion maxima y minima para que sea comparable con las anteriores
+Comercio_al_por_Mayor_original[['poblacion_minima', 'poblacion_maxima']] = Comercio_al_por_Mayor_original['per_ocu'].astype(str).str.extract(r'(\d+\.?\d*)\D*(\d+\.?\d*)')
+
+
+###############################################################################
+###############################################################################
+
+#para verificar que no se repitan datos se filtra un valor por si solo, creando una matriz que filtre solo datos que lo tengan contenido  
+#para corroborrar si todos los valores del dato dan el numero total de los otros data frames y que no este agrupando de mas.
+#a su vez encontrar valores raros y poder identificarlos mas facilmente para ver si se estan filtrando o agrupando bien.
+
+dato_especificado = Comercio_al_por_Mayor_original[Comercio_al_por_Mayor_original["raz_social"] == "02DCC0038B "] #se filtra por razon social un valor especifico
+
+dato_especificado = dato_especificado.groupby('raz_social')[['poblacion_minima', 'poblacion_maxima',
+                                             "promedio","codigo_act", 'nom_estab', 'raz_social', 
+                                             'nombre_act']].sum(inplace = True)    #se agrupa conteniendo esas columnas en el data frame
+
+
+#se generan nuevas columnas donde nos tenga los datos de la poblacion maxima,  minima y se calcula el promedio. 
+#(para ver si coincide con los cuadros limpios)
+dato_especificado['poblacion_minima'] = pd.to_numeric(dato_especificado['poblacion_minima'], errors='coerce')
+dato_especificado['poblacion_maxima'] = pd.to_numeric(dato_especificado['poblacion_maxima'], errors='coerce')
+dato_especificado["promedio"] = (dato_especificado["poblacion_maxima"] + dato_especificado["poblacion_minima"])/2
+
+
+################################################################################
+
+empresas_grandes_top = grandes_empresas[grandes_empresas["promedio"] > 1000]
+porcentaje_mayor_1000 = len(empresas_grandes_top)/len(grandes_empresas) * 100
+
+#dividir en cuartiles
+grandes_empresas["cuartil_promedio"] = pd.qcut(grandes_empresas["promedio"], 4, labels=[1, 2, 3, 4])
+print(grandes_empresas["cuartil_promedio"].value_counts().sort_index())
+print(grandes_empresas[["promedio", "cuartil_promedio"]].head())
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+x = grandes_empresas["promedio"].values
+y = grandes_empresas["pesimista"].values
+z = grandes_empresas["optimista"].values
+
+
+x_y_z_Values = {
+    "promedio e_grandes" : x.mean(),
+    "desviacion estandar e_grandes" : x.std(),
+    "promedio pesimista e_grandes" : y.mean(),
+    "desviacion estandar pesimista e_grandes" : y.std(),
+    "promedio optimista e_grandes": z.mean(),
+    "desviacion estandar optimista e_grandes" : z.std()
+    }
+
+x_y_z_Values
+
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+grandes_empresas_ordenado = grandes_empresas.sort_values(by="promedio", ascending=True)
+outliers = grandes_empresas_ordenado.tail(50)
+resto_valores = grandes_empresas_ordenado.iloc[:-50]
+
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10, 6))
+plt.hist(resto_valores["promedio"], bins=15, color="skyblue", edgecolor="black")
+plt.title("Histograma de los 50 Promedios Más Altos")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.grid(True)
+plt.show()
+
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+#rango 250-600
+empresas_a = grandes_empresas[(grandes_empresas["promedio"] > 250) & (grandes_empresas["promedio"] < 600)]
+
+plt.figure(figsize=(10, 6))
+plt.hist(empresas_a["promedio"], bins=15, color="skyblue", edgecolor="black")
+plt.title("Histograma de los 50 Promedios Más Altos")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.grid(True)
+plt.show()
+
+porcentaje_a = (len(empresas_a) / len(grandes_empresas) )*100
+porcentaje_a
+
+#rango 600-1000
+
+empresas_b = grandes_empresas[(grandes_empresas["promedio"] > 600) & (grandes_empresas["promedio"] < 1000)]
+
+plt.figure(figsize=(10, 6))
+plt.hist(empresas_b["promedio"], bins=15, color="skyblue", edgecolor="black")
+plt.title("Histograma 6000-1000 Promedios Más Altos")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.grid(True)
+plt.show()
+
+porcentaje_b = (len(empresas_b) / len(grandes_empresas) )*100
+porcentaje_b
+
+
+
+#rango 1000-2000
+empresas_c = grandes_empresas[(grandes_empresas["promedio"] > 1000) & (grandes_empresas["promedio"] < 2000)]
+
+plt.figure(figsize=(10, 6))
+plt.hist(empresas_c["promedio"], bins=15, color="skyblue", edgecolor="black")
+plt.title("Histograma de los 50 Promedios Más Altos")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.grid(True)
+plt.show()
+
+porcentaje_c = (len(empresas_c) / len(grandes_empresas) )*100
+porcentaje_c
+
+#mas de 2000
+
+empresas_d = grandes_empresas[grandes_empresas["promedio"] > 2195]
+
+plt.figure(figsize=(10, 6))
+plt.hist(empresas_d["promedio"], bins=15, color="skyblue", edgecolor="black")
+plt.title("Histograma de Empresas con Promedio > 2000")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.grid(True)
+plt.show()
+
+porcentaje_d = (len(empresas_d) / len(grandes_empresas) )*100
+porcentaje_d
+
+###############################################################################
+"Comapracion de graficas de valores"
+
+plt.figure(figsize=(10, 6))
+plt.hist(resto_valores["promedio"], bins=15, alpha=0.6, label="Resto", color="gray", edgecolor="black")
+plt.hist(outliers["promedio"], bins=15, alpha=0.8, label="Top 50", color="skyblue", edgecolor="black")
+plt.title("Comparación de Histogramas: Top 50 vs Resto")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+###############################################################################
+
+"Intervalo de Confianza"  #95% - 1.96 /  99% 2.576   / 90%  1.645   / 70% - 1.150
+
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+# Extraer valores
+valores = grandes_empresas["promedio"].values
+
+# Calcular estadísticas
+media = np.mean(valores)
+std = np.std(valores, ddof=1)  # Desviación estándar muestral
+n = len(valores)
+z = 1.96  # Valor del intervalo
+
+# Calcular margen de error
+margen_error = z * (std / np.sqrt(n))
+
+# Intervalo de confianza
+ic_99 = (media - margen_error, media + margen_error)
+
+# Crear DataFrame con el resultado
+ic_df = pd.DataFrame({
+    "media": [media],
+    "limite_inferior_99": [ic_99[0]],
+    "limite_superior_99": [ic_99[1]],
+    "margen_error": [margen_error],
+    "n": [n]
+})
+
+print(ic_df)
+
+# Gráfica
+plt.figure(figsize=(8, 5))
+plt.axvline(ic_99[0], color='red', linestyle='--', label='Límite Inferior 99%')
+plt.axvline(media, color='blue', linestyle='-', label='Media')
+plt.axvline(ic_99[1], color='green', linestyle='--', label='Límite Superior 99%')
+
+plt.hist(valores, bins=30, alpha=0.3, color='gray', edgecolor='black')
+plt.title('Intervalo de Confianza del 99% sobre "promedio"')
+plt.xlabel('Promedio')
+plt.ylabel('Frecuencia')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+"Estadistica inferencial calcular el intervalo de confianza"
+
+"Modelo tipo Var"
+
+# Asegurar que no hay NaN
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+valores = grandes_empresas["promedio"].values
+
+# Calcular VaR izquierdo (2.5%) y derecho (97.5%)
+var_izquierdo = np.percentile(valores, 2.5)
+var_derecho = np.percentile(valores, 97.5)
+
+# Crear DataFrame con estos valores
+var_df = pd.DataFrame({
+    "VaR": ["Izquierdo 2.5%", "Derecho 97.5%"],
+    "Valor": [var_izquierdo, var_derecho]
+})
+
+print(var_df)
+
+# Graficar la distribución y marcar los VaR
+plt.figure(figsize=(10, 6))
+plt.hist(valores, bins=40, alpha=0.5, color='skyblue', edgecolor='black', label='Distribución')
+
+# Líneas verticales para VaR
+plt.axvline(var_izquierdo, color='red', linestyle='--', label=f'VaR Izquierdo 2.5% ({var_izquierdo:.2f})')
+plt.axvline(var_derecho, color='green', linestyle='--', label=f'VaR Derecho 97.5% ({var_derecho:.2f})')
+
+plt.title("Modelo VaR - Colas izquierda y derecha (2.5%)")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Modelo tipo VaR"  #percentil 2.5 y percentil 97.5
+
+# Quitar NaN en 'promedio'
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+valores = grandes_empresas["promedio"].values
+
+# Calcular VaR izquierdo (2.5%) y derecho (97.5%)
+var_izquierdo = np.percentile(valores, 2.5)
+var_derecho = np.percentile(valores, 97.5)
+
+# Crear DataFrame para cola izquierda (valores <= var_izquierdo)
+cola_izquierda_df = grandes_empresas[grandes_empresas["promedio"] <= var_izquierdo]
+
+# Crear DataFrame para cola derecha (valores >= var_derecho)
+cola_derecha_df = grandes_empresas[grandes_empresas["promedio"] >= var_derecho]
+
+print("Cola izquierda (≤ 2.5% VaR):")
+print(cola_izquierda_df.head())
+print("\nCola derecha (≥ 97.5% VaR):")
+print(cola_derecha_df.head())
+
+# Graficar
+plt.figure(figsize=(12, 6))
+plt.hist(valores, bins=40, alpha=0.5, color='skyblue', edgecolor='black', label='Distribución completa')
+
+# Resaltar cola izquierda
+plt.hist(cola_izquierda_df["promedio"], bins=20, alpha=0.7, color='red', label='Cola Izquierda (≤ 2.5%)')
+
+# Resaltar cola derecha
+plt.hist(cola_derecha_df["promedio"], bins=20, alpha=0.7, color='green', label='Cola Derecha (≥ 97.5%)')
+
+# Líneas de VaR
+plt.axvline(var_izquierdo, color='darkred', linestyle='--', label=f'VaR Izquierdo 2.5% ({var_izquierdo:.2f})')
+plt.axvline(var_derecho, color='darkgreen', linestyle='--', label=f'VaR Derecho 97.5% ({var_derecho:.2f})')
+
+plt.title('Distribución de Promedios con Colas Izquierda y Derecha (2.5%)')
+plt.xlabel('Promedio')
+plt.ylabel('Frecuencia')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+###############################################################################
+
+"Modelo tipo VaR"  #percentil 5 y percentil 95
+
+grandes_empresas = grandes_empresas.dropna(subset=["promedio"])
+
+valores = grandes_empresas["promedio"].values
+
+# Calcular VaR izquierdo (5%) y derecho (95%)
+var_izquierdo_5 = np.percentile(valores, 5)
+var_derecho_95 = np.percentile(valores, 95)
+
+# Crear DataFrame para cola izquierda (valores <= var_izquierdo_5)
+cola_izquierda_5_df = grandes_empresas[grandes_empresas["promedio"] <= var_izquierdo_5]
+
+# Crear DataFrame para cola derecha (valores >= var_derecho_95)
+cola_derecha_95_df = grandes_empresas[grandes_empresas["promedio"] >= var_derecho_95]
+
+print("Cola izquierda (≤ 5% VaR):")
+print(cola_izquierda_5_df.head())
+print("\nCola derecha (≥ 95% VaR):")
+print(cola_derecha_95_df.head())
+
+# Graficar
+plt.figure(figsize=(12, 6))
+plt.hist(valores, bins=40, alpha=0.5, color='skyblue', edgecolor='black', label='Distribución completa')
+
+# Resaltar cola izquierda
+plt.hist(cola_izquierda_5_df["promedio"], bins=20, alpha=0.7, color='red', label='Cola Izquierda (≤ 5%)')
+
+# Resaltar cola derecha
+plt.hist(cola_derecha_95_df["promedio"], bins=20, alpha=0.7, color='green', label='Cola Derecha (≥ 95%)')
+
+# Líneas de VaR
+plt.axvline(var_izquierdo_5, color='darkred', linestyle='--', label=f'VaR Izquierdo 5% ({var_izquierdo_5:.2f})')
+plt.axvline(var_derecho_95, color='darkgreen', linestyle='--', label=f'VaR Derecho 95% ({var_derecho_95:.2f})')
+
+plt.title('Distribución de Promedios con Colas Izquierda y Derecha (5%)')
+plt.xlabel('Promedio')
+plt.ylabel('Frecuencia')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+Comercio_quantil_1 = Comercio_por_Mayor["promedio"].quantile(0.25)
+Comercio_quantil_1 = Comercio_por_Mayor["promedio"].quantile(0.50)
+Comercio_quantil_1 = Comercio_por_Mayor["promedio"].quantile(0.75)
+Comercio_quantil_1 = Comercio_por_Mayor["promedio"].quantile(0.95)
+
+
+plt.figure(figsize=(10, 6))
+plt.hist(empresas_b["promedio"], bins=15, color="skyblue", edgecolor="black")
+plt.title("Histograma 6000-1000 Promedios Más Altos")
+plt.xlabel("Promedio")
+plt.ylabel("Frecuencia")
+plt.grid(True)
+plt.show()
