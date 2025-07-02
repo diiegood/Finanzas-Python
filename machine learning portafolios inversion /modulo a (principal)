@@ -1,0 +1,156 @@
+"Practica 3"
+
+import pandas as pd 
+import funciones_curso as erk
+import scipy.stats
+import numpy as np
+from scipy.stats import norm 
+
+
+#hfi son los datos que se cargan a traves de una libreria creada en el modulo anterior
+
+"Se cargan las librerias en esta funcion"
+
+hfi = erk.get_hfi_returns() #carga la funcion para leer los datos como hfi
+hfi.head()
+
+###############################################################################
+
+pd.concat([hfi.mean(), hfi.median(), hfi.mean()>hfi.median()], axis="columns")
+
+#valor 0 corresponde a la media
+#valor 1 corresponde a la mediana
+#valor 2 corresponde a ver si la media es menor a la mediana en boleano
+
+#para calcular la curtosis de la base de datos
+
+erk.skewness(hfi).sort_values() #va a ordenar los valores de la funcion skewwnes aplicado a hfi
+
+
+scipy.stats.skew(hfi)
+erk.skewness(hfi)
+hfi.shape
+
+normal_rets = np.random.normal(0, .15, size = (26300, 1))
+normal_rets
+
+erk.skewness(normal_rets) #calcula la skewness de los datos anteriormente creados aleatoriamente
+
+erk.kurtosis(normal_rets)  #calcula la curtosis de los datos anteriormente creados aleatoriamente
+
+erk.skewness(hfi) #calcula la asimetria de los datos
+
+erk.kurtosis(hfi)
+
+scipy.stats.kurtosis(normal_rets) #calcula la curtosis 
+
+scipy.stats.jarque_bera(normal_rets) #calcula si es normal o no con el jarque bera
+#primer numero indica valor  jarque bera  y el segundo es el p-value del test de hipotesis (valor de confianza)
+#rechaza o acepta la hipotesis nula de la distribucion normal
+
+
+scipy.stats.jarque_bera(hfi) 
+
+#para ver si la distribucion es normal
+erk.is_normal(normal_rets) #marca un boleano si es normal o no la distribucion de datos
+erk.is_normal(hfi)
+hfi.aggregate(erk.is_normal)
+
+###############################################################################
+
+"Practica 4"
+
+"Practica 3"
+
+import pandas as pd 
+import funciones_curso as erk
+import scipy.stats 
+from scipy.stats import norm
+import numpy as np
+
+
+#hfi son los datos que se cargan a traves de una libreria creada en el modulo anterior
+
+"Se cargan las librerias en esta funcion"
+
+hfi = erk.get_hfi_returns() #carga la funcion para leer los datos como hfi
+hfi.head()
+
+#indica la dispersion de la media o la desviacion estandar
+hfi.std(ddof= 0)
+
+#se calcula la desviacion estandar para el subconjunto hfi
+hfi[hfi<0].std(ddof=0) #calcula la semi-desviacion
+
+erk.semi_desviacion(hfi)
+
+"Calculo del VaR y C-VaR"
+
+#VaR historico  ###############################################################
+
+"Requiere un historial de los rendimeintos intentando encontrar el VaR del 5% (dado un CI de 95%)"
+#observa las rentabilidades pasadas y las analiza desde el percentil 5, 
+#siendo el limite dado el intervalo de confianza seleccionado
+
+np.percentile(hfi, 5) #se observa el valor en percentil 5 en columna
+np.percentile(hfi, 5, axis= 0) #muestra los percentiles de todas las columnas
+#Hay una probabilidad de 5% de que en el periodo determinado se pierda el primer valor obtenido del array anterior
+
+erk.VaR_historico(hfi)  #Calcula el VaR para cada columna dado el percentil 5
+#q- percentil 
+
+norm.ppf(0.05) #esta funcion nos da el valor asociado de la distribucion normal 
+#segun el valor de la distribucion que esta debajo del numero que pongamos
+
+"""
+si pongo 0.5 es el valor de la media de la normal porque significa que esta en el (0.5) 50%
+por lo que deberia ser 0 ya que estandarizada su media es cero
+"""
+
+distrbucion_normal_puntuacion = norm.ppf(0.05)
+distrbucion_normal_puntuacion
+
+#Calcula el VaR a un nivel del 5% osea en el percentil 5
+-(hfi.mean() + distrbucion_normal_puntuacion * hfi.std(ddof=0))
+
+#si se quiere poner positivo el resultado se agrega  -()  al exterior de la funcion
+
+#VaR parametrico-Gaussiano / se toma como una muestra #########################
+
+"Supone que la distribucion es normal y parametrico es segun los parametros de quien realiza el calculo"
+
+erk.VaR_Normal(hfi) #Calcula el VaR de los datos usando modelo parametrico gaussiano
+
+#calcula el valor z suponiendo que los datos siguen la distribucion normal, pero en realidad no 
+#porque tienen asimetria y exceso de curtosis
+
+#Lo ideal seria ajustar los datos para tener en cuenta la asimetria y la curtosis
+
+#La normal la curtosis siempre es 3 si es mayor de 3 no es normal
+
+#VaR con  Modificacion Cornish-Fisher / #######################################
+
+"""se toma como que los retornos tienen sesgo negativo o positivo, 
+#teniendo colas mas pesadas de lo que la distribucion normal refleja"""
+#VaR
+
+#se genera una lista de resultados donde vienen todos los modelos del VaR 
+VaR_list = [erk.VaR_Normal(hfi),erk.VaR_mejorado(hfi, modified = True), erk.VaR_historico(hfi)]
+
+#para comparar todos los modelos de var se genera una matriz con la suma de todas las matrices
+#de los resultados anteriores de los modelos
+comparasion = pd.concat(VaR_list, axis=1)
+
+#se renombran las columnas de la matriz comparasion creada posteriormente
+comparasion.columns=["dist_normal", "Cornish-Fisher", "Historico"]
+
+comparasion.plot.bar (title= "Hedge Fund Indices: VaR")
+
+erk.C_VaR_historico(hfi)
+#Estos numeros dicen que si ocurre ese cinco porciento de probabilidades, siendo
+#el peor 5% de los casos posibles,  el promedio de la perdida 
+#es el de cada valor arrojado por cada variable.
+
+
+
+
