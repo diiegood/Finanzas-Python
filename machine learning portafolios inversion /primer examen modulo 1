@@ -1,0 +1,166 @@
+"Examen 1 coursera curso de machine learning especializacion"
+
+import pandas as pd 
+import scipy.stats
+import numpy as np
+from scipy.stats import norm 
+
+#se carga la libreria
+datos = pd.read_csv("C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
+                  header = 0, 
+                  index_col=0, 
+                  parse_dates=True, 
+                  na_values=-99.99 )
+
+#para transformar los datos en una serie de tiempo
+datos.index = pd.to_datetime(datos.index, format="%Y%m").to_period('M')
+datos.head()
+
+
+#se filtran los datos de interes Lo-20 y Hi-20 , generando un nuevo data frame
+rendimientos = datos[["Lo 20", "Hi 20"]]
+rendimientos =  rendimientos /100
+rendimientos.head(50)
+rendimientos.tail(50)
+
+#se calculan los rendimientos mensuales y posteriormente los anuales
+numero_periodos = rendimientos.shape[0] #se calculan los rendimientos por renglon de la matriz
+rendimiento_mensual = (rendimientos+1).prod()**(1/numero_periodos) - 1
+rendimiento_anual = (rendimiento_mensual + 1)**12-1
+rendimiento_anual
+
+rendimiento_anual_Lo_20 = rendimiento_anual["Lo 20"]
+rendimiento_anual_Hi_20 = rendimiento_anual["Hi 20"]
+
+#Para calcular la volatilidad de ambos
+volatilidad_anual = rendimientos.std()*np.sqrt(12)
+volatilidad_anual
+
+volatilidad_anual_Lo_20 = volatilidad_anual["Lo 20"]
+volatilidad_anual_Hi_20 = volatilidad_anual["Hi 20"]
+
+#para acotar un periodo de 1999 a 2015 / se realiza exactamente lo mismo a lo anterior pero limitando la fecha
+rendimientos_acotados = rendimientos["1999":"2015"]
+numero_periodos_a = rendimientos_acotados.shape[0]
+rendimiento_mensual_a = (rendimientos_acotados+1).prod()**(1/numero_periodos_a) - 1
+rendimiento_anual_a = (rendimiento_mensual_a + 1)**12-1
+rendimiento_anual_a
+
+rendimiento_anual_a_Lo = rendimiento_anual_a["Lo 20"]
+rendimiento_anual_a_Hi = rendimiento_anual_a["Hi 20"]
+
+volatilidad_anual_a = rendimientos_acotados.std()*np.sqrt(12)
+volatilidad_anual_a
+
+volatilidad_a_Lo = volatilidad_anual_a["Lo 20"]
+volatilidad_a_Hi = volatilidad_anual_a["Hi 20"]
+
+
+#Para calcular el Draw Down del portafolio
+
+#primero se calcula el indice de cartera
+indice_cartera = 1000 * (1+rendimientos_acotados).cumprod()
+indice_cartea_max = indice_cartera.min()
+indice_cartera
+
+import funciones_curso as fc #se importa la funcion previamente creada
+"""
+La funcion Drawdown de la libreria funciones_curso crea tres columnas en el dataframe
+que se le especifique en este caso primero calcula un indice de cartera dependiendo el presupuesto
+del valor monetario asignado, posteriormente calcula el pico maximo anterior de ganancia y con base
+a eso saca los rendimientos previos comparando los valores siguientes o del tiempo t+1 con el maximo
+historico que se tenga registrado hasta ese tiempo t+1
+"""
+
+#Para calcular las caidas maximas comparandolas con el maximo historico que se tenga de rendimiento
+
+#modulo / funcion (dataframe["Columna"])[Columna Drawdown].min()
+caida_maxima_Lo_20 = fc.drawdown(rendimientos_acotados["Lo 20"])["Drawdown"].min()
+
+caida_maxima_Hi_20 = fc.drawdown(rendimientos_acotados["Hi 20"])["Drawdown"].min()
+
+#Para calcular las fechas donde sucedio esa maxima caida historica registrada de indice de cartera
+
+#muestra el valor indixeado que coincide con el valor donde se obtuvo un minimo / segun las columnas seleccionadas
+fecha_minimo_historico_Lo = fc.drawdown(rendimientos_acotados["Lo 20"])["Drawdown"].idxmin() 
+
+fecha_minimo_historico_Hi = fc.drawdown(rendimientos_acotados["Hi 20"])["Drawdown"].idxmin() 
+
+################################################################################
+################################################################################
+################################################################################
+
+#Para acotar el nuevo perido desde 2009  atraves de 2018. / calcular la semidesviacion
+
+prices = pd.read_csv("C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
+                     header = 0, index_col=0, parse_dates=True, na_values=-99.99)
+
+prices.index = pd.to_datetime(prices.index, format="%Y%m")
+prices.index = prices.index.to_period('M')
+prices.head()
+
+precios_2009 = prices["2009":]
+precios_2009.head()
+
+semi_desviacion_2009 = fc.semi_desviacion(precios_2009)
+
+semi_desviacion_2009.max()
+semi_desviacion_2009.idxmax()
+semi_desviacion_2009.min()
+semi_desviacion_2009.idxmin()
+
+################################################################################
+################################################################################
+################################################################################
+
+#Pregunta 1
+print("el rendimiento anual de la cartera Lo 20 es de ", rendimiento_anual_Lo_20 * 100,"%")
+
+#Pregunta 2
+print("La volatilidad anualizada de la cartera Lo 20 es de", volatilidad_anual_Lo_20* 100, "%")
+
+#Pregunta 3 
+print("el rendimiento anual de la cartera Hi 20 es de ", rendimiento_anual_Hi_20 * 100,"%")
+
+#Pregunta 4
+print("La volatilidad anualizada de la cartera Hi es de", volatilidad_anual_Hi_20 * 100, "%")
+
+#Pregunta 5
+print("El rendimeinto anualizado de la cartera Lo 20 durante el periodo 1999-2015 es de", rendimiento_anual_a_Lo*100,"%")
+
+#Pregunta 6
+print("La volatilidad de Lo 20 durante el periodo de 1999-2015 es de ", volatilidad_a_Lo *100 , "%")
+
+#Pregunta 7
+print("Cual fue la rentabilidad anualizada de la cartera Hi 20 en el periodo 1999 - 2015", rendimiento_anual_a_Hi * 100 , "%")
+
+#Pregunta 8
+print("la volatilidad anualizada de la cartera Hi 20 en el period 1999-2015 ", volatilidad_a_Hi *100, "%")
+
+#Pregunta 9 
+print("caida maxima durante el periodo 1999-2015 de Lo 20 es de", -(caida_maxima_Lo_20) * 100, "%" )
+
+#Pregunta 10 
+print("periodo donde se registro esa caida?", fecha_minimo_historico_Lo )
+
+#Pregunta 11
+print("caida maxima durante el periodo 1999-2015 de Hi 20 es de", -(caida_maxima_Hi_20) * 100, "%" )
+
+#Pregunta 12 
+print("periodo donde se registro esa caida?", fecha_minimo_historico_Hi )
+
+#Pregunta 13
+print("Short Selling")
+
+#Pregunta 14
+print("Fixed Income Arbitrage")
+
+#Pregunta 15
+print("Convertible Arbitrage")
+
+#Pregunta 16
+print("Fixed Income Arbitrage")
+
+rendimientos.plot() #grafica de rendimientos de todos los periodos
+rendimientos_acotados.plot() #grafica de rendimientos del periodo 1999-2015
+indice_cartera.plot()
