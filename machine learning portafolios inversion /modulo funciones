@@ -1,3 +1,13 @@
+"""
+Nota:
+    
+Al crear una funcion se debe cargar el modulo donde se encuentra y a su vez cargar la funcion a usar
+cada vez que se crea una se debe reiniciar el programa para que la pueda correr sin problemas
+correr primero el modulo de funciones y despues el principal.
+"""
+
+
+
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
@@ -20,17 +30,28 @@ def drawdown(return_series: pd.Series):
 def obtener_returnos():
     """
     Load the Fama-French Dataset for the returns of the Top and Bottom Deciles by MarketCap
+    1- carga los datos panel
+    2-filtra solo los valores de Lo-20 y Hi-20 del data frame
+    3-se calculan los rendimientos de rendimientos/100
+    4-se cambia el formato a serie de tiempo y se indexa el periodo
+    5-regresa la funcion rets que es el dataframe ya filtrado con todo lo anterior
     """
-    me_m = pd.read_csv("C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
-                       header=0, index_col=0, na_values=-99.99)
-    rets = me_m[['Lo 10', 'Hi 10']]
-    rets.columns = ['SmallCap', 'LargeCap']
+    #se cargan los datos panel
+    me_m = pd.read_csv(
+       "C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
+       header=0,
+       index_col=0,
+       parse_dates=True,
+       na_values=-99.99)
+    rets = me_m[['Lo 20', 'Hi 20']]
+    #rets.columns = ['SmallCap', 'LargeCap']
+    rets = me_m
     rets = rets/100
     rets.index = pd.to_datetime(rets.index, format="%Y%m").to_period('M')
     return rets
 
 
-def get_hfi_returns():  #funcion para leer base de datos
+def returns():  #funcion para leer base de datos
     """
     Load and format the EDHEC Hedge Fund Index Returns
     """
@@ -135,7 +156,7 @@ def semideviation3(r):
     excess_negative = excess[excess<0]                        # We take only the returns below the mean
     excess_negative_square = excess_negative**2               # We square the demeaned returns below the mean
     n_negative = (excess<0).sum()                             # number of returns under the mean
-    return (excess_negative_square.sum()/n_negative)**0.5     # semideviation
+    return (excess_negative_square.sum()/n_negative)**0.5     
 
 def C_VaR_historico(r, level =5):
     """
@@ -148,3 +169,62 @@ def C_VaR_historico(r, level =5):
         return r.aggregate(C_VaR_historico, level=level)
     else:
         raise TypeError("Expected r to be a Series or DataFrame")
+        
+        
+###############################################################################
+
+def cargar_datos():
+    """
+    Carga los datos a utilizar en el modulo dos del rendimiento de la industria
+    """
+    datos = pd.read_csv("C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\data\\ind30_m_vw_rets.csv",
+                        header = 0,
+                        index_col = 0,
+                        parse_dates=True)/100
+    datos.index = pd.to_datetime(datos.index, format="%Y%m").to_period("M")
+    datos.columns = datos.columns.str.strip()
+    return datos
+
+
+def volatilidad_anualizada(r, periodos_año):
+    """
+    Anualiza la volatilidad sobre los rendimientos
+    se hace inferencia en los periodos por año
+    """
+    return r.std()*(periodos_año**0.5)
+
+
+
+def rendimientos_anualizados(r, periodos_año):
+    """
+    Anualiza los rendimeintos donde se hace inferencia por año
+    """
+    periodos_año = 12 #
+    compounded_growth = (1+r).prod()
+    numero_periodos = r.shape[0]
+    return compounded_growth**(periodos_año/numero_periodos)
+
+
+def sharpe_ratio(r, risk_free_rate, periodos_año):
+    """
+    Se calcula el sharpe ratio de los rendimientos anualizados
+    """
+    periodos_año = 12 #
+    risk_free_periodo = (1+risk_free_rate)**(1/periodos_año)-1 
+    excess_ret = r - risk_free_periodo
+    ann_ex_ret = rendimientos_anualizados(excess_ret, periodos_año)
+    ann_vol = volatilidad_anualizada(r, periodos_año)
+    return ann_ex_ret, ann_vol
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
