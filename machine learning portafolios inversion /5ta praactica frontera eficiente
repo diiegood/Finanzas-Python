@@ -1,0 +1,75 @@
+"Calculo de Frontera Eficiente"
+
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import scipy.stats
+
+datos = pd.read_csv("C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\data\\ind30_m_vw_rets.csv",
+                    header = 0, index_col = 0, parse_dates=True)
+
+datos = datos/100 #se transforma todo el dataframe dividiendolo entre 100
+
+#header = 0, / indica que la priera fila del archivo contiene nombres de columnas 
+#index_col=0  / indica que la primera columna se suara como indice del data frame en vez de la columna normal
+#parse_dates = True / intenta convertir automaticamente el indice siendo la primera columna en fechas
+
+###############################################################################
+"Analisis de la matriz"
+
+datos.index #muestra los datos indexados del dataframe datos
+
+#se transforma a una serie de tiempo mensual
+datos.index = pd.to_datetime(datos.index, format= "%Y%m").to_period("M") 
+datos.head(30)
+
+datos.columns #muestra las columnas de la matriz
+datos["Food "].shape #muestra los valores de la columna food de la matriz
+#elimina los espacios en blanco de las columnas y de cada nombre como si fueran strings
+datos.columns = datos.columns.str.strip() 
+datos.columns
+datos.shape
+
+import funciones_curso as fc
+
+datos = fc.cargar_datos()
+datos.shape
+datos.head(20)
+fc.drawdown(datos["Food"])["Drawdown"].plot.line(figsize =(12,6) ) #se grafican las caidas de rendimientos maximas.
+
+columnas_a = ["Food", "Smoke", "Coal", "Beer", "Fin"]
+fc.VaR_mejorado(datos[columnas_a], modified = True)
+
+fc.VaR_mejorado(datos, modified= True).sort_values().tail() #valores mas altos de la cola
+fc.VaR_mejorado(datos, modified= True).sort_values().head() #
+
+fc.VaR_mejorado(datos, modified= True).sort_values().plot.bar()
+fc.VaR_mejorado(datos, modified= True).sort_values().plot()
+
+risk_free_rate = 0.03
+periodos_año = 12
+
+"Correcion esta abajo"
+fc.sharpe_ratio(datos, risk_free_rate, periodos_año).sort_values().plot.bar()
+
+###############################################################################
+
+resultado = fc.sharpe_ratio(datos, risk_free_rate, periodos_año)
+
+# Acceder solo a la Serie/DataFrame con los Sharpe ratios
+sharpe_ratios = resultado[0]  # Asumimos que está en la posición 0
+
+# Ordenar y graficar
+sharpe_ratios.sort_values().plot.bar(
+    title="Sharpe Ratio de la industria",
+    color="green"
+)
+
+###############################################################################
+
+data = fc.rendimientos_anualizados(datos["1995":"2000"],12)
+data.sort_values().plot.bar()
+
+
+
+
