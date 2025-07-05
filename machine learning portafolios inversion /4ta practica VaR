@@ -171,8 +171,6 @@ cada vez que se crea una se debe reiniciar el programa para que la pueda correr 
 correr primero el modulo de funciones y despues el principal.
 """
 
-
-
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
@@ -251,6 +249,7 @@ def kurtosis(r):
     sigma_r = r.std(ddof=0)
     exp = (demeaned_r**4).mean()
     return exp/sigma_r**4
+
 
 import scipy.stats
 def is_normal(r, level=0.01):
@@ -358,30 +357,49 @@ def volatilidad_anualizada(r, periodos_año):
     """
     return r.std()*(periodos_año**0.5)
 
-
-
 def rendimientos_anualizados(r, periodos_año):
     """
     Anualiza los rendimeintos donde se hace inferencia por año
     """
-    periodos_año = 12 #
-    compounded_growth = (1+r).prod()
+    crecimiento_compuesto  = (1+r).prod()
     numero_periodos = r.shape[0]
-    return compounded_growth**(periodos_año/numero_periodos)
-
+    return crecimiento_compuesto**(periodos_año/numero_periodos)-1
 
 def sharpe_ratio(r, risk_free_rate, periodos_año):
     """
     Se calcula el sharpe ratio de los rendimientos anualizados
     """
-    periodos_año = 12 #
     risk_free_periodo = (1+risk_free_rate)**(1/periodos_año)-1 
     excess_ret = r - risk_free_periodo
     ann_ex_ret = rendimientos_anualizados(excess_ret, periodos_año)
     ann_vol = volatilidad_anualizada(r, periodos_año)
-    return ann_ex_ret, ann_vol
+    return ann_ex_ret/ann_vol
 
 
+def var_gaussian(r, level=5, modified=False):
+    """
+    Returns the Parametric Gauusian VaR of a Series or DataFrame
+    If "modified" is True, then the modified VaR is returned,
+    using the Cornish-Fisher modification
+    """
+    # compute the Z score assuming it was Gaussian
+    z = norm.ppf(level/100)
+    if modified:
+        # modify the Z score based on observed skewness and kurtosis
+        s = skewness(r)
+        k = kurtosis(r)
+        z = (z +
+                (z**2 - 1)*s/6 +
+                (z**3 -3*z)*(k-3)/24 -
+                (2*z**3 - 5*z)*(s**2)/36
+            )
+    return -(r.mean() + z*r.std(ddof=0))
+    
+    
+    
+    
+    
+    
     
     
     
