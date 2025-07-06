@@ -144,8 +144,57 @@ desviacion_estandar = 0.16 #volatilidad del activo
 sharpe_ratio = (retorno - tasa_libre_riesgo ) / desviacion_estandar
 sharpe_ratio
 
-"Medida DrawDown"
+"Tuplas y Listas"
+
+#####################################   Tuplas
+
+"""
+Las tuplas no se pueden modificar (son inmutables)
+tienen un parentesis como simbolo
+tienen pocos metodos para modificar :
+    count(contar los elementos que hay correspondiente al nombre o numero del valor que se pregunta), 
+    index (para enconrar la posicion del indice de un valor)
+son mas rapidas
+son para datos fijos o valores que son constantes
+tienen mas seguridad en tener los datos al ser inmutables
+"""
+
+#Las tuplas son convenientes para poder tener datos que no se quieren modificar o seran constantes
+#son para tener mas seguridad o procesos mas rapido de calculo
+#se usan como claves en diccionarios porque no se modifican
+
+"Ejemplos"
+
+#tuplas
+(1,0) #tupla normal
+ 
+((1,0)) #misma tupla que la de arriba
+
+((1,0),) #una tupla dentro de otra tupla
+
+((1,0),)* 5 #multiplicacion de una tupla por 5 , da 5 tuplas de resultado
+
+gatos = ("gato", "gato1", "gato2", "gato3")
+gatos.count("gato")  #arroja como resultado 1 osea, que hay un valor que corresponde a esta descripcion en la tupla
+gatos.index("gato1") #rebela la posicion en la que esta el valor "gato1"
 
 
+#####################################   Listas
 
+"""
+Las listas  se pueden modificar (son mutables)
+tienen corechetes como simbolo
+tienen algunos metodos para modificar :
+    append.(agregar un valor nuevo dentro de la lista), 
+    remove (para remover un valor dentro de la lista)
+son mas lentas
+son para datos que pueden ir cambiando
+"""
 
+#Ejemplos:
+
+mi_lista = [1, 2, 3]
+mi_lista.append(4)  #se puede agregar un valor
+mi_lista.remove(4)  #se elimina el valor 4 que se acaba de agregar a la lista
+
+5 * mi_lista #multiplica 5 veces la lista recien creada
