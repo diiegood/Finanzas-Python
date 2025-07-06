@@ -1,75 +1,521 @@
-"Calculo de Frontera Eficiente"
-
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import scipy.stats
-
-datos = pd.read_csv("C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\data\\ind30_m_vw_rets.csv",
-                    header = 0, index_col = 0, parse_dates=True)
-
-datos = datos/100 #se transforma todo el dataframe dividiendolo entre 100
-
-#header = 0, / indica que la priera fila del archivo contiene nombres de columnas 
-#index_col=0  / indica que la primera columna se suara como indice del data frame en vez de la columna normal
-#parse_dates = True / intenta convertir automaticamente el indice siendo la primera columna en fechas
-
-###############################################################################
-"Analisis de la matriz"
-
-datos.index #muestra los datos indexados del dataframe datos
-
-#se transforma a una serie de tiempo mensual
-datos.index = pd.to_datetime(datos.index, format= "%Y%m").to_period("M") 
-datos.head(30)
-
-datos.columns #muestra las columnas de la matriz
-datos["Food "].shape #muestra los valores de la columna food de la matriz
-#elimina los espacios en blanco de las columnas y de cada nombre como si fueran strings
-datos.columns = datos.columns.str.strip() 
-datos.columns
-datos.shape
+"Frontera eficiente"
 
 import funciones_curso as fc
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
 
-datos = fc.cargar_datos()
-datos.shape
-datos.head(20)
-fc.drawdown(datos["Food"])["Drawdown"].plot.line(figsize =(12,6) ) #se grafican las caidas de rendimientos maximas.
+datos = fc.rendimientos_industria()
+er = fc.rendimientos_anualizados(datos["1996":"2000"], 12)
+cov = datos["1996":"2000"].cov()
 
-columnas_a = ["Food", "Smoke", "Coal", "Beer", "Fin"]
-fc.VaR_mejorado(datos[columnas_a], modified = True)
 
-fc.VaR_mejorado(datos, modified= True).sort_values().tail() #valores mas altos de la cola
-fc.VaR_mejorado(datos, modified= True).sort_values().head() #
+def retornos_portafolio (weights, rendimientos):
+    """
+    Pesos / retornos
+    indica la multiplicacion de matriz
+    weights.T es la matriz transpuesta del vector de pesos dimension 1 x n
+    rendimientos es un vector de rendimientos esperados dimension n x 1
+    multiplicacion matricial entre ambas, donde su resultado es un unico numero escalar
+    """
+    return weights.T@ rendimientos
 
-fc.VaR_mejorado(datos, modified= True).sort_values().plot.bar()
-fc.VaR_mejorado(datos, modified= True).sort_values().plot()
+def volatilidad_portafolio(weights, covarianza):
+    """
+    Pesos / volatilidad
+    indica la multiplicacion de matriz
+    weights.T es la matriz transpuesta del vector de pesos dimension 1 x n
+    rendimientos es un vector de rendimientos esperados dimension n x 1
+    multiplicacion matricial entre ambas, donde su resultado es un unico numero escalar
+    """
+    return (weights.T@ covarianza @weights)**0.5
 
-risk_free_rate = 0.03
-periodos_año = 12
+l = ["Food", "Beer", "Smoke", "Coal"]
+er[l]
 
-"Correcion esta abajo"
-fc.sharpe_ratio(datos, risk_free_rate, periodos_año).sort_values().plot.bar()
+cov.loc[l, l]
 
 ###############################################################################
+"llamando la libreria"  
 
-resultado = fc.sharpe_ratio(datos, risk_free_rate, periodos_año)
+#multiplicacion de matrices las multiplicacion de matrices solo se puede realizar bajo los criterios:
+""" 
+#####Multiplicacion Matricial ######
+el numero de la primera matriz debe ser igual al numero de filas de la segunda matriz
+matriz A :  m * n #debe coincidir el numero de columnas
+matriz B : n * p  #debe coincidir el numero de filas
+su resultado es una matriz de forma :  ->   m * p
+"""
+    
+weights = np.repeat(1/4,4) #repite valores de  1/4 o 0.25 por 4 valores siendo proporcional
+weights
 
-# Acceder solo a la Serie/DataFrame con los Sharpe ratios
-sharpe_ratios = resultado[0]  # Asumimos que está en la posición 0
+fc.portafolio_rendimientos(weights, er[l]) #calcula los rendimientos del portafolio por sector
+ 
+fc.portafolio_volatilidad(weights, cov.loc[l,l]) #calcula la volatilidad del portafolio 
 
-# Ordenar y graficar
-sharpe_ratios.sort_values().plot.bar(
-    title="Sharpe Ratio de la industria",
-    color="green"
-)
+"Frontera eficiente de activos"  
+#cada punto de la frontera representa un portafolio dado un valor de rendimiento y de riesgo
 
+l= ["Games", "Fin"]
+n_points = 20
+
+"""
+En la siguiente linea de codigo se va crear un ciclo donde se va generar en un espacio no lineal
+es una lista formada por un conjunto de bucles con diferentes ponderaciones
+"""
+
+#hacer referencia w al porcentaje por activo que se va tener del total.
+weights = [np.array([w, 1-w]) for w in np.linspace(0, 1,n_points)]#se genera una lista  con un bucle de
+#w puntos finales en un espacio lineal
+weights
+
+len(weights)
+l
+
+#para sacar el rendimiento y la volatilidad de cada portafolio generado previamente en el bucle
+#anterior donde se comprende por un conjunto de portafolios dado un peso determinado por cada activo
+
+#rendimientos del portafolio:
+port_rend = [fc.portafolio_rendimientos(w, er[l]) for w in weights]
+
+#volatilidad del portafolio:
+port_vol = [fc.portafolio_volatilidad(w, cov.loc[l,l]) for w in weights]
+
+#se crea un diccionario donde vengan los valores de rendimiento y volatiliadd 
+#segun los  parametros creados previamente.
+df_rend = pd.DataFrame({"Rendimientos": port_rend , "Volatilidad": port_vol})
+
+#se grafica la frontera eficiente donde cada punto es un portafolio dado un nivel de pesos 
+#de los activos ademas de un nivel de volatilidad y un nivel de rendimiento dado.
+df_rend.plot.scatter(x="Volatilidad", y="Rendimientos")
+
+
+#usando la funcion de graficar del modulo funciones_curso
+l = ["Fin",  "Beer"]
+fc.grafica(25, er[l], cov.loc[l,l])
+    
+###############################################################################
+###############################################################################
 ###############################################################################
 
-data = fc.rendimientos_anualizados(datos["1995":"2000"],12)
-data.sort_values().plot.bar()
+"Aplicacion de Quadprog para poder trazar la frontera eficiente"
+
+"""
+Se usara una nueva funcion que se usa de programacion cuadratica para optimizar
+los pesos de la frontera eficiente dado por cada nivel de riesgo y rendimeinto
+del activo.
+"""
+
+datos = fc.rendimientos_industria()
+er = fc.rendimientos_anualizados(datos["1996":"2000"], 12)
+cov = datos["1996":"2000"].cov()
 
 
+from scipy.optimize import minimize
 
+l = ["Fin",  "Beer"]
+fc.grafica(25, er[l], cov.loc[l,l])
+
+l
+
+rendimiento_objetivo = 0.19
+
+frontera_pesos = fc.volatilidad_minima(rendimiento_objetivo, er[l], cov.loc[l,l])
+frontera_volatilidad = fc.portafolio_volatilidad(frontera_pesos , cov.loc[l,l])
+
+
+datos_portafolio = {"portfolio weights": frontera_pesos,
+                    "portfolio volatility": f"{frontera_volatilidad * 100: 2f}%",
+                    "rendimiento_deseado":  f"{rendimiento_objetivo * 100: 2f}%"}
+datos_portafolio
+
+
+#se busca la minima volatilidad posible , buscando conseguir el maximo rendimiento posible
+
+#todos los valores l son la matriz del sector de activos que se va usar para la frontera eficiente
+
+l = ["Smoke", "Fin", "Games", "Coal"]
+
+
+# Número de puntos para la frontera eficiente
+n_points = 25
+
+# Llamada correcta a la función para graficar la frontera eficiente
+fc.grafica_frontera_eficiente(n_points, er[l], cov.loc[l, l])
+
+# Llamada correcta a la función para obtener los pesos óptimos
+pesos = fc.pesos_optimos(n_points, er[l],  cov.loc[l, l])
+pesos 
+
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+
+"""
+####################### Nombre Modulo : funciones_curso #######################
+"""
+
+
+"""
+Nota:
+    
+Al crear una funcion se debe cargar el modulo donde se encuentra y a su vez cargar la funcion a usar
+cada vez que se crea una se debe reiniciar el programa para que la pueda correr sin problemas
+correr primero el modulo de funciones y despues el principal.
+"""
+
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+from scipy.optimize import minimize
+
+def drawdown(return_series: pd.Series):
+    """Takes a time series of asset returns.
+       returns a DataFrame with columns for
+       the wealth index, 
+       the previous peaks, and 
+       the percentage drawdown
+    """
+    wealth_index = 1000*(1+return_series).cumprod()
+    previous_peaks = wealth_index.cummax()
+    drawdowns = (wealth_index - previous_peaks)/previous_peaks
+    return pd.DataFrame({"Wealth": wealth_index, 
+                         "Previous Peak": previous_peaks, 
+                         "Drawdown": drawdowns})
+
+
+def obtener_returnos():
+    """
+    Load the Fama-French Dataset for the returns of the Top and Bottom Deciles by MarketCap
+    1- carga los datos panel
+    2-filtra solo los valores de Lo-20 y Hi-20 del data frame
+    3-se calculan los rendimientos de rendimientos/100
+    4-se cambia el formato a serie de tiempo y se indexa el periodo
+    5-regresa la funcion rets que es el dataframe ya filtrado con todo lo anterior
+    """
+    #se cargan los datos panel
+    me_m = pd.read_csv(
+       "C:/Users/creep/OneDrive/Escritorio/programacion/data/Portfolios_Formed_on_ME_monthly_EW.csv",
+       header=0,
+       index_col=0,
+       parse_dates=True,
+       na_values=-99.99)
+    rets = me_m[['Lo 20', 'Hi 20']]
+    #rets.columns = ['SmallCap', 'LargeCap']
+    rets = me_m
+    rets = rets/100
+    rets.index = pd.to_datetime(rets.index, format="%Y%m").to_period('M')
+    return rets
+
+
+def returns():  #funcion para leer base de datos
+    """
+    Load and format the EDHEC Hedge Fund Index Returns
+    """
+    hfi = pd.read_csv("C:/Users/creep/OneDrive/Escritorio/programacion/data/edhec-hedgefundindices.csv",
+                      header=0, index_col=0, parse_dates=True)
+    hfi = hfi/100
+    hfi.index = hfi.index.to_period('M')
+    return hfi
+
+
+def skewness(r):
+    """
+    Alternative to scipy.stats.skew()
+    Computes the skewness of the supplied Series or DataFrame
+    Returns a float or a Series
+    """
+    demeaned_r = r - r.mean()
+    # use the population standard deviation, so set dof=0
+    sigma_r = r.std(ddof=0)
+    exp = (demeaned_r**3).mean()
+    return exp/sigma_r**3
+
+
+def kurtosis(r):
+    """
+    Alternative to scipy.stats.kurtosis()
+    Computes the kurtosis of the supplied Series or DataFrame
+    Returns a float or a Series
+    """
+    demeaned_r = r - r.mean() 
+    # use the population standard deviation, so set dof=0
+    sigma_r = r.std(ddof=0)
+    exp = (demeaned_r**4).mean()
+    return exp/sigma_r**4
+
+
+import scipy.stats
+def is_normal(r, level=0.01):
+    """
+    Applies the Jarque-Bera test to determine if a Series is normal or not
+    Test is applied at the 1% level by default
+    Returns True if the hypothesis of normality is accepted, False otherwise
+    """
+    if isinstance(r, pd.DataFrame):
+        return r.aggregate(is_normal)
+    else:
+        statistic, p_value = scipy.stats.jarque_bera(r)
+        return p_value > level
+
+def semi_desviacion(r):
+    """
+    los rendimientos con semi-desviacion o semidesvaicion negativa de r
+    deben ser series o un data frame
+    """
+    is_negative = r<0
+    return r[is_negative].std(ddof=0)
+
+#r son los rendimientos
+#level es el valor del percentil donde se va parar para sacar el VaR
+def VaR_historico(r, level=5):
+    """
+    VaR historico
+    """
+    if isinstance(r, pd.DataFrame):
+        return r.aggregate(VaR_historico, level=level)
+    
+    elif isinstance(r, pd.Series):
+        return -np.percentile(r, level)
+    else:
+        raise TypeError("no seas wey")
+
+      
+    
+def VaR_Normal (r, level=5):
+    """
+    Calcula el VaR con retornos usando modelo parametrico de la distribucion normal
+    """
+    #para calcular el valor z de la distribucion si fuera normal
+    valor_dist_norm = norm.ppf(level/100)
+    return -(r.mean() + valor_dist_norm*r.std(ddof=0))
+
+
+def VaR_mejorado(r, level=5, modified= False):
+    """
+    Rendimientos parametricos del VaR Gaussiano en una serie o un dataframe
+    si se modifica es verdadero despues se modifica el VaR de los retornos
+    """
+    #calcular el valor z asumiendo la distribucion normal
+    z = norm.ppf(level/100)
+    if modified:
+        #modifica el valor z basado en la curtosis y la asimetria observada
+        s = skewness(r)
+        k = kurtosis(r)
+        z = (z+ (z**2 -1)*s/6 + (z**3 - 3*z)*(k-3)/24-(2*z**3-5*z)*(s**2)/36)
+        return -(r.mean()+z*r.std(ddof=0))
+    
+def semideviation3(r):
+    """
+    Returns the semideviation aka negative semideviation of r
+    r must be a Series or a DataFrame, else raises a TypeError
+    """
+    excess= r-r.mean()                                        # We demean the returns
+    excess_negative = excess[excess<0]                        # We take only the returns below the mean
+    excess_negative_square = excess_negative**2               # We square the demeaned returns below the mean
+    n_negative = (excess<0).sum()                             # number of returns under the mean
+    return (excess_negative_square.sum()/n_negative)**0.5     
+
+def C_VaR_historico(r, level =5):
+    """
+    Calcula el VaR condicional de las series del dataframe
+    """
+    if isinstance(r, pd.Series):
+        is_beyond = r <= -VaR_historico(r, level=level)
+        return -r[is_beyond].mean()
+    elif isinstance(r, pd.DataFrame):
+        return r.aggregate(C_VaR_historico, level=level)
+    else:
+        raise TypeError("Expected r to be a Series or DataFrame")
+        
+        
+###############################################################################
+
+def rendimientos_industria():
+    """
+    Carga los datos a utilizar en el modulo dos del rendimiento de la industria
+    """
+    datos = pd.read_csv("C:\\Users\\creep\\OneDrive\\Escritorio\\programacion\\data\\ind30_m_vw_rets.csv",
+                        header = 0, index_col = 0)/100
+    
+    datos.index = pd.to_datetime(datos.index, format="%Y%m").to_period('M')
+    datos.columns = datos.columns.str.strip()
+    return datos
+
+def volatilidad_anualizada(r, periodos_año):
+    """
+    Anualiza la volatilidad sobre los rendimientos
+    se hace inferencia en los periodos por año
+    """
+    return r.std()*(periodos_año**0.5)
+
+def rendimientos_anualizados(r, periodos_año):
+    """
+    Anualiza los rendimeintos donde se hace inferencia por año
+    """
+    crecimiento_compuesto  = (1+r).prod()
+    numero_periodos = r.shape[0]
+    return crecimiento_compuesto**(periodos_año/numero_periodos)-1
+
+def sharpe_ratio(r, risk_free_rate, periodos_año):
+    """
+    Se calcula el sharpe ratio de los rendimientos anualizados
+    """
+    risk_free_periodo = (1+risk_free_rate)**(1/periodos_año)-1 
+    excess_ret = r - risk_free_periodo
+    ann_ex_ret = rendimientos_anualizados(excess_ret, periodos_año)
+    ann_vol = volatilidad_anualizada(r, periodos_año)
+    return ann_ex_ret/ann_vol
+
+
+def var_gaussian(r, level=5, modified=False):
+    """
+    Returns the Parametric Gauusian VaR of a Series or DataFrame
+    If "modified" is True, then the modified VaR is returned,
+    using the Cornish-Fisher modification
+    """
+    # compute the Z score assuming it was Gaussian
+    z = norm.ppf(level/100)
+    if modified:
+        # modify the Z score based on observed skewness and kurtosis
+        s = skewness(r)
+        k = kurtosis(r)
+        z = (z +
+                (z**2 - 1)*s/6 +
+                (z**3 -3*z)*(k-3)/24 -
+                (2*z**3 - 5*z)*(s**2)/36
+            )
+    return -(r.mean() + z*r.std(ddof=0))
+    
+###############################################################################
+"Funciones practica 6"
+
+def portafolio_rendimientos (weights, rendimientos):
+    """
+    Pesos / retornos
+    indica la multiplicacion de matriz
+    weights.T es la matriz transpuesta del vector de pesos dimension 1 x n
+    rendimientos es un vector de rendimientos esperados dimension n x 1
+    multiplicacion matricial entre ambas, donde su resultado es un unico numero escalar
+    """
+    return weights.T@rendimientos 
+
+
+def portafolio_volatilidad(weights, covarianza):
+    """
+    Pesos / volatilidad
+    indica la multiplicacion de matriz
+    weights.T es la matriz transpuesta del vector de pesos dimension 1 x n
+    rendimientos es un vector de rendimientos esperados dimension n x 1
+    multiplicacion matricial entre ambas, donde su resultado es un unico numero escalar
+    """
+    return (weights.T@covarianza@weights)**0.5
+    
+    
+def grafica(n_points, er, cov):
+    """
+    Grafica frontera eficiente de dos activos
+    """
+    if er.shape[0] != 2 or er.shape[0] != 2: #limita la forma de la matriz a cualquiera diferente de 2
+        raise ValueError("Solo puede graficar frontera eficiente de 2 activos")
+    weights = [np.array([w, 1-w]) for w in np.linspace(0, 1, n_points)]
+    retornos = [portafolio_rendimientos(w, er) for w in weights]
+    volatilidades = [portafolio_volatilidad(w, cov) for w in weights]
+    ef = pd.DataFrame({
+        "Rendimientos": retornos, 
+        "Volatilidad": volatilidades
+    })
+    return ef.plot.line(x="Volatilidad", y="Rendimientos", style=".-")
+ 
+    """   
+def grafica_ef (n_points, er, cov, style=".-"):
+    """
+    #Grafica los N-activos de la frontera eficiente
+    """
+    weights = minimize_vol(target_return)
+    retornos = [portafolio_rendimientos(w, er) for w in weights]
+    volatilidades = [portafolio_volatilidad(w, cov) for w in weights]
+    """   
+
+
+#se recomienda hacer un constructor en este caso al tener varias funciones que 
+#son dependientes la una del otro
+
+#def objetivo(w, er):
+ #   return rendimiento_objetivo - portafolio_rendimientos(w, er)
+    
+
+def volatilidad_minima(target_return, er, cov):
+    """
+    Rendimiento objetivo --> W 
+    Se busaca hacer una funcion que optimice la funcion para poder sacar
+    el mejor rendimiento al menor riesgo
+    """    
+    #se debe poner un objetivo
+    #se deben poner restricciones
+    #se debe poner una posicion incial
+    n = er.shape[0]
+    init_guess = np.repeat(1/n, n)
+    #limites - bounds
+    bounds = ((0.0, 1.0),) * n  #se crea una tupla con tuplas (tuplas no se pueden modificar son como listas)
+    #restricciones a cumplir:
+    """
+    se quiere minimizar la volatilidad con la restriccion de que las rentabilidades 
+    sean el punto optimo que se tenga en la grafica si se voltea que sea el pico maximo 
+    de la curva
+    """
+    #Restricciones:
+        #1era cada peso debe tener un equilibrio 
+        #la suma de todos los pesos debe dar 1
+        #no debe haber pesos negativos / son ir en corto
+        #el rendimiento que se genera a partir del conjunto de pesos es el rendimiento objetivo
+    weights_sum_to_1 = {'type': 'eq',
+                        'fun': lambda weights: np.sum(weights) - 1}
+    #se hace una funcion que indique si se comple con la restriccion o no
+    return_is_target = {'type': 'eq',
+                        'args': (er,),
+                        'fun': lambda weights, er: target_return - portafolio_rendimientos(weights,er)} 
+    #la funcion requiere de los pesos y las matrices de covarianzas
+    weights = minimize(portafolio_volatilidad, init_guess,
+                       args=(cov,), method='SLSQP',
+                       options={'disp': False},
+                       constraints=(weights_sum_to_1,return_is_target),
+                       bounds=bounds)
+                        #SLSQ es el optimziador
+    #cualquier ponderacion que pase al optimizar, debe ser una restriccion de igualdad
+    #cumple la funcion con la restriccion si el valor devuelto es cero
+    
+    #si se cumple el objetivo, si las ponderaciones del portafolio tienen una rentabilidad objetivo
+    #igual a la rentabilidad objetivo
+    return weights.x
+
+def pesos_optimos (n_points, er, cov):
+    """
+    lista de los pesos para optimizar la frontera a la 
+    minima volatilidad y maximo rendimiento
+    """
+    target = np.linspace(er.min(), er.max(), n_points)
+    weights = [volatilidad_minima(target_return, er, cov) for target_return in target ]
+    return weights
+
+
+def grafica_frontera_eficiente(n_points, er, cov):
+    """
+    Grafica de la frontera eficiente con varios activos
+    """
+    weights = pesos_optimos(n_points, er, cov)
+    rendimientos_frontera = [portafolio_rendimientos(w, er) for w in weights]
+    volatilidad_frontera = [portafolio_volatilidad(w, cov) for w in weights]
+    ef = pd.DataFrame({
+        "Returns": rendimientos_frontera,
+        "Volatility": volatilidad_frontera
+    })
+    return ef.plot.line(x="Volatility", y="Returns", style='.-', legend=False)
+
+  
 
