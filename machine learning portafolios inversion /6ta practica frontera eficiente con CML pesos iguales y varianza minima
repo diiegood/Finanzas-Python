@@ -1,4 +1,6 @@
-"Frontera eficiente"
+"Frontera eficiente" 
+#con punto de varianza minima , linea de mercado de capitales y 
+#pesos iguales de portafolio de todos los activos
 
 import funciones_curso as fc
 import pandas as pd
