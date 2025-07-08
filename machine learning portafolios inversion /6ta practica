@@ -1,0 +1,100 @@
+"Frontera eficiente"
+
+import funciones_curso as fc
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+
+datos = fc.rendimientos_industria()
+er = fc.rendimientos_anualizados(datos["1996":"2000"], 12)
+cov = datos["1996":"2000"].cov()
+
+"Sexta practica Maximizar el Sharpe Ratio de la Frontera Eficiente"
+
+#se busaca la cartera con el sharpe maximo posible con el que minimice la
+#volatilidad porque el que la minimiza te da el peor rendimiento
+#se busca el mejor rendimiento dado un menor nivel de volatilidad por unidad 
+
+
+"Frontera eficiente agregando tasa libre de riesgo"
+grafica_frontera = fc.grafica_frontera_eficiente(20, er, cov)
+grafica_frontera.set_xlim(left = 0)
+risk_free_rate = 0.1
+weigths_max_sharpe_ratio = fc.sharpe_ratio_maximo(risk_free_rate , er, cov)
+returns_max_sharpe_ratio = fc.portafolio_rendimientos(weigths_max_sharpe_ratio , er)
+volatility_max_sharpe_ratio = fc.portafolio_volatilidad(weigths_max_sharpe_ratio, cov)
+
+"Se agrega la Capital Market Line a la grafica creada"
+
+cml_x = [0, volatility_max_sharpe_ratio ]
+cml_y = [risk_free_rate, returns_max_sharpe_ratio ]
+grafica_frontera.plot(cml_x, cml_y, color = "black", marker="o")
+
+
+###############################################################################
+ 
+"Practica 6"
+
+l = ["Food", "Steel"]  #matriz de sectores de activos
+cov.loc[l,l] #matriz de covarianzas de los activos seleccionados en el vector l de rendimientos
+
+#sharpe ratio maximo / tasa libre de riesgo, vector de rendimientos, matriz de covarianzas
+fc.sharpe_ratio_maximo(0.1, er[l], cov.loc[l,l]) #se asigna una ponderacion de : 
+    # 75.04 % invertido en alimentos y un 24.95% invertido en acero
+    
+rentabilidades_esperadas = er[l]  
+rentabilidades_esperadas
+
+nuevos_rendimientos = np.array([.11, .12]) #11% para comida y  12% para acero
+fc.sharpe_ratio_maximo(0.1, nuevos_rendimientos, cov.loc[l,l]) #cambia la ponderacion de la cartera a 58% - 42%
+
+"""
+Un pequeño cambio en los rendimientos esperados propone un cambio drastico en la
+asignacion de los pesos optimos para la cartera de inversion
+
+°Se pueden hacer iteraciones en los rendiminetos esperados para cambiar los pesos de 
+los activos que se van asignar°
+"""
+
+
+#Naturaleza de Markowitz de maximizar el error - error de estimacion 
+
+#optomiza invirtiendo todo en comida
+nuevos_rendimientos_a = np.array([.13, .10])
+fc.sharpe_ratio_maximo(0.1, nuevos_rendimientos_a, cov.loc[l,l])
+
+#optimiza invirtiendo todo en acero
+nuevos_rendimientos_b = np.array([.10, .13])
+fc.sharpe_ratio_maximo(0.1, nuevos_rendimientos_b, cov.loc[l,l])
+
+"""
+Markowitz tiende a  hacer cambios masivos en las ponderaciones de la cartera
+con base a cambios minimos en el rendimiento 
+"""
+
+#La punta de la curva de la frontera eficiente , se puede decir que es la cartera
+#con volatilidad minima de todas las incluidas dentro de la frontera eficiente
+#llamada tambien como GMV cartera de varianza minima global 
+
+
+"""Se grafica la frontera eficiente teniendo en cuenta 
+
+    Parámetros:
+    - n_points: número de portafolios a simular en la frontera eficiente
+    - er: rendimientos esperados (vector)
+    - cov: matriz de covarianza de los activos
+    - show_cml: si True, agrega la línea del mercado de capitales (CML)
+    - riskfree_rate: tasa libre de riesgo (para la CML)
+    - show_ew: si True, muestra el portafolio con pesos iguales (Equal Weight)
+    
+    """
+fc.grafica_frontera(20, er, cov, show_cml=True, riskfree_rate=0.1, show_ew=True)
+
+fc.grafica_frontera(20, er, cov, show_cml=True, riskfree_rate=0.1, show_ew=True, show_gmv=True)
+
+#punto negro significa la cartera global de varianza minima
+
+
+
