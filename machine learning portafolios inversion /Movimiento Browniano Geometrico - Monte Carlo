@@ -1,0 +1,57 @@
+"Practica 9  Smiluacion de Monte Carlo"
+
+import funciones_curso as fc
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+
+def movimiento_browniano_geometrico(años = 10, n_scenarios = 1000, mean = 0.07, variance = 0.15, 
+                                    steps_per_year =  12 , s_0 = 100):
+    #s_0 es el precio en tiempo 0
+    #n_snarios son las caminatas aleatorias que va dar
+    #steps per year = pasos por año
+    """
+    Evolucion del comportamiento del precio de un activo utilzando
+    el movimiento browninano geometrico
+    """
+    dt = 1 / steps_per_year
+    n_steps = int(años * steps_per_year)
+    xi = np.random.normal(size=(n_steps, n_scenarios))
+    rets = mean * dt + variance *np.sqrt(dt)*xi #xi es una matriz
+    rets = pd.DataFrame(rets)
+    
+    #para los precios
+    prices = s_0 *(1+rets).cumprod()
+    return prices
+
+
+p = movimiento_browniano_geometrico(10, n_scenarios=10)
+p.shape
+p.head()
+p.tail()
+
+p.plot()
+
+p = movimiento_browniano_geometrico(años = 10, n_scenarios=1000).plot(figsize=(12,6), legend =False)
+p = movimiento_browniano_geometrico(años =10, n_scenarios=1000)
+
+def movimiento_browniano_geometrico_extension(años = 10, n_scenarios = 1000, mean = 0.07, variance = 0.15, 
+                                    steps_per_year =  12 , s_0 = 100):
+
+    """
+    Extension del moimiento browniano geometrico, 
+    """
+    dt = 1 / steps_per_year
+    n_steps = int(años * steps_per_year)
+    rets_plus_1 = np.random.normal(loc=(1+mean*dt),scale=(variance*np.sqrt(dt)),size=(n_steps, n_scenarios))
+    rets_plus_1[0]=1
+    #para los precios
+    prices = s_0 *pd.DataFrame(rets_plus_1).cumprod()
+    return prices
+
+movimiento_browniano_geometrico(años=10, n_scenarios=20).plot(legend = False, figsize = (12,6) )
+
+movimiento_browniano_geometrico(n_scenarios=10).head()
+
