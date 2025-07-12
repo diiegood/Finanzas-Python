@@ -1,0 +1,166 @@
+"Practica 8 CPPI"
+
+import funciones_curso as fc
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+
+ind_return = fc.rendimientos_industria()
+tmi_return = rendimiento_total_mercado_index
+
+risky_r = ind_return["2000":][["Steel", "Fin", "Beer"]]
+risky_r.shape
+
+safe_r = pd.DataFrame().reindex_like(risky_r)
+safe_r.shape
+
+#para programar el algoritmo CPPI
+safe_r[:]= 0.03 / 12  #datos mensuales se divide entre 12 , 
+start = 1000  #cantidad en dolares
+floor = 0.8 #liminite minimo de operacion / floor  80% del valor incial
+
+#calcular el presupuesto de riesgo 
+#cushion -( Asset Value minus Floor Value ) 
+#compute an allocation to safe and risky assets  / m * (risk budget)
+#recalcular el valor del activo basado en los rendimientos
+
+def compound(r):
+    return (1+r).prod()-1
+    
+def compound2(r):
+    return np.expm1(np.log1p(r).sum())
+
+
+compound(risky_r) #se obtiene el resultadod de multiplciarlos todos 
+compound2(risky_r)
+
+compound(ind_return[["Steel", "Fin", "Beer"]])
+
+compound2(ind_return[["Steel", "Fin", "Beer"]])
+
+"Calculo de CPPI"
+
+dates = risky_r.index
+n_steps = len(dates)
+account_value = start
+floor_value = start * floor
+m = 3
+
+
+account_history = pd.DataFrame().reindex_like(risky_r)
+cushion_history = pd.DataFrame().reindex_like(risky_r)
+risky_w_history = pd.DataFrame().reindex_like(risky_r)
+
+#corregir las funciones
+
+for step in range(n_steps):
+    cushion = (account_value - floor_value)/account_value #diferencia absoluta valor restante
+    # ratio se expresa en porcentaje , diferencia entre cuenta y el limite del piso de caida
+    "El riesgo no debe ir arriba del 100% ni debajo del 0%"
+    risky_w = m * cushion #peso del activo de riesgo en la cartera 
+    risky_w = np.minimum(risky_w,1)
+    risky_w = np.maximum(risky_w,0)
+    safe_w = 1 - risky_w #peso del activo sin riesgo en la cartera
+    risky_alloc = account_value*risky_w
+    safe_alloc = account_value*safe_w
+    
+    #actualizar el valor de la cuenta por el valor del tiempo
+    account_value = risky_alloc*(1+risky_r.iloc[step]) + safe_alloc*(1+safe_r.iloc[step])
+    #guardar los valores donde se pueda ver el historial y la grafica
+    cushion_history.iloc[step] = cushion
+    risky_w_history.iloc[step] = risky_w
+    account_history.iloc[step] = account_value
+    risky_wealth = start*(1+risky_r).cumprod()
+    
+
+"""
+cushion es la amortiguacion o la cantidad que puede perderse antes de entrar en el
+limite de riesgo por lo que esta seria la diferencia de la cantidad total de la cartera
+menos el limite del piso, si la cartera es de 1000 y el piso empieza en 600 , que es un 60%
+el colchon serian 400 que seria el rango que empieza en el total hasta donde empieza el limite
+de perdida , seria  1000-600 = 400 de colchon antes de entrar en el limite de perdida, 
+representando el colchon un 40% de la cartera
+
+si se usa un m o multiplicador de 3 se multiplica por el porcentaje del colchon, siendo
+3 (.4) = 1.20 osea 120% ya que la formula es  m*(total - piso)  /  colchon = total - piso
+por lo que la asignacion del activo de riesgo es de 120%, el peso de riesgo no debe ser 
+mayor de 100% 
+"""
+
+#Grafica general de las industrias de la cartera
+account_history.head()
+risky_wealth = start*(1+ risky_r).cumprod()
+account_history["Beer"].plot()
+risky_wealth.plot()
+
+#grafica de comparacion de cartera con solo cerveza y cartera con cerveza y activo sin riesgo
+ax = account_history["Beer"].plot(figsize=(12,6))
+risky_wealth["Beer"].plot(ax = ax, style = "k:") #el estilo es de negro con lineas punteadas
+ax.axhline(y = floor_value, color = "r",  linestyle = "--")
+
+#linea azul es la serie principal trazada  portafolio diversificado con cerveza y libre de riesgo
+#la linea negra punteaad es el risky_wealth osea cartera con pura industria cervecera
+#la linea roja es la linea punteada / limite fijado absoluto 
+
+
+#grafica activos
+risky_w_history.plot()
+
+
+#las probabilidades de tocar el piso dependen de lo grande que sea el colchon
+#entre mas grande es mejor porque son menores las probabildiades de tocar el piso
+#el drawdown actualiza la caida del piso porque se basa en los maximos que se van alcanzando
+#mientras que aqui la caida es fija porque solo se basa en la cuenta que se tiene de limite de caida
+#ademas del limite del porcentaje del colchon que se maneje
+
+#grafica de comparacion de cartera con solo cerveza y cartera con industria financiera y activo sin riesgo
+
+ind = "Fin"
+ax = account_history[ind].plot(figsize=(12,6))
+risky_wealth[ind].plot(ax = ax, style = "k:") #el estilo es de negro con lineas punteadas
+ax.axhline(y = floor_value, color = "r",  linestyle = "--")
+
+#linea azul es la serie principal trazada / cartera diversificada con activo sin riesgo
+#la linea negra punteaad es el si se hubiera invertido solo en finanzas
+#la linea roja es la linea punteada / limite fijado absoluto 
+
+#ahora lo mismo pero con al industria del acero
+#grafica reprensenta los rendimientos obtenidos al invertir 100 usd por activo
+ind = "Steel"
+ax = account_history[ind].plot(figsize=(12,6))
+risky_wealth[ind].plot(ax = ax, style = "k:") #el estilo es de negro con lineas punteadas
+ax.axhline(y = floor_value, color = "r",  linestyle = "--")
+
+
+"Funcion que muestra las estadisticas de cada activo calculando los parametros de interes"
+fc.summary_stats(risky_r)
+
+btr = fc.run_cppi(risky_r) #back test results
+#se toman los resultados de las pruebas restrospectivas y se convierten en retornos
+
+#calcula los rendimientos de la funcion de btr / ademas remueve el NaN de la primera celda
+stats_cartera = fc.summary_stats(btr["Wealth"].pct_change().dropna()) #cambio de porcentaje de cotizacion diaria son los rendimientos
+stats_cartera
+
+#corregir desde las funciones.
+btr = fc.run_cppi(tmi_return["2007":])
+ax = btr["Wealth"].plot(figsize=(12,6), legend = False)
+btr["Risky Wealth"].plot(ax= ax, style = "k--", legend = False)
+
+
+fc.summary_stats(btr["Risky Wealth"].pct_change().dropna())
+fc.summary_stats(btr["Wealth"].pct_change().dropna())
+
+
+#todos los portafolios empiezan desde 1000 dolares de inversion pero cada
+#sector termina con una cantidad diferente conforme a su rendimiento
+btr = fc.run_cppi(ind_return["2007":][["Steel","Fin","Beer"]], drawdown=0.25)
+ax = btr["Wealth"].plot(figsize=(12,6))
+btr["Risky Wealth"].plot(ax = ax, style="--")
+
+#stats de diferentes portafolios de una cartera con activos de puro riesgo
+#y otra con una cartera diversificada
+fc.summary_stats(btr["Risky Wealth"].pct_change().dropna())
+fc.summary_stats(btr["Wealth"].pct_change().dropna())
+
