@@ -1,0 +1,160 @@
+import funciones_curso as fc
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+
+"Practica 7 Limites de la Diversificacion"
+
+datos = fc.rendimientos_industria()
+er = fc.rendimientos_anualizados(datos["1996":"2000"], 12)
+cov = datos["1996":"2000"].cov()
+
+"""
+Analizar que suceden ante las caidas del mercado
+en relacion a las correlaciones entre las acciones del mercado
+Calcular la capitalizacion bursatil de las empresas que cotizan en bolsa 
+por fraccion y total.
+
+"""
+#creacion de un indice bursatil ponderado por capitalizacion de mercado 
+
+
+
+ind_return = fc.rendimientos_industria()
+ind_nfirms = fc.get_ind_nfirms()
+ind_size = fc.get_ind_size()
+
+ind_return.shape
+
+#capitalizacion de mercado de la industria
+ind_market_Cap = ind_nfirms * ind_size
+ind_market_Cap.shape
+
+#se quieren sumar todas las columnas
+total_market_cap =  ind_market_Cap.sum(axis="columns")
+total_market_cap.plot()
+
+capitalizacion_pesos_industria = ind_market_Cap.divide(total_market_cap, axis="rows")
+capitalizacion_pesos_industria.plot()
+ 
+capitalizacion_pesos_industria.head()
+ 
+capitalizacion_pesos_industria["1926":].sum(axis = "columns") 
+
+capitalizacion_pesos_industria[["Fin", "Steel"]].plot(figsize=(12,6))
+
+rendimiento_total_mercado = (capitalizacion_pesos_industria * ind_return).sum(axis ="columns")
+rendimiento_total_mercado.plot() 
+ 
+rendimiento_total_mercado_index = fc.drawdown(rendimiento_total_mercado).Wealth
+
+rendimiento_total_mercado_index.plot(figsize=(12,6), title= 'rendimientos totales mercado')
+ 
+rendimiento_total_mercado_index["1980":].plot(figsize=(12,6))
+
+#se traza el indice y la media movil a 36 meses
+rendimiento_total_mercado_index["1980":].rolling(window=36).mean().plot() 
+#rolling funciona cuando se indexa una serie de tiempo / a 36 meses
+
+#el primer punto de datos requiere 36 meses, donde se pierden 36 meses de datos para generar la media movil
+#porque se requiere ese tiempo para poder calcular la media movil, donde el primer valor de la media movil
+#estara despues de esos 36 meses.
+
+
+tmi_tr3mrets = rendimiento_total_mercado.rolling(window= 36 ).aggregate(fc.rendimientos_anualizados, 
+                                                                        periodos_año = 12)
+
+tmi_tr3mrets .plot(figsize = (12,6), legend = True, label = "Rendimiento con 36 meses")
+
+rendimiento_total_mercado.plot(label = "Returns", color = "red", legend  =True)
+
+
+"Para graficar las dos graficas en uno solo correr ambos codigos al mismo tiempo"
+"si se quiere una grafica por variable correr uno por separado del otro"
+
+###############################################################################
+
+"Correlaciones de balanceo con varios indices agrupado "
+
+#serie de tiempo de correlaciones
+"Multi-index"
+#sirve para poner un doble indice con empresa y año (hay dos columnas en la parte de los indices)
+#cuando no es multi-indice solo tiene una columna en este caso indexada (año)
+
+"Matriz con doble indice (multi-indice)"
+#rolling es para agrupar todas las filas en una ventana, dada o intervalo
+ts_corr = ind_return.rolling(window= 36).corr()
+ts_corr.tail() #es una serie de tiempo de una matriz donde tiene doble indice (multi-indice)
+ts_corr.plot()
+
+ind_return.head() #matriz con un solo indice
+
+
+#se quiere medir la correlacion media de toda la matriz durante un año dado
+#por lo que se debe agrupar , al ser un multi-indice se debe indicar bajo que nivel o indice
+
+ts_corr.index.names = ["date", "industry"]
+ts_corr.tail()
+
+#se calcula una correlacion sobre 36 meses
+#se agrupa por fecha
+#se agrupa por un nivel a la derecha
+
+ind_tr36corr = ts_corr.groupby(level = "date").apply(lambda cormat:cormat.values.mean())
+ind_tr36corr.plot()
+
+tmi_tr3mrets.plot(label = "rendimientos 36 meses", figsize=(12,6), legend=True, secondary_y = True, color = "red")
+ind_tr36corr.plot(label = "correlaciones 36 meses", legend = True, color= "green")
+
+"""
+Se puede ver que los rendimientos son los de la grafica roja y las correlaciones la verde 
+
+eje de la derecha es de los rendimientos en porcentaje
+
+eje de la izquierda es de las correlaciones en porcentaje
+
+Las linea verde es la correlacion media entre industrias 
+"""
+
+""" ############################# Explicacion: 
+Cuando el mercado se hunde se puede ver que las correlaciones suben  y cuando
+el mercado sube las correlaciones vuelven a la normalidad, teniendo en cuenta las correlaciones de 
+36 meses, por lo que esta imagen nos puede decir visualmente
+como la diversificacion falla cuando se necesita
+
+Esto porque cuando el mercado esta cayendo muy fuerte se busca las correlaciones 
+para poder salir de el con una contraposicion que contrarreste el efecto
+pero las correlaciones empiezan a subir 
+
+"""
+
+#Analisis del periodo de 2008
+
+tmi_tr3mrets["2007":].plot(label = "rendimientos 36 meses", figsize=(12,6), legend=True, secondary_y = True, color = "red")
+ind_tr36corr["2007":].plot(label = "correlaciones 36 meses", legend = True, color= "green")
+
+
+"""
+Conforme el mercado se desploma en 2008, las correlaciones se disparan de forma estrepitosa
+llegando a un maximo de 0.75 de correlacion donde la diversificacion no ayuda
+porque se saca de un promedio total de todas las correlaciones de los sectores por lo
+que todos tenian un 75% de correlacion osea ninguno o estadisticamente ninguno durante
+este experimento se podia demostrar que sirviera para amortiguar el golpe ya que iban 
+incrementando en vez de bajar
+"""
+
+correlacion_entre_rendimientos_y_correlaciones = tmi_tr3mrets.corr(ind_tr36corr)
+correlacion_entre_rendimientos_y_correlaciones
+
+
+#en conclusion la diversificacion no ayuda cuando los mercados se caen porque
+#la mayoria de los sectores aumenta su correlacion por lo que le pasa el mismo efecto
+#suponiendo que se calcula una media de 36 meses o 3 años 
+#la correlacion deberia bajar para que funcionara la diversificacion general
+
+"Temas vistos"
+#ventanas moviles = medias moviles 
+#multi-indices
+
