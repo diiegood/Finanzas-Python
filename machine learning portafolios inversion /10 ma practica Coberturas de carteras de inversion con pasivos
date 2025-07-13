@@ -1,0 +1,83 @@
+import funciones_curso as fc
+import pandas as pd
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from scipy.optimize import minimize
+import ipywidgets as widgets
+
+
+"""
+Estrategias optimas de inversion para inversores con objetivos de pasivo o
+de consumo a largo plazo, para inversores institucionales,se realizaran temas
+relacionados a la gestion de activos y pasivos, restricciones del inversor
+ademas de ratios financieros, minimizacion de costes de oportunidad de las 
+restricciones a corto plazo.
+
+Inversion basada en el pasivo, fondos de pensiones nuevos lineamientos, 
+el nuevo estilo de inversion de cartera de polizas de seguros ha cambiado a
+una inversion dinamica basada en el pasivo (DLDI en ingles)
+
+Caracteristicas: 
+    
+    Gestion de riesgo de cartera en relacion al pasivo.
+    
+    Asignacion dinamica en el tiempo absoluto, ademas del enfoque de asignacion
+    que varia dinamicamente a traves del tiempo dentro de los bloques de construccion
+    arriesgados y seguros
+"""
+
+
+def squareit(n):
+    return n*n
+
+squareit(5)
+
+###############################################################################
+
+"Practica 10 Estrategias de inversion basadas en pasivos y ratios de financiacion"
+
+def valor_presente (t,r):
+    """Calcula la formula de valor presente"""
+    return (1+r)**(-t)
+
+valor_presente(10,0.03) #calcula el valor presente
+ 
+valor_presente(10,0.03) * (1.03**10) #calcula el valor futuro
+
+def PV(l,r):
+    """
+    Calcula el valor presente de una secuencia de pasivos
+    l es el tiempo, y los valores son los montos sobre cada retorno del pasivo
+    valuado en valor presente en la secuencia
+    """
+    dates = l.index
+    discounts  = valor_presente(dates, r)
+    return (discounts*l).sum()    
+
+liabilities = pd.Series(data =[1,1.5,2,2.5], index=[3,3.5,4,4.5])
+liabilities #pasivos
+
+PV(liabilities, 0.03)
+
+liabilities.sum()
+
+def ratio_fondeo (assets, liabilities, r):
+    """
+    Calcula el funding ratio de algunos activos dado los pasivos 
+    y las tasas de interes
+    assets - activos
+    liabilities - activos
+    r - tasa de interes
+    """
+    return assets/PV(liabilities,r)
+
+ratio_fondeo(5, liabilities, 0.03) #0.8021407126958777
+    
+ratio_fondeo(5, liabilities, 0.02) # 0.7720304366941648
+
+ratio_fondeo(5, liabilities, 0.05) # 0.8649082768407927
+
+"Practica 10 / Parte 2 Cobertura de carteras de pasivos"
+
+
