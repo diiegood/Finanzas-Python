@@ -1,0 +1,107 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import os
+
+"""
+############################  Accion de NAFTRAC  ##############################
+"""
+
+# Carga de datos de Naftrac
+url_bh = "https://raw.githubusercontent.com/diiegood/Finanzas-Python/main/Tesis/Data/SPY2.csv"#datos de naftrac
+#url_bh = ""
+Naftrac = pd.read_csv(url_bh)
+Naftrac = Naftrac[["Date","Price", "Open","Low"]]
+
+#Se crea un data fram vacio
+serie_Naftrac= pd.DataFrame()
+
+#se crea una serie de tiempo con el data frame recien creado
+serie_Naftrac["Date"] = pd.to_datetime(Naftrac["Date"], dayfirst = False)
+
+#se crean las columnas de rnedimientos y cierre de precios en la nueva serie
+serie_Naftrac["Close"] = Naftrac["Price"]
+serie_Naftrac = serie_Naftrac.sort_values(by = "Date", ascending = False) #se ordenan los valores de la serie por ascendente
+serie_Naftrac["Close_previous"] = serie_Naftrac["Close"].shift(1)
+serie_Naftrac["Returns"] = serie_Naftrac["Close"]/serie_Naftrac["Close_previous"]-1 #calcular rendimientos
+#otras formas de calcular rendimientos
+#serie_Naftrac["Returns2"] = serie_Naftrac["Close"].pct_change()
+serie_Naftrac = serie_Naftrac.dropna()
+serie_Naftrac = serie_Naftrac.reset_index(drop= True)
+
+Volatilidad = serie_Naftrac["Returns"].std()
+volatilidad_anualizada =  (Volatilidad * np.sqrt(252))*100
+
+#Calculo de Drawdown
+serie_Naftrac["wealth_index"] = 1000*(1+serie_Naftrac["Returns"]).cumprod()
+serie_Naftrac["previous_peaks"] = serie_Naftrac["wealth_index"].cummax()
+serie_Naftrac ["Drawdowns"] = (serie_Naftrac["wealth_index"] - serie_Naftrac["previous_peaks"])/serie_Naftrac["previous_peaks"]
+
+Naftrac["Price"].plot()
+serie_Naftrac["Returns"].plot()
+serie_Naftrac["wealth_index"].plot()
+serie_Naftrac["Drawdowns"].plot()
+
+###############################################################################
+
+import matplotlib.pyplot as plt
+
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Primer eje (izquierda)
+serie_Naftrac["wealth_index"].plot(ax=ax1, color='blue', label='Wealth Index')
+ax1.set_ylabel('wealth_index', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
+
+# Segundo eje (derecha)
+ax2 = ax1.twinx()
+serie_Naftrac["Drawdowns"].plot(ax=ax2, color='red', label='Drawdowns')
+ax2.set_ylabel('Drawdowns', color='red')
+ax2.tick_params(axis='y', labelcolor='red')
+
+# Título y leyenda
+plt.title("Wealth Index y Drawdowns")
+fig.tight_layout()
+plt.show()
+
+
+"""
+############################  Accion de S&P500  ##############################
+"""
+
+# Carga de datos de Naftrac
+url_bh = "https://raw.githubusercontent.com/diiegood/Finanzas-Python/main/Tesis/Data/NAFTRAC.csv" #datos de naftrac
+#url_bh = ""
+Naftrac = pd.read_csv(url_bh)
+Naftrac = Naftrac[["Date","Price", "Open","Low"]]
+
+#Se crea un data fram vacio
+serie_Naftrac= pd.DataFrame()
+
+#se crea una serie de tiempo con el data frame recien creado
+serie_Naftrac["Date"] = pd.to_datetime(Naftrac["Date"], dayfirst = False)
+
+#se crean las columnas de rnedimientos y cierre de precios en la nueva serie
+serie_Naftrac["Close"] = Naftrac["Price"]
+serie_Naftrac = serie_Naftrac.sort_values(by = "Date", ascending = True) #se ordenan los valores de la serie por ascendente
+serie_Naftrac["Close_previous"] = serie_Naftrac["Close"].shift(1)
+serie_Naftrac["Returns"] = serie_Naftrac["Close"]/serie_Naftrac["Close_previous"]-1 #calcular rendimientos
+#otras formas de calcular rendimientos
+#serie_Naftrac["Returns2"] = serie_Naftrac["Close"].pct_change()
+serie_Naftrac = serie_Naftrac.dropna()
+serie_Naftrac = serie_Naftrac.reset_index(drop= True)
+
+Volatilidad = serie_Naftrac["Returns"].std()
+volatilidad_anualizada =  (Volatilidad * np.sqrt(252))*100
+
+#Calculo de Drawdown
+serie_Naftrac["wealth_index"] = 1000*(1+serie_Naftrac["Returns"]).cumprod()
+serie_Naftrac["previous_peaks"] = serie_Naftrac["wealth_index"].cummax()
+serie_Naftrac ["Drawdowns"] = (serie_Naftrac["wealth_index"] - serie_Naftrac["previous_peaks"])/serie_Naftrac["previous_peaks"]
+
+Naftrac["Price"].plot()
+serie_Naftrac["Returns"].plot()
+serie_Naftrac["wealth_index"].plot()
+serie_Naftrac["Drawdowns"].plot()
+
