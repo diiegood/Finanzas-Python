@@ -1,22 +1,121 @@
-import numpy as np
+
+from alpha_vantage.timeseries import TimeSeries
 import pandas as pd
-import yfinance as yf
-from pandas_datareader import data as pdr
-from datetime import datetime
+from datetime import datetime, timedelta
 
-# Activar la sobreescritura para usar yfinance con pandas_datareader
-yf.pdr_override()
+# 🔑 Tu API Key de Alpha Vantage
+api_key = 'TU_API_KEY'
+ts = TimeSeries(key=api_key, output_format='pandas')
 
-# Lista de tickers
-tickers = ["SOXL", "WALMEX.MX"]
+def get_last_6m(symbol):
+    # Obtener todos los datos diarios
+    df, meta = ts.get_daily(symbol=symbol, outputsize='full')
+    df.index = pd.to_datetime(df.index)
+    cutoff = datetime.today() - timedelta(days=182)
+    return df[df.index >= cutoff]
 
-# Rango de fechas
-inicio = datetime(2025, 1, 1)
-fin = datetime(2025, 7, 1)
+# Datos filtrados
+df_soxl = get_last_6m('SOXL')
+df_walmex = get_last_6m('SPDR')  # símbolo de Walmex en BMV
 
-# Obtener datos históricos desde Yahoo Finance
-datos = pdr.get_data_yahoo(tickers, start=inicio, end=fin)
+# Visualización (primeras filas)
+print("SOXL (últimos 6 meses):")
+print(df_soxl.head())
+print("\nWalmex (últimos 6 meses):")
+print(df_walmex.head())
 
-# Mostrar (o guardar) los datos
-print(datos)  # Si estás en consola
-# datos.to_excel("mi_portafolio_diario.xlsx")  # Opcional: guardar en Excel
+
+
+import investpy
+import pandas as pd
+
+def descargar_walmex(desde='01/01/2024', hasta='17/07/2025'):
+    try:
+        # Descargar datos históricos de WALMEX en México desde Investing.com
+        df = investpy.get_stock_historical_data(stock='WALMEX',
+                                                country='mexico',
+                                                from_date=desde,
+                                                to_date=hasta)
+        print(f"Datos descargados correctamente, total registros: {len(df)}")
+        print(df.head())
+
+        # Guardar a CSV para análisis posterior
+        df.to_csv('walmex_investing.csv')
+        print("Datos guardados en 'walmex_investing.csv'")
+        
+        return df
+    
+    except Exception as e:
+        print("Error al descargar datos:", e)
+        return None
+
+# Ejecutar función con fechas
+datos_walmex = descargar_walmex()
+
+
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+import pandas as pd
+import time
+
+# Configurar navegador headless (sin ventana)
+options = Options()
+options.add_argument("--headless")
+
+# Ruta a chromedriver
+driver_path = 'ruta/a/tu/chromedriver'  # Cambia esto a la ruta correcta
+
+driver = webdriver.Chrome(executable_path=driver_path, options=options)
+
+# URL de datos históricos WALMEX en Investing.com
+url = "https://www.investing.com/equities/wal-mex-s-a-b-de-cv-historical-data"
+
+driver.get(url)
+time.sleep(5)  # Esperar a que cargue la página
+
+# Aceptar cookies si aparece (puede variar)
+try:
+    cookie_btn = driver.find_element(By.ID, "onetrust-accept-btn-handler")
+    cookie_btn.click()
+    time.sleep(2)
+except:
+    pass
+
+# Desplazar la tabla para cargar datos (scroll)
+driver.execute_script("window.scrollTo(0, 1000);")
+time.sleep(2)
+
+# Obtener tabla de datos históricos
+table = driver.find_element(By.CSS_SELECTOR, "table.genTbl.closedTbl.historicalTbl")
+
+# Extraer datos de la tabla
+rows = table.find_elements(By.TAG_NAME, "tr")
+
+data = []
+for row in rows[1:]:  # Omitir encabezado
+    cols = row.find_elements(By.TAG_NAME, "td")
+    if len(cols) == 7:
+        fecha = cols[0].text
+        precio_cierre = cols[1].text
+        apertura = cols[2].text
+        maximo = cols[3].text
+        minimo = cols[4].text
+        volumen = cols[5].text
+        cambio = cols[6].text
+        data.append([fecha, apertura, maximo, minimo, precio_cierre, volumen, cambio])
+
+driver.quit()
+
+# Crear DataFrame
+df = pd.DataFrame(data, columns=["Fecha", "Apertura", "Máximo", "Mínimo", "Cierre", "Volumen", "Cambio"])
+
+# Mostrar primeras filas
+print(df.head())
+
+# Guardar a CSV
+df.to_csv("walmex_investing_selenium.csv", index=False)
+print("Datos guardados en 'walmex_investing_selenium.csv'")
+
+
