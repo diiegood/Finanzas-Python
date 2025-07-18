@@ -1,0 +1,22 @@
+import numpy as np
+import pandas as pd
+import yfinance as yf
+from pandas_datareader import data as pdr
+from datetime import datetime
+
+# Activar la sobreescritura para usar yfinance con pandas_datareader
+yf.pdr_override()
+
+# Lista de tickers
+tickers = ["SOXL", "WALMEX.MX"]
+
+# Rango de fechas
+inicio = datetime(2025, 1, 1)
+fin = datetime(2025, 7, 1)
+
+# Obtener datos históricos desde Yahoo Finance
+datos = pdr.get_data_yahoo(tickers, start=inicio, end=fin)
+
+# Mostrar (o guardar) los datos
+print(datos)  # Si estás en consola
+# datos.to_excel("mi_portafolio_diario.xlsx")  # Opcional: guardar en Excel
