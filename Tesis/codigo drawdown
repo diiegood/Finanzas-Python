@@ -1,0 +1,225 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import os
+
+"""
+############################  Accion de s&p500  ##############################
+"""
+
+# Carga de datos de Naftrac
+url_bh = "https://raw.githubusercontent.com/diiegood/Finanzas-Python/main/Tesis/Data/SPY2.csv"#datos de naftrac
+SP = pd.read_csv(url_bh)
+SP = SP[["Date","Price", "Open","Low"]]
+
+#Se crea un data fram vacio
+serie_SP= pd.DataFrame()
+
+#se crea una serie de tiempo con el data frame recien creado
+serie_SP["Date"] = pd.to_datetime(SP["Date"], dayfirst = False).reset_index(drop=True)
+
+#se crean las columnas de rnedimientos y cierre de precios en la nueva serie
+serie_SP["Close"] = SP["Price"]
+serie_SP = serie_SP.sort_values(by = "Date", ascending = True) #se ordenan los valores de la serie por ascendente
+serie_SP["Close_previous"] = serie_SP["Close"].shift(1)
+serie_SP["Returns"] = serie_SP["Close"]/serie_SP["Close_previous"]-1 #calcular rendimientos
+#otras formas de calcular rendimientos
+#serie_Naftrac["Returns2"] = serie_Naftrac["Close"].pct_change()
+serie_SP = serie_SP.dropna()
+# Función para cargar y procesar los datos de los activos
+
+###############################################################################
+
+serie_SP = serie_SP.reset_index(drop= True)
+
+Volatilidad = serie_SP["Returns"].std()
+volatilidad_anualizada =  (Volatilidad * np.sqrt(252))*100
+
+#Calculo de Drawdown
+serie_SP["wealth_index"] = 700*(1+serie_SP["Returns"]).cumprod()
+serie_SP["previous_peaks"] = serie_SP["wealth_index"].cummax()
+serie_SP["Drawdowns"] = (serie_SP["wealth_index"] - serie_SP["previous_peaks"])/serie_SP["previous_peaks"]
+serie_SP.set_index('Date', inplace = True) #se indexa la columna de la fecha 
+
+serie_SP["Returns"].plot()
+serie_SP["Close"].plot()
+serie_SP["wealth_index"].plot()
+serie_SP["Drawdowns"].plot()
+
+
+#Grafica de activo de S&P500     ##############################################
+
+#Grafica individual de precio de cierre de la accion
+plt.plot( serie_SP['Close'], linestyle='-', color='blue')
+plt.title('Precio de cierre de la accion')   # Título del gráfico
+plt.xlabel('Años')                              # Etiqueta del eje X
+plt.ylabel('Valor en dolares del activo')                             # Etiqueta del eje Y
+plt.grid(True)                                   # Mostrar cuadrícula
+plt.xticks(rotation=45)                          # Rotar fechas para que se vean mejor
+plt.tight_layout()                               # Ajusta el diseño automáticamente
+
+plt.show()
+
+#Grafica individual de caidas comparados con el maximo historico
+plt.plot( serie_SP["Drawdowns"], linestyle = "-", color="red")
+# Personalización
+plt.title('Caidas maximas comparadas con el maximo anterior')   # Título del gráfico
+plt.xlabel('Años')                              # Etiqueta del eje X
+plt.ylabel('% de caida')                             # Etiqueta del eje Y
+plt.grid(True)                                   # Mostrar cuadrícula
+plt.xticks(rotation=45)                          # Rotar fechas para que se vean mejor
+plt.tight_layout()                               # Ajusta el diseño automáticamente
+
+plt.show()
+
+#Grafica de Drawdowns  ########################################################
+
+import matplotlib.pyplot as plt
+
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Primer eje (izquierda)
+serie_SP["wealth_index"].plot(ax=ax1, color='blue', label='Wealth Index')
+ax1.set_ylabel('wealth_index', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
+
+# Segundo eje (derecha)
+ax2 = ax1.twinx()
+serie_SP["Drawdowns"].plot(ax=ax2, color='red', label='Drawdowns')
+ax2.set_ylabel('Drawdowns', color='red')
+ax2.tick_params(axis='y', labelcolor='red')
+
+# Título y leyenda
+plt.title("Wealth Index y Drawdowns")
+fig.tight_layout()
+plt.show()
+
+###############################################################################
+
+"""
+Data frame de comparacion entre ambos indices:
+"""
+
+Comparacion = pd.DataFrame()
+Comparacion["correlaciones"] = serie_SP["Returns"].rolling(window=5).corr(serie_Naftrac["Returns"])
+Comparacion["corr_cierre"] = serie_SP["Close"].rolling(window=5).corr(serie_Naftrac["Close"]) # Por ejemplo, una ventana de 20 días
+Comparacion["corr_caida"] = serie_SP["Drawdowns"].rolling(window=5).corr(serie_Naftrac["Drawdowns"])
+
+import matplotlib.pyplot as plt
+
+serie_SP["correlaciones"].plot(figsize=(10, 5), title="Correlación móvil (Returns vs Drawdowns)")
+plt.ylabel("Correlación")
+plt.grid(True)
+plt.show()
+
+
+
+
+
+
+
+
+
+
+###############################################################################
+
+"""
+############################  Accion de Naftrac  ##############################
+"""
+
+# Carga de datos de Naftrac
+url_bh = "https://raw.githubusercontent.com/diiegood/Finanzas-Python/main/Tesis/Data/NAFTRAC.csv" #datos de naftrac
+#url_bh = ""
+Naftrac = pd.read_csv(url_bh)
+Naftrac = Naftrac[["Date","Price", "Open","Low"]]
+
+#Se crea un data fram vacio
+serie_Naftrac= pd.DataFrame()
+
+#se crea una serie de tiempo con el data frame recien creado
+serie_Naftrac["Date"] = pd.to_datetime(Naftrac["Date"], dayfirst = False)
+
+#se crean las columnas de rnedimientos y cierre de precios en la nueva serie
+serie_Naftrac["Close"] = Naftrac["Price"]
+serie_Naftrac = serie_Naftrac.sort_values(by = "Date", ascending = True) #se ordenan los valores de la serie por ascendente
+serie_Naftrac["Close_previous"] = serie_Naftrac["Close"].shift(1)
+serie_Naftrac["Returns"] = serie_Naftrac["Close"]/serie_Naftrac["Close_previous"]-1 #calcular rendimientos
+#otras formas de calcular rendimientos
+#serie_Naftrac["Returns2"] = serie_Naftrac["Close"].pct_change()
+serie_Naftrac = serie_Naftrac.dropna()
+serie_Naftrac = serie_Naftrac.reset_index(drop= True)
+
+Volatilidad = serie_Naftrac["Returns"].std()
+volatilidad_anualizada =  (Volatilidad * np.sqrt(252))*100
+
+#Calculo de Drawdown
+serie_Naftrac["wealth_index"] = 1000*(1+serie_Naftrac["Returns"]).cumprod()
+serie_Naftrac["previous_peaks"] = serie_Naftrac["wealth_index"].cummax()
+serie_Naftrac ["Drawdowns"] = (serie_Naftrac["wealth_index"] - serie_Naftrac["previous_peaks"])/serie_Naftrac["previous_peaks"]
+serie_Naftrac.set_index('Date', inplace = True)
+
+serie_Naftrac["Returns"].plot()
+serie_Naftrac["wealth_index"].plot()
+serie_Naftrac["Drawdowns"].plot()
+
+
+#Grafica de Drawdowns  ########################################################
+
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Primer eje (izquierda)
+serie_Naftrac["wealth_index"].plot(ax=ax1, color='blue', label='Wealth Index')
+ax1.set_ylabel('wealth_index', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
+
+# Segundo eje (derecha)
+ax2 = ax1.twinx()
+serie_Naftrac["Drawdowns"].plot(ax=ax2, color='red', label='Drawdowns')
+ax2.set_ylabel('Drawdowns', color='red')
+ax2.tick_params(axis='y', labelcolor='red')
+
+# Título y leyenda
+plt.title("Wealth Index y Drawdowns")
+fig.tight_layout()
+plt.show()
+
+
+###############################################################################
+
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import os
+
+"Analisis de mercado comportamiento de activos"
+
+#Calcula el valor del activo incluyendo los intereses e impuestos
+def margen_ganancia_accion (precio_accion):
+    precio_accion = precio_accion
+    iva = precio_accion * (0.16)
+    comision = precio_accion * (0.0025)
+    precio_activo_sucio = precio_accion + iva + comision
+    return precio_activo_sucio 
+
+precio_walmex = 53.99
+valor_contrato = precio_walmex
+margen_ganancia_accion(precio_accion= precio_wakmex)
+
+#retencion del 30% del valor de titulo por ganancia de impuesto
+
+#calcula la ganancia o perdida del arbitraje del activo
+
+print("Ingresa el valor final del titulo")
+valor = float(input()) 
+if valor < margen_ganancia_accion(precio):
+    print("esta perdidendo dinero")
+if valor > margen_ganancia_accion(precio):
+    print("felicidades no lo estas haciendo mal")
+
+
+###############################################################################
+
+
