@@ -1,0 +1,414 @@
+"CIR Mondek ti simulate changes in Interes Rates and Liability Hedging" 
+#Cox Ingersoll Ross model  / extension dek modelo de Vasicek para prevenir 
+#los cambios negativos en las tasas de interes 
+
+"""
+Modelo de Vasicek:
+    Sirve para medir el comportamiento de la cartera de inversion conforme a 
+    los diferentes tiposa de interes a lo largo del tiempo  (siendo un proceso estocastico) 
+    ya que es importante conocer el impacto de la variacion del tiempo en los pasivos
+    
+    Es la combinacion de un proceso de reversiohn a la media de la tasa de interes
+    actual con la de mediano / largo plazo, ademas de un proceso de movimiento 
+    browniano de la volatilidad de la tasa de interes.
+    
+"""
+
+
+#Sort Rate  vs Anualizad Rate 
+
+"""
+Short Rate es la tasa instantanea obtenido en un periodo de tiempo muy reducido
+al pedir prestado una suma de dinero durante el plazo de 1 dia 
+"""
+
+#Interes compuesto; conversion del ineres compuesto a e 
+
+#se presta un dolar ademas se va cobnar el 100% de la tasa de interes 
+#al final del año se debe devolver el capital mas los intereses = 1 + 1 * 1 = 2
+# por lo que al final del año se obtinen 2 dolares
+1 * (1 + 1) 
+1*(1+1)**1
+
+# pero si se cambia la capitalizacion de la tasa de interes a semestral osea
+# 2 veces al año finalizando cada semestre, 1 + 1 * 0.5 + ( 1+ 1 * 0.5) * 0.5.
+1 + 1 * 0.5 + ( 1+ 1 * 0.5) * 0.5
+1*(1+1/2)**2
+
+#ahora se hace trimestral 
+1*(1+1/4)**4
+
+#se hace sobre dias 100 dias 
+1*(1+1/100)**100
+
+#se hace sobre dias 100 dias 
+1*(1+1/10000)**10000
+
+
+"""
+Interes Compuesto 
+(1+r/n)**n  -> conforme n aumenta el numero converge a euler 
+"""
+
+#librerias
+
+import numpy as np
+import pandas as pd 
+import funciones_curso as fc 
+import math
+import ipywidgets as widgets
+from IPython.display import display
+
+
+def tasa_anual(r):
+    """
+    Convierte la tasa instanea a una tasa anualizada 
+    """
+    return np.exp(r)
+
+def tasa_instantanea(r):
+    """
+    Convierte la tasa anual a la instanea 
+    """
+    return np.log1p(r)
+
+
+
+def Cox_Ingerson_Ross_Model(n_scenarios, n_years=10, a=0.05, b=0.03, sigma=0.05, steps_per_year=12, r_0=None):
+    """
+    Implementaciones para el modelo CIR para las tasas de interes 
+    """
+    if r_0 is None: r_0 = b
+    r_0 = tasa_instantanea(r_0)
+    dt = 1/steps_per_year
+    num_steps = int(n_years*steps_per_year)+1
+    shock = np.random.normal(0, scale = np.sqrt(dt), size=(num_steps, n_scenarios))
+    rates= np.empty_like(shock)
+    rates[0] = r_0
+    for step in range(1, num_steps):
+        r_t = rates[step-1]
+        d_r_t = a *(b-r_t)*dt + sigma*np.sqrt(r_t)*shock[step]
+        rates[step]= abs(r_t + d_r_t)
+        
+    return pd.DataFrame(data = tasa_anual(rates), index=range(num_steps))
+        
+
+n_scenarios = 10 #numero de simulaciones de la caminata aleatoria
+
+#legend = False es para quitar las acotaciones o macadoresa de la grafica
+Cox_Ingerson_Ross_Model(n_scenarios=n_scenarios).plot(figsize=(12,5), legend=False)
+
+#cuando sigma es cero la recta se vuelve una pendiente plana curveada, como debido a que no hay volatlidad y solo 
+#se genera un solo vector en vez de varios.
+
+#a es el decrecimiento o crecimiento de la pendiente ya que es la velocidad de la reversion
+#entre mas rapido la recta se va curveando mas
+
+"""
+El modelo CIR sirve para poder medir los cambios en las tasas de interes 
+se busca determinar que pasara con el precio del bono sin cupon 
+cuando cambien las tasas de interes
+"""
+
+ 
+def Cox_Ingerson_Ross_Model(n_scenarios, n_years=10, a=0.05, b=0.03, sigma=0.05, steps_per_year=12, r_0=None):
+    """
+    Implementaciones para el modelo CIR para las tasas de interes 
+    """
+    if r_0 is None: r_0 = b
+    r_0 = tasa_instantanea(r_0)
+    dt = 1/steps_per_year
+    num_steps = int(n_years*steps_per_year)+1 #los años deben ser decimales
+    
+    shock = np.random.normal(0, scale = np.sqrt(dt), size=(num_steps, n_scenarios))
+    rates= np.empty_like(shock)
+    rates[0] = r_0
+    
+    #Para generar el precio
+    h = math.sqrt(a**2 + 2*sigma**2)
+    prices = np.empty_like(shock)
+
+    def price(ttm, r):
+        _A = ((2*h*math.exp((h+a)*ttm/2))/(2*h+(h+a)*(math.exp(h*ttm)-1))) ** (2*a*b/sigma**2)
+        _B = (2*(math.exp(h*ttm)-1))/(2*h + (h+a)*(math.exp(h*ttm)-1))
+        _P = _A *np.exp(-_B*r)
+        return _P
+    prices[0]=price(n_years, r_0)
+    
+    for step in range(1, num_steps):
+        r_t = rates[step-1]
+        d_r_t = a *(b-r_t)*dt + sigma*np.sqrt(r_t)*shock[step]
+        rates[step]= abs(r_t + d_r_t)
+        #generar los precios al tiempo t
+        prices[step]=price(n_years-step*dt, rates[step])
+        
+    rates = pd.DataFrame(data=tasa_anual(rates), index=range(num_steps))
+    #para los precios
+    prices = pd.DataFrame(data=prices, index=range(num_steps))
+        
+    return rates, prices
+
+
+
+"""
+Se genera una funcion para calcular la evolucion del valor de los activos en 10
+escenarios distintos siendo una caminata aleatoria, cambaindo conforme a la trayectoria
+la grafica parte del origen que es la cantidad de dinero con la que se parte, por lo que
+al final del tiempo t indicado en el eje de x se obtendra la cantidad de ese periodo conforme
+al eje y que se observe , cantidad dada en millones de dolares 75 = 750,000 usd
+por lo que al final se obtendrian 2 millones de dolares en el mejor caSO Y 1.25 millones
+en el peor de los casos.
+"""
+
+a_0 = 75
+rates, bond_prices = Cox_Ingerson_Ross_Model(n_years=10, r_0=0.03, b=0.03, n_scenarios=100)
+liabilities= bond_prices 
+zcbond_10 = pd.Series(data=[1], index=[10])
+zc_0 = fc.pv(zcbond_10, r=0.03)
+n_bonds = a_0/zc_0
+av_zc_bonds= n_bonds * bond_prices
+av_cash = a_0 * (rates / 12+1).cumprod()
+
+av_cash.plot(legend=False, figsize=(12,6))
+
+
+av_zc_bonds.plot(legend=False, figsize=(12,6)) #deben salir 10 caminatas aleatorias
+
+(av_cash/liabilities).pct_change().plot(title="Retornos del ratio del fondo)", legend= False, figsize=(12,5))
+
+###############################################################################
+
+a_0 = 0.75
+rates, bond_prices = Cox_Ingerson_Ross_Model( r_0=0.03, b=0.03, n_scenarios=10000)
+liabilities= bond_prices 
+zc_0 = fc.pv(zcbond_10, r=0.03)
+n_bonds = a_0/zc_0
+av_zc_bonds= n_bonds * bond_prices
+av_cash = a_0 * (rates / 12+1).cumprod()
+
+tfr_cash = av_cash.iloc[-1]/liabilities.iloc[-1]
+tfr_zc_bonds = av_zc_bonds.iloc[-1]/liabilities.iloc[-1]
+ax = tfr_cash.plot.hist(label="Cash", figsize=(15,6), bins=100, legend=True)
+tfr_zc_bonds.plot.hist(ax=ax, label="ZC Bonds", bins=100, legend=True, secondary_y=True)
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Cox Ingerson Ross Model"
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import ipywidgets as widgets
+from IPython.display import display
+
+
+
+# Función que simula el modelo CIR
+def Cox_Ingersoll_Ross_Model_Precios(r_0=0.03, a=0.5, b=0.03, sigma=0.001, n_scenarios=2, T=10, n_steps=100):
+    dt = T / n_steps
+    rates = np.zeros((n_steps + 1, n_scenarios))
+    rates[0] = r_0
+
+    for t in range(1, n_steps + 1):
+        z = np.random.normal(size=n_scenarios)
+        rates[t] = (
+            rates[t - 1] +
+            a * (b - rates[t - 1]) * dt +
+            sigma * np.sqrt(np.maximum(rates[t - 1], 0)) * np.sqrt(dt) * z
+        )
+
+    # Crear DataFrame para facilitar el plot
+    time = np.linspace(0, T, n_steps + 1)
+    df = pd.DataFrame(rates, index=time)
+    df.plot(legend=False, figsize=(12, 5))
+    plt.title("Modelo CIR - Simulación de Tasas de Interés")
+    plt.xlabel("Tiempo (años)")
+    plt.ylabel("Tasa de interés")
+    plt.grid(True)
+    plt.show()
+
+# Controles interactivos
+controls = widgets.interactive(Cox_Ingersoll_Ross_Model_Precios,
+                               r_0 = (0.0, 0.15, 0.01),
+                               a = (0.0, 1.0, 0.1),
+                               b = (0.0, 0.15, 0.01),
+                               sigma = (0.0, 0.1, 0.01),
+                               n_scenarios = (1, 100))
+display(controls)
+
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+###############################################################################
+
+
+
+"""
+Simulación de tasas de interés y cobertura de pasivos con el modelo CIR
+
+Modelo Cox-Ingersoll-Ross (CIR): una extensión del modelo de Vasicek que previene tasas negativas.
+
+Modelo de Vasicek:
+    - Modela el comportamiento de las tasas de interés como un proceso estocástico.
+    - Incorpora reversión a la media y ruido browniano.
+    - Útil para evaluar el impacto de la variación de tasas en los pasivos.
+
+Short Rate vs Tasa Anualizada:
+    - Short rate: tasa instantánea (ej. overnight).
+    - Tasa anualizada: capitalización compuesta continua a lo largo del año.
+
+Interés compuesto:
+    (1 + r/n)^n → e^r cuando n → ∞
+"""
+
+# --------------------
+# IMPORTACIONES
+# --------------------
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import math
+import ipywidgets as widgets
+from IPython.display import display
+
+# --------------------
+# FUNCIONES DE CONVERSIÓN DE TASAS
+# --------------------
+
+def tasa_anual(r):
+    """Convierte una tasa instantánea a una tasa anual compuesta continuamente."""
+    return np.exp(r)
+
+def tasa_instantanea(r):
+    """Convierte una tasa anual compuesta a una tasa instantánea."""
+    return np.log1p(r)
+
+# --------------------
+# FUNCIÓN DE VALOR PRESENTE PARA BONOS CUPÓN CERO
+# --------------------
+
+def pv(zcbond_series, r):
+    """
+    Calcula el valor presente de un bono cupón cero.
+    Parámetros:
+        zcbond_series (pd.Series): índices = años, valores = flujos
+        r (float): tasa de descuento
+    """
+    return sum([cf / ((1 + r) ** t) for t, cf in zcbond_series.items()])
+
+# --------------------
+# MODELO COX-INGERSOLL-ROSS (CIR)
+# --------------------
+
+def Cox_Ingersoll_Ross_Model(n_scenarios, n_years=10, a=0.05, b=0.03, sigma=0.05,
+                              steps_per_year=12, r_0=None):
+    """
+    Simula tasas de interés y precios de bonos cupón cero con el modelo CIR.
+    """
+    if r_0 is None:
+        r_0 = b
+    r_0 = tasa_instantanea(r_0)
+    dt = 1 / steps_per_year
+    num_steps = int(n_years * steps_per_year) + 1
+
+    shock = np.random.normal(0, np.sqrt(dt), size=(num_steps, n_scenarios))
+    rates = np.empty_like(shock)
+    prices = np.empty_like(shock)
+
+    rates[0] = r_0
+
+    h = math.sqrt(a**2 + 2 * sigma**2)
+
+    def price(ttm, r):
+        A = ((2 * h * np.exp((h + a) * ttm / 2)) /
+             (2 * h + (h + a) * (np.exp(h * ttm) - 1))) ** (2 * a * b / sigma**2)
+        B = (2 * (np.exp(h * ttm) - 1)) / (2 * h + (h + a) * (np.exp(h * ttm) - 1))
+        return A * np.exp(-B * r)
+
+    prices[0] = price(n_years, r_0)
+
+    for step in range(1, num_steps):
+        r_prev = rates[step - 1]
+        dr = a * (b - r_prev) * dt + sigma * np.sqrt(np.maximum(r_prev, 0)) * shock[step]
+        rates[step] = np.abs(r_prev + dr)
+        prices[step] = price(n_years - step * dt, rates[step])
+
+    df_rates = pd.DataFrame(tasa_anual(rates), index=range(num_steps))
+    df_prices = pd.DataFrame(prices, index=range(num_steps))
+    return df_rates, df_prices
+
+# --------------------
+# SIMULACIÓN DE HEDGING (BONOS VS EFECTIVO)
+# --------------------
+
+a_0 = 0.75  # Valor inicial del portafolio
+
+rates, bond_prices = Cox_Ingersoll_Ross_Model(n_years=10, r_0=0.03, b=0.03, n_scenarios=10)
+
+# Definir bono cupón cero a 10 años
+zcbond_10 = pd.Series([1], index=[10])
+zc_0 = pv(zcbond_10, r=0.03)
+
+# Cantidad de bonos necesarios para cubrir el pasivo
+n_bonds = a_0 / zc_0
+
+# Valor del portafolio con bonos CIR
+av_zc_bonds = n_bonds * bond_prices
+
+# Valor del portafolio en efectivo (capitalización mensual)
+av_cash = a_0 * (1 + rates / 12).cumprod()
+
+# Gráfica
+av_cash.plot(legend=False, figsize=(12, 6))
+plt.title("Evolución del valor del efectivo (hedging sin bonos)")
+plt.xlabel("Tiempo (meses)")
+plt.ylabel("Valor del portafolio")
+plt.grid(True)
+plt.show()
+
+# --------------------
+# WIDGET INTERACTIVO PARA EXPLORAR CIR
+# --------------------
+
+def Cox_Ingersoll_Ross_Model_Precios(r_0=0.03, a=0.5, b=0.03, sigma=0.001, n_scenarios=2, T=10, n_steps=100):
+    dt = T / n_steps
+    rates = np.zeros((n_steps + 1, n_scenarios))
+    rates[0] = r_0
+
+    for t in range(1, n_steps + 1):
+        z = np.random.normal(size=n_scenarios)
+        rates[t] = (
+            rates[t - 1] +
+            a * (b - rates[t - 1]) * dt +
+            sigma * np.sqrt(np.maximum(rates[t - 1], 0)) * np.sqrt(dt) * z
+        )
+
+    time = np.linspace(0, T, n_steps + 1)
+    df = pd.DataFrame(rates, index=time)
+    df.plot(legend=False, figsize=(12, 5))
+    plt.title("Modelo CIR - Simulación de Tasas de Interés")
+    plt.xlabel("Tiempo (años)")
+    plt.ylabel("Tasa de interés")
+    plt.grid(True)
+    plt.show()
+
+controls = widgets.interactive(Cox_Ingersoll_Ross_Model_Precios,
+                               r_0=(0.0, 0.15, 0.01),
+                               a=(0.0, 1.0, 0.1),
+                               b=(0.0, 0.15, 0.01),
+                               sigma=(0.0, 0.1, 0.01),
+                               n_scenarios=(1, 100))
+display(controls)
+
+
+
+
+
