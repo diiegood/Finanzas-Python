@@ -1,0 +1,292 @@
+"""
+Analisis de un bono sin cupon , viendo cuando pagan los cupones e igualando los
+factores de duracion. se va crear un portafolio con bonos normales y con bonos cuponados
+
+"""
+import numpy as np 
+import pandas as pd 
+import funciones_curso as fc
+
+###############################################################################
+###############################################################################
+
+"Funciones anteriores"
+
+def discount(t, r):
+    """
+    Compute the price of a pure discount bond that pays a dollar at time period t
+    and r is the per-period interest rate
+    returns a |t| x |r| Series or DataFrame
+    r can be a float, Series or DataFrame
+    returns a DataFrame indexed by t
+    """
+    discounts = pd.Series([(r+1)**-i for i in t])
+    discounts.index = t
+    return discounts
+
+def pv(flows, r):
+    """
+    Calcula el valor presente de la secuncia de los flujos de efectivo dados por un indice y
+    unos montos, puede ser un escalar o una serie de un data frame con un numero de columnas 
+    por los flujos
+    """
+    dates = flows.index
+    discounts = discount(dates, r)
+    return discounts.multiply(flows, axis='rows').sum()
+    
+def funding_ratio(assets, liabilities, r):
+    """
+    Computes the funding ratio of a series of liabilities, based on an interest rate and current value of assets
+    """
+    return pv(assets, r)/pv(liabilities, r)
+
+def tasa_anual(r):
+    """Convierte una tasa instantánea a una tasa anual compuesta continuamente."""
+    return np.expm1(r)
+
+def tasa_instantanea(r):
+    """Convierte una tasa anual compuesta a una tasa instantánea."""
+    return np.log1p(r)
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Parametros del bono"
+
+#maturity : es el tiempo de vencimiento del bono, cuanto va durar hasta que vence
+#principal : es el valor del instrumento llamado tambien valor nominal o face value
+#coupon_rate : es la tasa cupon anual, si es de 5% al año pagara 5% de tasa cupon, la tasa cupon se paga a lo largo del año
+#coupons_per_year : indica cuantos cupones hay por año, normalmente son 2 semestreales de (5% /2) = 2.5% semestral
+#la tasa de descunto: se usa para descontar todos los cupones 
+
+
+#el cupon si se apga 12 veces es uno semestra y se divide la tasa anual entre 12 
+#por lo que si dura 3 años de maturity pagaria alrededor de 36 cupones el bono
+def bond_cash_flows(maturity, principal=100, coupon_rate=0.03, coupons_per_year=12):
+    """
+    Rendimientos de las series de los cash flows generados por bono
+    indexado  a un determinado numero de cupones
+    """
+    n_coupons = round(maturity*coupons_per_year)
+    coupon_amt = principal*coupon_rate/coupons_per_year
+    coupons = np.repeat(coupon_amt, n_coupons)
+    coupon_times = np.arange(1, n_coupons+1)
+    cash_flows = pd.Series(data=coupon_amt, index=coupon_times)
+    cash_flows.iloc[-1] += principal
+    return cash_flows
+
+
+#funcion para valuar el bono / genera los flujos de efectivo simplemente 
+#desopues calcula el valor presente
+def bond_price (maturity, principal=100, coupon_rate=0.03, coupons_per_year=12, discount_rate = 0.03):
+    """
+    Precio de un bono basado en los parametros de vencimineot del bono, 
+    principal es el valor nominal , teniendo tambien como parametros 
+    la tasa cupon, los cupones por añop, y la tasa de inter5es descontada de los
+    flujos de efectivo futuros asociada al valor presente, cuanto valen hoy los 
+    que se recibiran en el futuro
+    """
+    cash_flows = bond_cash_flows(maturity, principal, coupon_rate, coupons_per_year)
+    return pv(cash_flows, discount_rate/coupons_per_year)
+
+
+
+#calcula el cash flow del bono, al estilo de un bono bullet, 
+#donde se pagan puros cupones y al final el nominal 
+bond_cash_flows(3, 100, 0.03, 2)
+
+
+"Funciones para valuar bonos"
+
+#bono a descuento es un bono bajo par
+#la tasa de interes del bono es el yield rate
+
+bond_price(20, 1000, 0.05, 2, 0.04) #bono sobre par
+
+bond_price(20, 1000, 0.05, 2, 0.05) #bono a la par
+
+bond_price(20, 1000, 0.05, 2, 0.08)  #bono bajo par 
+
+
+"Casmbio del precio de los bonos conforme a la tasa de interes"
+
+#El uso de un solo bono como covertura es un problema, se debe diversificar 
+#tambien en la inversion en bonos.
+
+
+rates = np.linspace(.01, .10, num=20)
+rates
+
+"Calculo de la lista de precios"
+
+#se crea una funciuon con un bucle señalando que tome un valor del vector rates
+prices = [bond_price(10,1000,.05,2,rate)for rate in rates]
+prices
+
+#se genera un grafico donde se observa el cambio del valor del bono conforme se mueve el yield
+pd.DataFrame(data=prices, index=rates).plot(title="cambio en el precio de bono ", legend = False)
+
+#Se busca encontrar una combinacion de bonos que tengan resistencia a los tipos de interes 
+"""
+los bonos no cuponados o cupon cero son mas resistentes a los tipos de interes
+porque solo recibenm un solo pago de amortizacion por lo regular a se 
+venden a precio de descuento, por lo que al final del periodo se amortizan y 
+no hay tasas de interes intermedias 
+"""
+
+"Cash de cada bono"
+cf = bond_cash_flows(3, 1000, .06, 2) #pago de cupon semestral
+#se calcula el tiempo medio ponderado que tarda en recuperar el efectivo
+cf 
+
+#se calcula el tiempo de espera que tarada en recuperar su efectivo. por lo que se 
+#calcularan los factores de descuento, es mejor recuperar 30 usd a tiempo hoy que 30 usd en el futuro
+#porque esos 30 usd de hoy valen mas que los del futuro
+
+"factor de descuento de cada flujo"
+discounts = discount(cf.index, 0.06 / 2) #6 peridosos semestrales a 3 años
+discounts  #se calculan los factores de descuento ,
+# es lo que se debe descontar correspondiente al pago de cada periodo
+
+"Calculo del promedio ponderado"
+
+"flujos de efectivo descontados, pasados a valor presente"
+discount_cash_flow = discounts*cf
+discount_cash_flow
+
+"Pesos de cada flujo"
+weights = discount_cash_flow/ discount_cash_flow.sum()
+weights
+
+#se va usar el indice para muliplicar le peso, ya que el numero de cada flujo representa
+#el tiempo en el cual este va caer
+cf.index*weights
+duracion_macaulay = (cf.index*weights).sum() #promedio ponderado de todos los periodos
+
+"""
+Significa que el ultimo pago que es al vencimienot del bono durante el tiempo 6
+pero la duracion media ponderada al valor acatual de cada flujo es al tiempo valuada
+a valor present de los flujos de efectivo es igual a 5.57 periodos, se valora 6 periodos
+pero la duracion media ponderada que marca es en el periodo 5.57 siendo este la duracion de
+Macaulay.
+"""
+
+print("el tiempo que tardara en recuperar la inversion del bnono es en", duracion_macaulay, "periodos")
+
+#la duracion del bono es vinculada a la cantidad en la que el precio del bono 
+#cambiuara cuando las tasas de interes  
+
+
+def macaulay_duration(flows, discount_rate):
+    """
+    Calcula la duracion de Macaulay en secuencia de los flujos de efecetivo
+    o cash flows.
+    """
+    flujo_descontado = discount(flows.index, discount_rate)*flows
+    weights = flujo_descontado/flujo_descontado.sum()
+    return np.average(flows.index, weights=weights)
+
+#se calcula la duracion de macaulay con los flujos de efectivo y la tasa de descuento que es
+#la tasa cupon dividida entre la capitalizacion (semestral)
+macaulay_duration(bond_cash_flows(3,1000, .06, 2), .06/2)
+
+
+#los cambios de rendimientos de los bonos se ven afectados por los tipos de interes
+#la curva de rendimiento se puede comportar de diferentes formas, pueden inclinarse
+#se pueden aplanar, puede tener una curvatura adicional, 
+
+
+"Duracion de un bono cupon cero"
+liabilities = pd.Series(data = [100000, 100000], index=[10,12])
+macaulay_duration(liabilities, .04)
+
+#la duracion de un bono cupon cero es de 10.96
+
+#duracion de macaulay de 10 años
+bond_10 = macaulay_duration(bond_cash_flows(10, 1000, .05, 1), .04)
+bond_20 = macaulay_duration(bond_cash_flows(20, 1000, .05, 1), .04)
+
+bond_10, bond_20
+
+#la duracion del bono de 10 años es de aproximadamente 8.19 años mientras
+#que la del bono de 20 años es de 13.5 años
+
+def match_durations(cf_t, cf_s, cf_l, discount_rate ):
+    """
+    Retornos de los pesos de W en cf_s a lo largo de (1-w), en cf_l tencdra una 
+    duracion efectiva que haga conexion con cf-t
+    """
+    d_t = macaulay_duration(cf_t, discount_rate)
+    d_s = macaulay_duration(cf_s, discount_rate)
+    d_l = macaulay_duration(cf_l, discount_rate)
+    return (d_l - d_t)/(d_l - d_s)
+
+short_bond = bond_cash_flows(10, 1000, .05, 1)
+long_bond = bond_cash_flows(20, 1000, .05, 1)
+w_s = match_durations(liabilities, short_bond, long_bond, .04)
+w_l = 1 - w_s
+w_s, w_l
+
+#significa que tiene que poner 48.26% de sus activos en el bono corto 
+# y poner el 51.73% de los activos en el bono largo
+
+precio_bono_corto = bond_price(10,1000, .05, 1, .04)
+precio_bono_largo= bond_price(20,1000, .05, 1, .04)
+
+p = 130000 #valor del portafolio
+portfolio_flows= pd.concat([p*w_s*short_bond/precio_bono_corto, p*(1-w_s)*long_bond/precio_bono_largo])
+macaulay_duration(portfolio_flows, 0.04)
+
+"Ratio de financiacion"
+cfr = funding_ratio(portfolio_flows, liabilities, .04)
+
+"""se construye el ratio de financiacion conforme cambain las tasas de ionteres para los
+flujos de caja diferentes"""
+
+#se hace una iteracion de tasas del 0 al 10% 
+rates = np.linspace(0, .1, 20)
+
+lb_assets = p*long_bond/precio_bono_largo
+sb_assets = p*short_bond/precio_bono_corto
+
+fr_change= pd.DataFrame({
+    "Bono Largo":  [funding_ratio(lb_assets, liabilities, r) for r in rates],
+    "Bono Corto":  [funding_ratio(sb_assets, liabilities, r) for r in rates],
+    "Duracion Matched Bonds":  [funding_ratio(portfolio_flows, liabilities, r) for r in rates]}, 
+    index = rates)
+
+
+fr_change.plot(title="Funding Ratios with changes in Interes rates", figsize=(12,6))
+
+"""
+En la grafica se ve que si se hubiera invertido el dinero en un bono a largo plazo
+el ratio de financiacion con inters bajos seria de 1.15, pero si el intere sube
+el ratio de financiacion del bono largo se desploma llegando a 0.95, cuando el interes
+baja al bono largo le va bien y si sube le va mal
+"""
+
+"""
+Por otro lado si se pone el dinero de la fianza en un bono corto la curva es diferente
+en este caso si los tipos de interes suben le va bien mientras que si bajan le mal 
+"""
+
+"Sensibilidad de los bonos ante los tipos de interes"
+#la duracion del bono tiene el p,q en 7.5 y 1.025 dada la tasa de desscuento actual
+#en una cartera de bonos se debe crear una creando solamente bonos antiguos y corrientes
+#donde tienen los pagos intermedios pero el pasivo debe tener una duracion equivalente a la
+#de sus acativos / la duracion de los activos debe ser igual a la de los activos si son iguales
+# o tienen un punto de equilibrio se esta expuesto al riesgo de los tipos de interes.
+
+"""
+#el ratio de bonos expresa el apalancamiento de un emisor de bonos examinando el valor 
+#de los bonos en ciruclacion y su vencimiento, este apalancamiento se refiere a cualquier capital prestado, como
+#la deuda emitida en forma de bonos u otras deudas
+"""
+
+"""
+la relacion divide el valor nocional de los bonos de largo plazo de un empresa por su
+valor empresarial, excluyendo el efectivo o las deudas a corto plazo
+"""
+#si el ratio de bonos es superior a 1/3 o 0.333 significa que el apalancamiento
+#es superior al promdio asumido por una empresa 
