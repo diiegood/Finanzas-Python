@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 from scipy.optimize import minimize
+import math
 
 def drawdown(return_series: pd.Series):
     """Takes a time series of asset returns.
@@ -53,6 +54,19 @@ def obtener_returnos():
     rets = rets/100
     rets.index = pd.to_datetime(rets.index, format="%Y%m").to_period('M')
     return rets
+
+def obtener_retornos_totales():
+    """
+    Load the 30 industry portfolio data and derive the returns of a capweighted total market index
+    """
+    ind_nfirms = get_ind_nfirms()
+    ind_size = get_ind_size()
+    ind_return = rendimientos_industria()
+    ind_mktcap = ind_nfirms * ind_size
+    total_mktcap = ind_mktcap.sum(axis=1)
+    ind_capweight = ind_mktcap.divide(total_mktcap, axis="rows")
+    total_market_return = (ind_capweight * ind_return).sum(axis="columns")
+    return total_market_return
 
 
 def returns():  #funcion para leer base de datos
@@ -479,4 +493,348 @@ def get_ind_nfirms():
     datos.index = pd.to_datetime(datos.index, format="%Y%m").to_period('M')
     datos.columns = datos.columns.str.strip()
     return datos
+
+
+def run_cppi(risky_r, safe_r=None, m=3, start=1000, floor=0.8, riskfree_rate=0.03, drawdown=None):
+    """
+    Run a backtest of the CPPI strategy, given a set of returns for the risky asset
+    Returns a dictionary containing: Asset Value History, Risk Budget History, Risky Weight History
+    """
+    # set up the CPPI parameters
+    dates = risky_r.index
+    n_steps = len(dates)
+    account_value = start
+    floor_value = start*floor
+    peak = account_value
+    if isinstance(risky_r, pd.Series): 
+        risky_r = pd.DataFrame(risky_r, columns=["R"])
+
+    if safe_r is None:
+        safe_r = pd.DataFrame().reindex_like(risky_r)
+        safe_r.values[:] = riskfree_rate/12 # fast way to set all values to a number
+    # set up some DataFrames for saving intermediate values
+    account_history = pd.DataFrame().reindex_like(risky_r)
+    risky_w_history = pd.DataFrame().reindex_like(risky_r)
+    cushion_history = pd.DataFrame().reindex_like(risky_r)
+    floorval_history = pd.DataFrame().reindex_like(risky_r)
+    peak_history = pd.DataFrame().reindex_like(risky_r)
+
+    for step in range(n_steps):
+        if drawdown is not None:
+            peak = np.maximum(peak, account_value)
+            floor_value = peak*(1-drawdown)
+        cushion = (account_value - floor_value)/account_value
+        risky_w = m*cushion
+        risky_w = np.minimum(risky_w, 1)
+        risky_w = np.maximum(risky_w, 0)
+        safe_w = 1-risky_w
+        risky_alloc = account_value*risky_w
+        safe_alloc = account_value*safe_w
+        # recompute the new account value at the end of this step
+        account_value = risky_alloc*(1+risky_r.iloc[step]) + safe_alloc*(1+safe_r.iloc[step])
+        # save the histories for analysis and plotting
+        cushion_history.iloc[step] = cushion
+        risky_w_history.iloc[step] = risky_w
+        account_history.iloc[step] = account_value
+        floorval_history.iloc[step] = floor_value
+        peak_history.iloc[step] = peak
+    risky_wealth = start*(1+risky_r).cumprod()
+    backtest_result = {
+        "Wealth": account_history,
+        "Risky Wealth": risky_wealth, 
+        "Risk Budget": cushion_history,
+        "Risky Allocation": risky_w_history,
+        "m": m,
+        "start": start,
+        "floor": floor,
+        "risky_r":risky_r,
+        "safe_r": safe_r,
+        "drawdown": drawdown,
+        "peak": peak_history,
+        "floor": floorval_history
+    }
+    return backtest_result
+
+
+def compound(r):
+    return (1+r).prod()-1
+    
+
+def compound2(r):
+    return np.expm1(np.log1p(r).sum())
+
+
+def summary_stats(r, risk_free_rate=0.03):
+    """
+    Regresa un dataframe que contenga la sumatoria agregada de los rendimientos
+    de las columnas de r 
+    """
+    ann_r = r.aggregate(rendimientos_anualizados, periodos_año = 12)
+    ann_vol = r.aggregate(volatilidad_anualizada, periodos_año = 12)
+    ann_sr = r.aggregate(sharpe_ratio, risk_free_rate = risk_free_rate, periodos_año =12)
+    dd = r.aggregate(lambda r: drawdown(r).Drawdown.min())
+    skew = r.aggregate(skewness)
+    kurt = r.aggregate(kurtosis)
+    cf_var5 = r.aggregate(VaR_mejorado, modified=True)
+    hist_cvar5 = r.aggregate(C_VaR_historico)
+    return pd.DataFrame({
+        "Annualized Return": ann_r,
+        "Annualized Vol": ann_vol,
+        "Skewness": skew,
+        "Kurtosis": kurt,
+        "Cornish-Fisher VaR (5%)": cf_var5,
+        "Historic CVaR (5%)": hist_cvar5,
+        "Sharpe Ratio": ann_sr,
+        "Max Drawdown": dd
+    })
+    
+    
+    
+def gbm(n_years = 10, n_scenarios=1000, mu=0.07, sigma=0.15, steps_per_year=12, s_0=100.0, prices=True):
+    """
+    Evolution of Geometric Brownian Motion trajectories, such as for Stock Prices through Monte Carlo
+    :param n_years:  The number of years to generate data for
+    :param n_paths: The number of scenarios/trajectories
+    :param mu: Annualized Drift, e.g. Market Return
+    :param sigma: Annualized Volatility
+    :param steps_per_year: granularity of the simulation
+    :param s_0: initial value
+    :return: a numpy array of n_paths columns and n_years*steps_per_year rows
+    """
+    # Derive per-step Model Parameters from User Specifications
+    dt = 1/steps_per_year
+    n_steps = int(n_years*steps_per_year) + 1
+    # the standard way ...
+    # rets_plus_1 = np.random.normal(loc=mu*dt+1, scale=sigma*np.sqrt(dt), size=(n_steps, n_scenarios))
+    # without discretization error ...
+    rets_plus_1 = np.random.normal(loc=(1+mu)**dt, scale=(sigma*np.sqrt(dt)), size=(n_steps, n_scenarios))
+    rets_plus_1[0] = 1
+    ret_val = s_0*pd.DataFrame(rets_plus_1).cumprod() if prices else rets_plus_1-1
+    return ret_val
+
+
+#calcula una tasa de descuento al tiempo t y una tasa anual
+def discount_a(t, r):
+    """
+    Calcula el precio de un bono a puro desacuento que paga en dolares a tiempo 
+    t donde t son los años y r es la tasa de interes anual
+    """
+    return (1+r)**(-t)
+
+
+#calcula una tasa de descuento al tiempo t y una tasa anual iterando los valores
+#del interes r y del tiempo t
+def discount(t, r):
+    """
+    Compute the price of a pure discount bond that pays a dollar at time period t
+    and r is the per-period interest rate
+    returns a |t| x |r| Series or DataFrame
+    r can be a float, Series or DataFrame
+    returns a DataFrame indexed by t
+    """
+    discounts = pd.Series([(r+1)**-i for i in t]) #genera un bucle con i para iterar los valores de i
+    discounts.index = t
+    return discounts
+
+
+def pv(flows, r):
+    """
+    Calcula el valor presente de la secuncia de los flujos de efectivo dados por un indice y
+    unos montos, puede ser un escalar o una serie de un data frame con un numero de columnas 
+    por los flujos
+    """
+    dates = flows.index
+    discounts = discount(dates, r)
+    return discounts.multiply(flows, axis='rows').sum()
+    
+def funding_ratio(assets, liabilities, r):
+    """
+    Computes the funding ratio of a series of liabilities, based on an interest rate and current value of assets
+    """
+    return pv(assets, r)/pv(liabilities, r)
+
+def tasa_anual(r):
+    """Convierte una tasa instantánea a una tasa anual compuesta continuamente."""
+    return np.expm1(r)
+
+def tasa_instantanea(r):
+    """Convierte una tasa anual compuesta a una tasa instantánea."""
+    return np.log1p(r)
+
+
+
+def Cox_Ingerson_Ross_Model(n_scenarios, n_years=10, a=0.05, b=0.03, sigma=0.05, steps_per_year=12, r_0=None):
+    """
+    Implementaciones para el modelo CIR para las tasas de interes 
+    """
+    if r_0 is None: r_0 = b
+    r_0 = tasa_instantanea(r_0)
+    dt = 1/steps_per_year
+    num_steps = int(n_years*steps_per_year)+1
+    shock = np.random.normal(0, scale = np.sqrt(dt), size=(num_steps, n_scenarios))
+    rates= np.empty_like(shock)
+    rates[0] = r_0
+    for step in range(1, num_steps):
+        r_t = rates[step-1]
+        d_r_t = a *(b-r_t)*dt + sigma*np.sqrt(r_t)*shock[step]
+        rates[step]= abs(r_t + d_r_t)
+        
+    return pd.DataFrame(data = tasa_anual(rates), index=range(num_steps))
+    
+
+def cir(n_years = 10, n_scenarios=1, a=0.05, b=0.03, sigma=0.05, steps_per_year=12, r_0=None):
+    """
+    Generate random interest rate evolution over time using the CIR model
+    b and r_0 are assumed to be the annualized rates, not the short rate
+    and the returned values are the annualized rates as well
+    """
+    if r_0 is None: r_0 = b 
+    r_0 = tasa_instantanea(r_0)
+    dt = 1/steps_per_year
+    num_steps = int(n_years*steps_per_year) + 1 # because n_years might be a float
+    
+    shock = np.random.normal(0, scale=np.sqrt(dt), size=(num_steps, n_scenarios))
+    rates = np.empty_like(shock)
+    rates[0] = r_0
+
+    h = math.sqrt(a**2 + 2*sigma**2)
+    prices = np.empty_like(shock)
+
+    def price(ttm, r):
+        _A = ((2*h*math.exp((h+a)*ttm/2))/(2*h+(h+a)*(math.exp(h*ttm)-1)))**(2*a*b/sigma**2)
+        _B = (2*(math.exp(h*ttm)-1))/(2*h + (h+a)*(math.exp(h*ttm)-1))
+        _P = _A*np.exp(-_B*r)
+        return _P
+    prices[0] = price(n_years, r_0)
+    
+    for step in range(1, num_steps):
+        r_t = rates[step-1]
+        d_r_t = a*(b-r_t)*dt + sigma*np.sqrt(r_t)*shock[step]
+        rates[step] = abs(r_t + d_r_t)
+        # generate prices at time t as well ...
+        prices[step] = price(n_years-step*dt, rates[step])
+
+    rates = pd.DataFrame(data=tasa_anual(rates), index=range(num_steps))
+    prices = pd.DataFrame(data=prices, index=range(num_steps))
+    return rates, prices
+
+
+
+def Cox_Ingersoll_Ross_Model_Precios(r_0=0.03, a=0.5, b=0.03, sigma=0.001, n_scenarios=2, T=10, n_steps=100):
+    dt = T / n_steps
+    rates = np.zeros((n_steps + 1, n_scenarios))
+    rates[0] = r_0
+
+    for t in range(1, n_steps + 1):
+        z = np.random.normal(size=n_scenarios)
+        rates[t] = (
+            rates[t - 1] +
+            a * (b - rates[t - 1]) * dt +
+            sigma * np.sqrt(np.maximum(rates[t - 1], 0)) * np.sqrt(dt) * z
+        )
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+"Parametros del bono"
+
+#maturity : es el tiempo de vencimiento del bono, cuanto va durar hasta que vence
+#principal : es el valor del instrumento llamado tambien valor nominal o face value
+#coupon_rate : es la tasa cupon anual, si es de 5% al año pagara 5% de tasa cupon, la tasa cupon se paga a lo largo del año
+#coupons_per_year : indica cuantos cupones hay por año, normalmente son 2 semestreales de (5% /2) = 2.5% semestral
+#la tasa de descunto: se usa para descontar todos los cupones 
+
+
+#el cupon si se apga 12 veces es uno semestra y se divide la tasa anual entre 12 
+#por lo que si dura 3 años de maturity pagaria alrededor de 36 cupones el bono
+def bond_cash_flows(maturity, principal=100, coupon_rate=0.03, coupons_per_year=12):
+    """
+    Rendimientos de las series de los cash flows generados por bono
+    indexado  a un determinado numero de cupones
+    """
+    n_coupons = round(maturity*coupons_per_year)
+    coupon_amt = principal*coupon_rate/coupons_per_year
+    coupons = np.repeat(coupon_amt, n_coupons)
+    coupon_times = np.arange(1, n_coupons+1)
+    cash_flows = pd.Series(data=coupon_amt, index=coupon_times)
+    cash_flows.iloc[-1] += principal
+    return cash_flows
+
+
+#funcion para valuar el bono / genera los flujos de efectivo simplemente 
+#desopues calcula el valor presente
+def bond_price (maturity, principal=100, coupon_rate=0.03, coupons_per_year=12, discount_rate = 0.03):
+    """
+    Precio de un bono basado en los parametros de vencimineot del bono, 
+    principal es el valor nominal , teniendo tambien como parametros 
+    la tasa cupon, los cupones por añop, y la tasa de inter5es descontada de los
+    flujos de efectivo futuros asociada al valor presente, cuanto valen hoy los 
+    que se recibiran en el futuro
+    """
+    cash_flows = bond_cash_flows(maturity, principal, coupon_rate, coupons_per_year)
+    return pv(cash_flows, discount_rate/coupons_per_year)
+
+
+
+def macaulay_duration(flows, discount_rate):
+    """
+    Calcula la duracion de Macaulay en secuencia de los flujos de efecetivo
+    o cash flows.
+    """
+    flujo_descontado = discount(flows.index, discount_rate)*flows
+    weights = flujo_descontado/flujo_descontado.sum()
+    return np.average(flows.index, weights=weights)
+    
+
+def match_durations(cf_t, cf_s, cf_l, discount_rate ):
+    """
+    Retornos de los pesos de W en cf_s a lo largo de (1-w), en cf_l tencdra una 
+    duracion efectiva que haga conexion con cf-t
+    """
+    d_t = macaulay_duration(cf_t, discount_rate)
+    d_s = macaulay_duration(cf_s, discount_rate)
+    d_l = macaulay_duration(cf_l, discount_rate)
+    return (d_l - d_t)/(d_l - d_s)
+    
+    
+def bond_total_return(monthly_prices, principal, coupon_rate, coupons_per_year):
+    """
+    Computes the total return of a Bond based on monthly bond prices and coupon payments
+    Assumes that dividends (coupons) are paid out at the end of the period (e.g. end of 3 months for quarterly div)
+    and that dividends are reinvested in the bond
+    """
+    coupons = pd.DataFrame(data = 0, index=monthly_prices.index, columns=monthly_prices.columns)
+    t_max = monthly_prices.index.max()
+    pay_date = np.linspace(12/coupons_per_year, t_max, int(coupons_per_year*t_max/12), dtype=int)
+    coupons.iloc[pay_date] = principal*coupon_rate/coupons_per_year
+    total_returns = (monthly_prices + coupons)/monthly_prices.shift()-1
+    return total_returns.dropna()
+
+
+
+def terminal_stats(rets, floor = 0.8, cap=np.inf, name="Stats"):
+    """
+    Genera un resumen de las estadisticas en la terminal de valores por 
+    dolar invertiudo, atraves de un rango de N escenarios
+    rets es el dataframe de rendimientos T X N donde T es el tiempo por paso (asumiendo quye los rets son ordenados por tiempo)
+    los retornos son una columna de un dataframe del resumen de las estadisticas indexados por 
+    """
+    terminal_wealth = (rets+1).prod()
+    breach = terminal_wealth < floor
+    reach = terminal_wealth >= cap
+    p_breach = breach.mean() if breach.sum() > 0 else np.nan
+    p_reach = reach.mean() if reach.sum() > 0 else np.nan
+    e_short = (floor-terminal_wealth[breach]).mean() if breach.sum() > 0 else np.nan
+    e_surplus = (-cap+terminal_wealth[reach]).mean() if reach.sum() > 0 else np.nan
+    sum_stats = pd.DataFrame.from_dict({
+        "mean": terminal_wealth.mean(),
+        "std" : terminal_wealth.std(),
+        "p_breach": p_breach,
+        "e_short":e_short,
+        "p_reach": p_reach,
+        "e_surplus": e_surplus
+    }, orient="index", columns=[name])
+    return sum_stats
+
 
