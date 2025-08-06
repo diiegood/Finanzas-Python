@@ -1,0 +1,107 @@
+"Simulacion de Precios de los Cupones de Bonos anonimos usando Cox-Ingersson-Ross Model"
+
+import numpy as np
+import pandas as pd
+import funciones_curso as fc
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+"Naive risk budgeting strategies between the PSP and GHP"
+
+def back_test(r1, r2, allocator, **kwargs):
+    """
+    Corre un back test o simulacion alojada entre dos sets de retornos r1 y r2
+    dondo son una matrix de T X N dataframes de retornos donde T es el time de pasos
+    indexado y N es el numero de escenarios.
+    
+    allocator (asignacion) /  es la funcion que toma dos sets de rendimientos o retornos dados unos
+    parametreos especificos y produce una asignacion hacia el primer portafolio (el resto de dinero se va a GHP)
+    como una matrix T X 1 dataframe.
+    
+    los rendimientos son una matriz T X N dataframe resultado del portafolio de N escenarios
+    """
+    
+    if not r1.shape == r2.shape:
+        raise ValueError("r1 y r2 necesitan tener la misa forma")
+    weights = allocator(r1, r2, **kwargs)
+    if not weights.shape == r1.shape:
+        raise ValueError("Asignador o Allocator de los renimientos de los pesos no hace match con r1")
+    r_mix = weights*r1 + (1-weights)*r2
+    return r_mix
+
+    
+def fixed_allocator(r1, r2, w1, **kwargs):
+    """
+    Produce que las series de tiempo de T pasos en las asignaciones entre PSP y GHP 
+    atraves de N escenarios PSP y GHP son dataframes de T X N datos que representan los
+    rendimientos de PSP y GHP tal que:
+        
+    Cada columna es un escenario
+    cada fila es el precio por un paso en el tiempo
+    los rendimientos son un dataframe de T X N de los pesos de PSP
+    """
+    return pd.DataFrame(data=w1, index=r1.index, columns=r1.columns)
+
+
+rates, zc_prices = fc.cir(10, 500, b =0.03, r_0 = 0.03)
+price_10 = fc.bond_price(10,100, .05, 12, rates)
+price_30 = fc.bond_price(30,100, .05, 12, rates)
+rets_30 = fc.bond_total_return(price_30, 100, .05, 12)
+rets_10 = fc.bond_total_return(price_10, 100, .05, 12)
+
+rets_bonds = back_test(rets_10, rets_30, allocator = fixed_allocator, w1=0.6) 
+mean_rets_bonds = rets_bonds.mean(axis="columns")
+fc.summary_stats(pd.DataFrame(mean_rets_bonds))
+    
+price_equity = fc.gbm(10, 500, 0.07, 0.15)
+rets_equity = price_equity.pct_change().dropna()
+rets_zc = zc_prices.pct_change().dropna()
+
+rets_7030b = back_test(rets_equity, rets_bonds, fixed_allocator, w1=0.7)
+rets_7030b_mean = rets_7030b.mean(axis=1)
+fc.summary_stats(pd.DataFrame(rets_7030b_mean))
+
+
+summaries = fc.summary_stats(rets_7030b)
+summaries.head()
+summaries.mean()
+
+pd.concat([
+    fc.terminal_stats(rets_bonds, name="FI"),
+    fc.terminal_stats(rets_equity, name="Eq"),
+    fc.terminal_stats(rets_7030b, name="70/30"),
+           ], axis=1)
+
+plt.figure(figsize=(12,6))
+sns.distplot(fc.terminal_stats(rets_equity), color="red", label="100% equities")
+sns.distplot(fc.terminal_stats(rets_bonds), color="blue", label="100% bonds")
+sns.distplot(fc.terminal_stats(rets_7030b), color="black", label="70% equities and 30% bonds")
+plt.legend();
+
+
+"Glide paths o trayectoria de camninos"
+
+def glidepath_allocator(r1, r2, start_glide = 1, end_glide=0):
+    """
+    Simulaciones de una fecha objetivo con un estilo de movimiento gradual de r1 y r2
+    """
+    n_points = r1.shape[0]
+    n_col = r1.shape[1]
+    path = pd.Series(data=np.linspace(start_glide, end_glide, num=n_points))
+    paths = pd.concat([path]*n_col, axis=1)
+    paths.index = r1.index
+    paths.columns = r1.columns
+    return paths
+
+
+#se crea un portafolio 80 / 20 en relacion a equity y deuda
+rets_g8020 = back_test(rets_equity, rets_bonds, allocator=glidepath_allocator, start_glide=.80, end_glide=.20)
+pd.concat([
+    fc.terminal_stats(rets_bonds, name="FI"),
+    fc.terminal_stats(rets_equity, name="Eq"),
+    fc.terminal_stats(rets_7030b, name="70/30"),
+    fc.terminal_stats(rets_g8020, name="Glide 80 to 20")
+           ], axis=1)
+
+
+
