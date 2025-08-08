@@ -1,0 +1,117 @@
+"Tesis 2 " 
+# Tesis 2: Antecedente histórico - Crisis Financiera de 2008
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+"Analisis de Portafolio"
+"Descargha de datos de yahoo finance" 
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+tickers = ["^DJI", "^GSPC", "^IXIC", "^FTSE", "^GDAXI", "^FCHI", "^STOXX50E",
+           "^N225", "^HSI", "^KS11", "^MXX", "^BVSP","SPY"]
+
+start_date = "2005-01-01"
+end_date = "2009-12-31"
+
+#indices:
+    #Dow Jones Industrial Average
+    #S&P500 
+    #Nasdaq Composite
+    #FTSE 100
+    #DAX
+    #CAC 40
+    #Euro Stoxx 40
+    #Nikkei 225
+    #Hang Seng Index (Hong Kong) 
+    #KOSPI Compositive Index (South Korea)
+    #IPC-BMV 
+    #IBOVESPA
+
+
+data = yf.download(
+    tickers,
+    start=start_date,
+    end=end_date,
+    interval="1d", 
+    auto_adjust=False,
+    group_by='ticker',
+    threads=True
+)
+
+# ============================================
+# 3. Extraer solo precios de cierre
+# ============================================
+close_prices = pd.DataFrame()
+for ticker in tickers:
+    if ticker in data:
+        close_prices[ticker] = data[ticker]["Close"]
+
+# Limpiar datos
+close_prices.dropna(inplace=True)
+
+# ============================================
+# 4. Calcular retornos logarítmicos diarios
+# ============================================
+log_returns = np.log(close_prices / close_prices.shift(1)).dropna()
+
+# ============================================
+# 5. Calcular retornos acumulados (base 1)
+# ============================================
+cumulative_returns = (log_returns + 1).cumprod()
+
+# ============================================
+# 6. Graficar retornos acumulados
+# ============================================
+plt.figure(figsize=(14, 7))
+for column in cumulative_returns.columns:
+    plt.plot(cumulative_returns.index, cumulative_returns[column], label=column)
+
+plt.title("Retornos acumulados (base 1) - Índices bursátiles (2005–2009)", fontsize=14)
+plt.xlabel("Fecha")
+plt.ylabel("Crecimiento relativo")
+plt.legend(loc='upper left', fontsize=8)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ============================================
+# 7. Filtrar retornos por año
+# ============================================
+returns_2007 = log_returns[log_returns.index.year == 2007]
+returns_2008 = log_returns[log_returns.index.year == 2008]
+returns_2009 = log_returns[log_returns.index.year == 2009]
+
+# ============================================
+# 8. Calcular matrices de correlación
+# ============================================
+corr_2007 = returns_2007.corr()
+corr_2008 = returns_2008.corr()
+corr_2009 = returns_2009.corr()
+
+# Mostrar matrices en consola
+print("Matriz de correlación - Año 2007:\n", corr_2007, "\n")
+print("Matriz de correlación - Año 2008:\n", corr_2008, "\n")
+print("Matriz de correlación - Año 2009:\n", corr_2009, "\n")
+
+# ============================================
+# 9. Función para graficar heatmaps
+# ============================================
+def plot_correlation_matrix(corr_matrix, year):
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap="coolwarm", center=0, linewidths=0.5)
+    plt.title(f"Matriz de correlación de retornos diarios - {year}")
+    plt.tight_layout()
+    plt.show()
+
+# Graficar los heatmaps
+plot_correlation_matrix(corr_2007, 2007)
+plot_correlation_matrix(corr_2008, 2008)
+plot_correlation_matrix(corr_2009, 2009)
+
