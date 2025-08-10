@@ -1,0 +1,153 @@
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ============================================
+# CONFIGURACIÓN
+# ============================================
+tickers = {
+    "Dow Jones Industrial Average (USA)": "^DJI",
+    "S&P 500 (USA)": "^GSPC",
+    "Nasdaq Composite (USA)": "^IXIC",
+    "FTSE 100 (UK)": "^FTSE",
+    "DAX (Germany)": "^GDAXI",
+    "CAC 40 (France)": "^FCHI",
+    "Euro Stoxx 50 (EU)": "^STOXX50E",
+    "Nikkei 225 (Japan)": "^N225",
+    "Hang Seng (Hong Kong)": "^HSI",
+    "KOSPI (South Korea)": "^KS11",
+    "IPC-BMV (Mexico)": "^MXX",
+    "IBOVESPA (Brazil)": "^BVSP",
+    "IBEX 35 (Spain)": "^IBEX"
+}
+
+start_date = "2005-01-01"
+end_date = "2009-12-31"
+
+# ============================================
+# DESCARGA DE DATOS
+# ============================================
+data = yf.download(
+    list(tickers.values()),
+    start=start_date,
+    end=end_date,
+    interval="1d",
+    auto_adjust=False,
+    group_by="ticker",
+    threads=True
+)
+
+# Construcción de precios de cierre
+close_prices = pd.DataFrame({
+    name: data[ticker]["Close"]
+    for name, ticker in tickers.items()
+    if ticker in data
+}).dropna()
+
+# ============================================
+# CÁLCULO DE RETORNOS
+# ============================================
+log_returns = np.log(close_prices / close_prices.shift(1)).dropna()
+cumulative_returns = (1 + log_returns).cumprod()
+
+# ============================================
+# GRAFICAR RETORNOS ACUMULADOS
+# ============================================
+plt.figure(figsize=(14, 7))
+for col in cumulative_returns.columns:
+    plt.plot(cumulative_returns.index, cumulative_returns[col], label=col)
+
+plt.title("Evolución de índices bursátiles (2005–2009)")
+plt.xlabel("Fecha")
+plt.ylabel("Crecimiento relativo")
+plt.legend(fontsize=8)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ============================================
+# MATRICES DE CORRELACIÓN POR AÑO
+# ============================================
+def plot_correlation_matrix(corr_matrix, year):
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap="coolwarm", center=0, linewidths=0.5)
+    plt.title(f"Matriz de correlación de retornos diarios - {year}")
+    plt.tight_layout()
+    plt.show()
+
+for year in [2007, 2008, 2009]:
+    yearly_corr = log_returns[log_returns.index.year == year].corr()
+    print(f"\nMatriz de correlación {year}:\n", yearly_corr)
+    plot_correlation_matrix(yearly_corr, year)
+
+# ============================================
+# CORRELACIÓN PROMEDIO MÓVIL (60 DÍAS)
+# ============================================
+window = 60
+rolling_corr_mean = []
+
+for i in range(window - 1, len(log_returns)):
+    window_data = log_returns.iloc[i-window+1:i+1]
+    corr_values = window_data.corr().values[np.triu_indices_from(window_data.corr(), k=1)]
+    rolling_corr_mean.append(np.mean(corr_values))
+
+rolling_corr_series = pd.Series(rolling_corr_mean, index=log_returns.index[window-1:])
+
+plt.figure(figsize=(12, 6))
+plt.plot(rolling_corr_series.index, rolling_corr_series.values, label="Correlación Promedio Móvil (60 días)")
+plt.title("Evolución de la correlación promedio móvil (2005–2009)")
+plt.xlabel("Fecha")
+plt.ylabel("Correlación promedio")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# ============================================
+# TOP Y BOTTOM CORRELACIONES 2008 (CON USA)
+# ============================================
+def plot_top_bottom_correlations(corr_series, reference_index):
+    fig, axs = plt.subplots(1, 2, figsize=(14, 5))
+    axs[0].barh(corr_series.head(5).index[::-1], corr_series.head(5).values[::-1], color="green")
+    axs[0].set_title(f"Top 5 MÁS correlacionados con {reference_index}")
+    axs[1].barh(corr_series.tail(5).index, corr_series.tail(5).values, color="red")
+    axs[1].set_title(f"Top 5 MENOS correlacionados con {reference_index}")
+    plt.tight_layout()
+    plt.show()
+
+returns_2008 = log_returns[log_returns.index.year == 2008]
+corr_dow = returns_2008.corrwith(returns_2008["Dow Jones Industrial Average (USA)"]).drop("Dow Jones Industrial Average (USA)").sort_values(ascending=False)
+corr_sp500 = returns_2008.corrwith(returns_2008["S&P 500 (USA)"]).drop("S&P 500 (USA)").sort_values(ascending=False)
+
+print("\nTop 5 MÁS correlacionados con Dow Jones (2008):\n", corr_dow.head(5))
+print("\nTop 5 MENOS correlacionados con Dow Jones (2008):\n", corr_dow.tail(5))
+plot_top_bottom_correlations(corr_dow, "Dow Jones")
+
+print("\nTop 5 MÁS correlacionados con S&P 500 (2008):\n", corr_sp500.head(5))
+print("\nTop 5 MENOS correlacionados con S&P 500 (2008):\n", corr_sp500.tail(5))
+plot_top_bottom_correlations(corr_sp500, "S&P 500")
+
+# ============================================
+# CORRELACIÓN PROMEDIO (2007–2009)
+# ============================================
+avg_corr_by_index = {}
+for year in [2007, 2008, 2009]:
+    yearly_corr = log_returns[log_returns.index.year == year].corr()
+    for idx in yearly_corr.columns:
+        avg_corr_by_index.setdefault(idx, []).append(yearly_corr.loc[idx, yearly_corr.columns != idx].mean())
+
+final_avg_corr = pd.Series({idx: np.mean(vals) for idx, vals in avg_corr_by_index.items()}).sort_values(ascending=False)
+
+print("\nTop 5 índices MÁS correlacionados (2007–2009):\n", final_avg_corr.head(5))
+print("\nTop 5 índices MENOS correlacionados (2007–2009):\n", final_avg_corr.tail(5))
+
+plt.figure(figsize=(10, 6))
+final_avg_corr.plot(kind="barh", color="steelblue")
+plt.title("Correlación promedio con otros índices (2007–2009)")
+plt.xlabel("Correlación promedio")
+plt.grid(True, axis='x', linestyle='--', alpha=0.6)
+plt.tight_layout()
+plt.show()
