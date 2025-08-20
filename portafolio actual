@@ -1,0 +1,51 @@
+import yfinance as yf
+import pandas as pd
+from datetime import datetime, timedelta
+import quadprog 
+import numpy as  np
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import os 
+import math 
+
+"Analisis de Portafolio"
+"Descargha de datos de yahoo finance" 
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+tickers = ["WALMEX.MX", "ALFAA.MX","KOFUBL.MX","GFNORTEO.MX"]
+
+# Fechas: últimos 6 meses desde hoy
+end_date = datetime.today().date()
+start_date = end_date - timedelta(days=180)
+
+# Descargar datos mensuales de cierre ajustado
+# Nota: usamos auto_adjust=False para que exista la columna 'Adj Close'
+acciones = yf.download(
+    tickers,  #activos que va descargar
+    start=start_date.strftime("%Y-%m-%d"), #fecha de descarga formato año/mes/dia
+    end=end_date.strftime("%Y-%m-%d"),
+    interval="1d", #frecuencia de descarga de datos
+    auto_adjust=False,
+    group_by="ticker",
+    threads=True
+)
+
+# Manejo del MultiIndex: extraer 'Adj Close' de cada ticker
+adj_close = pd.DataFrame()
+for ticker in tickers:
+    try:
+        # si MultiIndex: ('Adj Close', ticker) o (ticker, 'Adj Close')
+        if isinstance(acciones.columns, pd.MultiIndex):
+            adj_close[ticker] = acciones[ticker]['Adj Close']
+        else:
+            # si no es MultiIndex (caso raro)
+            adj_close[ticker] = acciones['Adj Close']
+    except Exception:
+        print(f"Advertencia: no se encontró Adj Close para {ticker}")
+
+# Definir índice de fechas
+adj_close.index.name = "Date"
+
