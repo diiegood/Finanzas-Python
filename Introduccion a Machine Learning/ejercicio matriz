@@ -1,0 +1,83 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- FUNCTIONS -------------------------------------------------------
+
+def create_plot(data):
+    """
+    Plots the dataset and its mean.
+    """
+    mean_data = np.mean(data, axis=0)
+
+    plt.scatter(data[:,0], data[:,1], label="Datapoints", marker="+", s=80)
+    plt.axvline(mean_data[0], linestyle="--", color="gray")
+    plt.axhline(mean_data[1], linestyle="--", color="gray")
+
+    plt.text(mean_data[0]+0.1, mean_data[1]+0.1, "Mean of data")
+
+    plt.xlim(min(data[:,0]) - 1, max(data[:,0]) + 1)
+    plt.ylim(min(data[:,1]) - 1, max(data[:,1]) + 1)
+
+    plt.gca().set_aspect("equal", adjustable="box")
+
+
+def show_rectangle(mean, point):
+    """
+    Draws the rectangle corresponding to (x - mean_x)*(y - mean_y).
+    Green if positive, red if negative.
+    """
+    dx = point[0] - mean[0]
+    dy = point[1] - mean[1]
+
+    # Determine rectangle color
+    color = "green" if dx * dy > 0 else "red"
+
+    # Rectangle coordinates
+    x0, y0 = mean
+    width = dx
+    height = dy
+
+    rect = plt.Rectangle((x0, y0), width, height, 
+                         color=color, alpha=0.3)
+    plt.gca().add_patch(rect)
+
+
+def calculate_area(mean, point):
+    """
+    Returns (x - mean_x)*(y - mean_y), the covariance contribution.
+    """
+    return (point[0] - mean[0]) * (point[1] - mean[1])
+
+
+# --- MAIN PROGRAM -----------------------------------------------------
+
+fig, ax = plt.subplots()
+
+# Choose one dataset by uncommenting:
+
+# Random:
+data = np.array([[1,2],[5,4],[-2,-3],[4,-2],[2,3],[8,-9]])
+
+# Straight line:
+# data = np.array([[1,1],[-3,-3],[2,2],[7,7]])
+
+# Q1: square
+# data = np.array([[0,0],[4,4],[0,4],[4,0]])
+
+# Compute mean
+mean_data = np.mean(data, axis=0)
+
+# Plot the points and the mean
+create_plot(data)
+
+area = 0
+mean = mean_data
+
+for i in range(len(data)):
+    # UNCOMMENT THIS LINE to show rectangles:
+    # show_rectangle(mean, data[i])
+    area += calculate_area(mean, data[i])
+
+plt.title(f"Covariance approx = sum(area)/N = {area/len(data):.3f}")
+plt.legend()
+plt.show()
