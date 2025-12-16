@@ -1,0 +1,340 @@
+"""
+Algebra lieneal
+"""
+
+import numpy as np 
+
+
+a = np.arange(6)
+print('A Vector:\n', a)
+
+a = np.array([[1, 2, 3],
+              [4, 5, 6]]) # Can you think of a better way to create this array?
+print('A Matrix:\n', a)
+
+
+
+"""
+Transposicion de matriz
+"""
+
+
+A = np.array([[5, 2, 9],
+              [6, 1, 0]])
+
+print('A\n', A)
+print('A.T\n', A.T)
+
+B = np.arange(9).reshape((3, 3))
+
+print('B\n', B)
+print('B.T\n', B.T)
+
+a = np.ones(3)
+print('A:\n', a)
+print('Shape of A:\n', a.shape)
+print('A.T:\n', a.T)
+print('Shape of A.T:\n', a.T.shape)
+
+
+a = np.ones((3,1))
+print('A:\n', a)
+print('Shape of A:\n', a.shape)
+print('A.T:\n', a.T)
+print('Shape of A.T:\n', a.T.shape)
+
+
+"""
+Producto matricial
+"""
+x = np.array([1, 2, 3])
+y = np.array([4, 5, 6])
+print('x:\n', x)
+print('y:\n', y)
+print('np.dot(x, y):\n', np.dot(x, y))
+print('x @ y:\n', x @ y)
+
+
+A = np.array([[2, 0, 1],
+              [1, 3, 4],
+              [0, 2, 1]])
+
+B = np.arange(6).reshape(3, 2)
+
+C = np.array([3, 2, 8]).reshape((-1, 1))
+
+print('A:\n', A)
+print('B:\n', B)
+print('A @ B:\n', A @ B)
+
+print('A:\n', A)
+print('C:\n', C)
+print('A @ C:\n', A @ C)
+
+print(B.shape)
+print(A.shape)
+print(B @ A)
+
+
+"""
+Paqueteria Linalg de numpy
+
+#Esta libreria se usa para calcular muchas propiedades de las matrices 
+#se pueden calcular determinantes o la matriz cuadrada
+"""
+
+# This computes the determinant
+print(np.linalg.det(A))
+
+
+# This computes the inverse
+print(np.linalg.inv(A))
+
+I = np.eye(3) # We can use this function to generate the identity matrix
+np.testing.assert_allclose(A @ np.linalg.inv(A), I, atol=1e-10)
+
+
+# This computes the eigenvalues and eigenvectors
+eigenvalues, eigenvectors = np.linalg.eig(A)
+print("The eigenvalues are\n", eigenvalues)
+print("The eigenvectors are\n", eigenvectors)
+
+
+"""
+Diagonalizacion de la matriz
+"""
+
+
+"""
+In this question, you shall be given a square matrix which you need to diagonalize. In particular, you will be given a diagonalizable matrix  𝐴
+  and you need to find matrices  𝑆
+  and  𝐷
+  such that:
+  𝐴=𝑆𝐷𝑆−1
+  
+  Recall that in order to do this, you must first find all the eigenvalues and eigenvectors of  𝐴
+ . Then,  𝑆
+  is the matrix of all the eigenvectors arranged as columns, and  𝐷
+  is the matrix of the corresponding eigenvalues arranged along the diagonal.
+  
+  
+"""
+
+def diagonalize(A):
+    """
+    Diagonalizes the input matrix A
+
+    Arguments:
+    A: A two dimensional Numpy array which is guaranteed to be diagonalizable
+
+    Returns:
+    S, D, S_inv: As explained above
+    """
+
+    ### BEGIN SOLUTION
+
+    # Retrieve the number of rows in A
+    n = 0
+
+    # Get the eigenvalues and eigenvectors of A
+    eig_vals, S = None, None
+
+    # Start by initializing D to a matrix of zeros of the appropriate shape
+    D = None
+
+    # Set the diagonal element of D to be the eigenvalues
+    for i in range(n):
+        pass
+
+    # Compute the inverse of S
+    S_inv = None
+
+    ### END SOLUTION
+
+    return S, D, S_inv
+
+
+
+A = np.array([[1, 5],
+              [2, 4]])
+S_exp = np.array([[-0.92847669, -0.70710678],
+                  [ 0.37139068, -0.70710678]])
+D_exp = np.array([[-1, 0],
+                  [0, 6]])
+S_inv_exp = np.array([[-0.76930926,  0.76930926],
+                      [-0.40406102, -1.01015254]])
+
+
+S, D, S_inv = diagonalize(A)
+np.testing.assert_allclose(S_exp, S, rtol=1e-5, atol=1e-10)
+np.testing.assert_allclose(D_exp, D, rtol=1e-5, atol=1e-10)
+np.testing.assert_allclose(S_inv_exp, S_inv, rtol=1e-5, atol=1e-10)
+
+A = np.array([[4, -9, 6, 12],
+              [0, -1, 4, 6],
+              [2, -11, 8, 16],
+              [-1, 3, 0, -1]])
+S_exp = np.array([[ 5.00000000e-01, -8.01783726e-01,  9.04534034e-01,  3.77964473e-01],
+                  [ 5.00000000e-01, -5.34522484e-01,  3.01511345e-01,  7.55928946e-01],
+                  [-5.00000000e-01,  1.98636631e-14,  3.01511345e-01,  3.77964473e-01],
+                  [ 5.00000000e-01, -2.67261242e-01, -5.03145109e-15,  3.77964473e-01]])
+D_exp = np.array([[1, 0, 0, 0],
+                  [0, 2, 0, 0],
+                  [0, 0, 3, 0],
+                  [0, 0, 0, 4]])
+S_inv_exp = np.array([[ 2.00000000e+00, -1.00000000e+01,  4.00000000e+00,  1.40000000e+01],
+                      [ 3.74165739e+00, -2.24499443e+01,  1.12249722e+01,  2.99332591e+01],
+                      [ 3.31662479e+00, -1.32664992e+01,  6.63324958e+00,  1.65831240e+01],
+                      [ 2.74154909e-15, -2.64575131e+00,  2.64575131e+00,  5.29150262e+00]])
+
+S, D, S_inv = diagonalize(A)
+np.testing.assert_allclose(S_exp, S, rtol=1e-5, atol=1e-10)
+np.testing.assert_allclose(D_exp, D, rtol=1e-5, atol=1e-10)
+np.testing.assert_allclose(S_inv_exp, S_inv, rtol=1e-5, atol=1e-10)
+
+print("All tests passed!")
+
+
+"""
+Multiplicacion polinomial
+"""
+
+
+def multiply(A, B):
+    """
+    Multiplies two polynomials
+
+    Arguments:
+    A: Coefficients of the first polynomial
+    B: Coefficients of the second polynomial
+
+    Returns:
+    C: The coefficients of A*B
+    """
+
+    ### BEGIN SOLUTION
+
+    # Find the coefficients of both the polynomials
+    na = None
+    nb = None
+
+    # Pad the smaller array with 0s
+    if False:
+        pass
+    else:
+        pass
+
+    # Initialize the output array with 0s
+    C = None
+
+    # Perform the multiplication
+    # You might want to break the loop over i into two separate phases
+    pass
+
+    # Remove any extra 0s from the back of C
+    pass
+
+    ### END SOLUTION
+
+    return C
+
+
+A = np.array([1, 2])
+B = np.array([3, 4])
+C_exp = np.array([3, 10, 8])
+np.testing.assert_allclose(multiply(A, B), C_exp, rtol=1e-5, atol=1e-10)
+
+A = np.array([5, 6])
+B = np.array([1, 3, 5, 9])
+C_exp = np.array([5, 21, 43, 75, 54])
+np.testing.assert_allclose(multiply(A, B), C_exp, rtol=1e-5, atol=1e-10)
+np.testing.assert_allclose(multiply(B, A), C_exp, rtol=1e-5, atol=1e-10)
+
+print("All tests passed!")
+
+
+# An assert statement where condition evaluates to true
+x = 5
+assert x == 5
+
+# An assert statement where the condition evaluates to false
+x = 5
+assert x == 4
+
+# An asseert statement with an error message
+x = 5
+assert x == 4, "x does not store the intended value"
+
+def test_assert():
+    """
+    This function demonstrates the use of assert statements in debugging
+    """
+
+    A = np.arange(5)
+    s = 0
+
+    # We shall first add all elements of A to s
+    for i in range(A.shape[0]):
+        s += A[i]
+
+    # We shall now subtract all the elements of A in the reverse order
+    # Unfortunately, we have a bug
+    for i in range(A.shape[0] - 1, 1, -1):
+        s -= A[i]
+
+    # Quite certainly, s must be equal to 0 at this point
+    # Had our implementation been correct, this assert should pass
+    assert s == 0
+
+test_assert()
+
+
+
+def inverse(A):
+    """
+    Computes (incorrectly) the inverse of A
+
+    A must have shape (2, 2)
+    """
+
+    return np.array([[A[1, 1], -A[0, 1]],
+                     [-A[1, 0], A[0, 0]]])
+
+
+A = np.array([[3, 5],
+              [1, 2]])
+A_exp = np.array([[2, -5],
+                  [-1, 3]])
+np.testing.assert_allclose(inverse(A), A_exp, rtol=1e-5)
+np.testing.assert_allclose(inverse(A) @ A, np.eye(2), rtol=1e-5, atol=1e-10)
+
+# Add another test here
+
+
+A = np.zeros((3, 2))
+B = np.zeros((4, 5))
+print(A @ B)
+
+
+
+def sum_of_max(A):
+    """
+    Computes the sum of the maximum element of each row of A
+
+    A must be a 2D Numpy array
+    """
+
+    return np.sum(np.max(A, axis=0))
+
+
+A = np.array([[1, 2],
+              [3, 4]])
+np.testing.assert_allclose(sum_of_max(A), 6)
+
+A = np.array([[24, 69, 83],
+              [74, 14, 27]])
+np.testing.assert_allclose(sum_of_max(A), 157)
+
+
+
+
