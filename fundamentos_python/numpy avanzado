@@ -1,0 +1,318 @@
+from finvizfinance.quote import finvizfinance
+
+stock = finvizfinance("tsla")
+
+stock.ticker_charts()
+stock_fundament = stock.ticker_fundament()
+stock_ratings_df = stock.ticker_outer_raitings()
+news_df = stock.ticker_news()
+inside_trader_df = stock.ticker_inside_trader()
+
+from finvizfinance.news import News
+
+fnews = News()
+all_news = fnews.get_news()
+
+all_news["news"].head()
+all_news["blogs"].head()
+
+
+"""
+Introduccion a Numpy 
+"""
+
+import numpy as np
+
+#Creacion de arrays
+"""
+Los arrays son listas , que contienen elementos solo del mismo tipo
+"""
+
+#se crea un vector
+a = np.array([1,2,3]) #array de 1 dimension
+a
+
+#se crea una matriz / array de 2 dimensiones
+b = np.array([[1,2,3],
+             [4,5,6],
+             [7,8,9]]) 
+
+b
+
+#para conocer la fomra de cada array
+forma_a = a.shape
+forma_b = b.shape
+
+
+#creacion de arays basados en su forma
+za = np.zeros((5,)) 
+za
+
+zb = np.zeros((2,3))
+zb
+
+zc = np.ones((3,2))
+zc
+
+a = np.arange(3)
+
+a = np.arange(3)
+a 
+a.shape
+
+
+a = a.reshape((1,-1))
+a
+a.shape
+
+
+
+a = a.reshape((-1,1))
+a
+a.shape
+
+
+a = np.arange(6)
+print("A : Original")
+a
+a.shape
+
+
+a = a.reshape((3,2))
+a
+a.shape
+
+
+a = np.arange(4)
+a
+print("The 2th element of A")
+a[2]
+
+
+
+
+
+a = np.arange(9).reshape(3, 3)
+
+print(a)
+
+print("The 1th row of the array:")
+print(a[1])
+
+print("Element at 0th row and 0th column:")
+print(a[0, 0])
+
+print("Element at 2th row and 1th column:")
+print(a[2, 1])
+
+
+
+"""
+Array Slicing
+"""
+
+a = np.arange(16).reshape(4, 4)
+print(a)
+
+print("The 1th column of the array:")
+print(a[:, 1])
+
+print("The 3th column of the array reshaped into a column vector:")
+print(a[:, 3].reshape(-1, 1))
+
+ 
+"""
+Finding the trace of a matrix
+"""
+
+def trace(A):
+    """
+    Find the trace of A
+
+    Arguments:
+    A: A two dimensional square matrix
+
+    Returns:
+    s: The trace of A
+    """
+
+    s = 0
+
+    ### BEGIN SOLUTION
+
+    # Get the number of rows in A
+    n = 0 # Replace the 0 with the correct code to get the number of rows
+
+    # Loop over all elements of the principal diagonal
+    for i in range(n):
+        s += None # Replace the None with the required element of A
+
+    # END SOLUTION
+
+    return s
+
+
+
+A = np.array([[3, 2, 7],
+              [4, 9, 0],
+              [1, 8, 5]])
+s_exp = 17
+np.testing.assert_allclose(trace(A), s_exp, rtol=1e-5)
+
+A = np.array([[12, -2, 31, 18],
+              [32, -77, -24, 19],
+              [87, 93, -53, 13],
+              [49, 81, 63, 70]])
+s_exp = -48
+np.testing.assert_allclose(trace(A), s_exp, rtol=1e-5)
+
+print("All tests passed!")
+
+
+"""
+Operations of Numpy Arrays
+"""
+
+a = np.array([[4, 1, 2],
+              [7, 2, 3]])
+
+b = np.array([[3, 6, 9],
+              [7, 8, 2]])
+
+print(a + b)
+print(a - b)
+print(a * b)
+print(a / b)
+print(a ** b)
+print(np.sqrt(a))
+print(np.exp(a))
+print(np.log(a))
+
+"""
+Broadcasting
+"""
+
+print(a * 2)
+print(a + 2)
+
+c = np.array([5, 3, 4]).reshape((1, 3))
+
+print('a:\n', a)
+print('c:\n', c)
+print('a + c:\n', a + c)
+
+a = np.arange(6).reshape((2, 3))
+print(a)
+
+b = np.arange(4).reshape((2, 2))
+print(b)
+
+print(a + b)
+
+
+"""
+Sigmoid Function
+"""
+
+def sigmoid(x):
+    """
+    Computes the sigmoid of x
+
+    Arguments:
+    x: A real number or a Numpy array
+
+    Returns:
+    s: The sigmoid of x
+    """
+
+    ### BEGIN SOLUTION
+    s = None
+    ### END SOLUTION
+    
+    return s
+
+x = 2.1
+expected = 0.8909031
+np.testing.assert_allclose(sigmoid(x), expected, rtol=1e-5)
+
+x = np.array([[3.4, -7.1, 9.4],
+              [-2.7, 8.882, -2.114]])
+expected = np.array([[9.67704535e-01, 8.24424686e-04, 9.99917283e-01],
+                     [6.29733561e-02, 9.99861153e-01, 1.07743524e-01]])
+np.testing.assert_allclose(sigmoid(x), expected, rtol=1e-5)
+
+print("All tests passed!")
+
+
+
+
+# Minimum of all elements of array
+
+a = np.array([[2, 1, 3],
+              [4, 5, 6]])
+
+print(a)
+print(np.min(a))
+
+
+# Sum of all columns of an array, returned as one dimensional array
+print(np.sum(a, axis=0))
+
+
+# Sum of all columns of an array, returned as a two dimensional array
+print(np.sum(a, axis=0, keepdims=True))
+
+
+# Sum of all rows of an array
+print(np.sum(a, axis=1, keepdims=True))
+
+
+
+"""
+Normalizar las columnas en un array
+"""
+
+def normalize(x):
+    """
+    Normalize all the columns of x
+
+    Arguments:
+    x: A two dimensional Numpy array
+
+    Returns:
+    c: The normalized version of x
+    """
+
+    ### BEGIN SOLUTION
+
+    # Calculate the mean of all columns
+    mean = None
+
+    # Calculate the standard deviation all columns
+    sigma = None
+
+    # Compute the final answer
+    c = None
+
+    ### END SOLUTION
+
+    return c
+
+x = np.array([[1, 4],
+              [3, 2]])
+expected = np.array([[-1, 1],
+                     [1, -1]])
+np.testing.assert_allclose(normalize(x), expected, rtol=1e-5)
+
+x = np.array([[324.33, 136.11, 239.38, 237.17],
+              [123.43, 325.24, 243.52, 745.25],
+              [856.36, 903.02, 430.25, 531.35]])
+expected = np.array([[-0.35694152, -0.97689929, -0.73023324, -1.28391946],
+                     [-1.00662188, -0.39712973, -0.68372539,  1.1554411 ],
+                     [ 1.3635634 ,  1.37402902,  1.41395863,  0.12847837]])
+np.testing.assert_allclose(normalize(x), expected, rtol=1e-5)
+
+print("All tests passed!")
+
+
+
