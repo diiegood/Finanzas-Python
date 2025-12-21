@@ -1,0 +1,118 @@
+"""
+Afinacion de la transformacion de datos
+"""
+
+# PACKAGE: DO NOT EDIT
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.style.use('fivethirtyeight')
+from sklearn.datasets import fetch_olivetti_faces
+import time
+import timeit
+
+
+# GRADED FUNCTION: DO NOT EDIT THIS LINE
+
+def affine_mean(mean, A, b):
+    """Compute the mean after affine transformation
+    Args:
+        mean: `ndarray` of shape (D,), the sample mean vector for some dataset.
+        A, b: `ndarray` of shape (D, D) and (D,), affine transformation applied to x
+    Returns:
+        sample mean vector of shape (D,) after affine transformation.
+    """
+    # YOUR CODE HERE
+    ### Uncomment and edit the code below
+#     ### Edit the code below to compute the mean vector after affine transformation
+#     affine_m = np.zeros(mean.shape) # affine_m has shape (D,)
+#     ### Update affine_m
+    
+#     ###
+#     return affine_m
+
+
+# GRADED FUNCTION: DO NOT EDIT THIS LINE
+def affine_covariance(S, A, b):
+    """Compute the covariance matrix after affine transformation
+    
+    Args:
+        S: `ndarray` of shape (D, D), the sample covariance matrix for some dataset.
+        A, b: `ndarray` of shape (D, D) and (D,), affine transformation applied to x
+    
+    Returns:
+        the sample covariance matrix of shape (D, D) after the transformation
+    """
+    # YOUR CODE HERE
+    ### Uncomment and edit the code below
+    ### EDIT the code below to compute the covariance matrix after affine transformation
+#     affine_cov = np.zeros(S.shape) # affine_cov has shape (D, D)
+#     ### Update affine_cov
+    
+#     ###
+#     return affine_cov
+
+
+## PLEASE DO NOT EDIT THIS CELL
+
+from numpy.testing import assert_allclose
+
+A = np.array([[0, 1], [2, 3]])
+b = np.ones(2)
+m = np.full((2,), 2)
+S = np.eye(2)*2
+
+expected_affine_mean = np.array([ 3., 11.])
+expected_affine_cov = np.array(
+    [[ 2.,  6.],
+    [ 6., 26.]])
+
+assert_allclose(affine_mean(m, A, b), expected_affine_mean, rtol=1e-4)
+### Some hidden tests below
+### ...
+
+
+## PLEASE DO NOT EDIT THIS CELL
+
+from numpy.testing import assert_allclose
+
+A = np.array([[0, 1], [2, 3]])
+b = np.ones(2)
+m = np.full((2,), 2)
+S = np.eye(2)*2
+
+expected_affine_cov = np.array(
+    [[ 2.,  6.],
+    [ 6., 26.]])
+
+assert_allclose(affine_covariance(S, A, b), 
+                expected_affine_cov, rtol=1e-4)
+
+### Some hidden tests below
+### ...
+
+
+random = np.random.RandomState(42)
+A = random.randn(4,4)
+b = random.randn(4)
+
+
+X = random.randn(100, 4)
+
+
+X1 = ((A @ (X.T)).T + b)  # applying affine transformation once
+X2 = ((A @ (X1.T)).T + b) # twice
+
+
+np.testing.assert_allclose(mean(X1), affine_mean(mean(X), A, b))
+np.testing.assert_allclose(cov(X1),  affine_covariance(cov(X), A, b))
+
+
+np.testing.assert_allclose(mean(X2), affine_mean(mean(X1), A, b))
+np.testing.assert_allclose(cov(X2),  affine_covariance(cov(X1), A, b))
+
+
+
+
+
+
