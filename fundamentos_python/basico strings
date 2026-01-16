@@ -1,0 +1,43 @@
+"""
+Ejercicios de codificacion basicos
+"""
+
+saldo = 100
+print ("Tienes saldo disponible de $", saldo, "dolares")
+
+
+
+nombre = "Juan Perez"
+nombre_a = "Elena"
+nombre_b =  "Alumno Capibara"
+
+print("¡Felicidades",nombre_b ,"por completar el curso de Business Analytics!")
+
+
+
+precio = 100
+descuento_a = 0.4
+descuento = descuento_a * 100
+
+descuento_reflejado = precio * (1-descuento_a)
+descuento_reflejado
+
+print("el precio del articulo solicitado es de $",precio)
+print("el descuento que le haremos esta en", descuento , "%")
+print("por lo que su articulo final quedaria en un valor total de $", descuento_reflejado)
+
+
+
+from datetime import datetime
+
+fecha_actual = datetime.now()
+
+print(f"Todays date is,{fecha_actual: %m-%d-%Y}") #se acomoda la fecha al formato deseado
+print(f"Todays date is,{fecha_actual: %B-%d-%Y}") #formatea la fecha completa en ingles
+
+
+
+
+saldo = 1000
+
+print(f"Su saldo son $ {saldo}, dolares")
