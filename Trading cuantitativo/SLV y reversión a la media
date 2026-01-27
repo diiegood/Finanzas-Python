@@ -1,0 +1,76 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.seasonal import STL
+
+# 1) Descargar datos de SLV (últimos 2 años)
+slv = yf.Ticker("SLV")
+df = slv.history(period="2y")
+df = df[['Close']].dropna()
+
+# 2) Log-precios
+df['LogClose'] = np.log(df['Close'])
+
+# 3) Descomposición STL
+stl = STL(df['LogClose'], period=252)  # asumimos ~252 días de trading/an
+res = stl.fit()
+df['Trend'] = res.trend
+df['Seasonal'] = res.seasonal
+df['Residual'] = res.resid
+
+# 4) Gráfica de resultados
+fig, axs = plt.subplots(4, 1, figsize=(10, 9), sharex=True)
+axs[0].plot(df['LogClose'], label='Log(Cierre)')
+axs[0].legend()
+axs[1].plot(df['Trend'], label='Tendencia')
+axs[1].legend()
+axs[2].plot(df['Seasonal'], label='Estacionalidad')
+axs[2].legend()
+axs[3].plot(df['Residual'], label='Residual (ruido)')
+axs[3].legend()
+plt.show()
+
+# Normalizamos residuo
+df['Res_std'] = (df['Residual'] - df['Residual'].rolling(60).mean()) / df['Residual'].rolling(60).std()
+
+# Definimos señales simples
+df['LongSignal'] = np.where(df['Res_std'] < -1, 1, 0)   # oversold -> comprar
+df['ShortSignal'] = np.where(df['Res_std'] > 1, -1, 0)  # overbought -> vender
+
+# Señal total
+df['Signal'] = df['LongSignal'] + df['ShortSignal']
+
+print(df[['Close','Trend','Residual','Res_std','Signal']].tail(10))
+
+
+# Rendimientos diarios
+df['Return'] = df['LogClose'].diff()
+
+# Variables basadas en components
+df['Trend_diff'] = df['Trend'].diff()
+df['Seasonal_diff'] = df['Seasonal'].diff()
+df['Residual_diff'] = df['Residual'].diff()
+
+# Señales binarias (target)
+df['Target'] = np.where(df['Return'].shift(-1) > 0, 1, 0)
+
+# Eliminamos NaNs
+df_ml = df.dropna()
+
+# Columnas predictoras
+features = ['Return','Trend_diff','Seasonal_diff','Residual_diff']
+X = df_ml[features]
+y = df_ml['Target']
+
+# División simple en entrenamiento/test
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+
+# Modelo simple
+from sklearn.ensemble import RandomForestClassifier
+model = RandomForestClassifier(n_estimators=100)
+model.fit(X_train, y_train)
+print("Accuracy test:", model.score(X_test, y_test))
+
+
