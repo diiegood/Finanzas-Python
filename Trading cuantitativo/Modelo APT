@@ -1,0 +1,48 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import statsmodels.api as sm
+
+# Activo
+ticker = "AAPL"
+precio = yf.download(ticker, start="2018-01-01", end="2024-01-01")["Close"]
+
+# Rendimientos del activo
+ret_activo = np.log(precio / precio.shift(1)).dropna()
+
+
+# Mercado
+sp500 = yf.download("^GSPC", start="2018-01-01", end="2024-01-01")["Close"]
+ret_mercado = np.log(sp500 / sp500.shift(1)).dropna()
+
+# Factores simulados (ejemplo académico)
+np.random.seed(42)
+tasa_interes = np.random.normal(0, 0.0005, len(ret_mercado))
+inflacion = np.random.normal(0, 0.0003, len(ret_mercado))
+
+
+df = pd.DataFrame({
+    "AAPL": ret_activo,
+    "Mercado": ret_mercado,
+    "Tasa_Interes": tasa_interes,
+    "Inflacion": inflacion
+}).dropna()
+
+
+Y = df["AAPL"]
+X = df[["Mercado", "Tasa_Interes", "Inflacion"]]
+X = sm.add_constant(X)
+
+modelo_apt = sm.OLS(Y, X).fit()
+print(modelo_apt.summary())
+
+
+# Prima promedio de los factores
+prima_factores = X.mean()
+
+# Rendimiento esperado del activo
+rendimiento_esperado = np.dot(modelo_apt.params, prima_factores)
+
+print("Rendimiento esperado APT:", rendimiento_esperado)
+
+
