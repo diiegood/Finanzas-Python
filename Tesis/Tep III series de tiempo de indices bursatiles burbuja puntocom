@@ -1,3 +1,79 @@
+"""
+TESIS: Antecedente histórico – Crisis Financiera Puntocom
+Análisis de portafolio internacional
+"""
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#indices bursatiles:
+tickers = [
+    "^DJI",    # Dow Jones
+    "^GSPC",   # S&P 500
+    "^IXIC",   # Nasdaq
+    "^FTSE",   # FTSE 100
+    "^GDAXI",  # DAX
+    "^FCHI",   # CAC 40
+    "^N225",   # Nikkei 225
+    "^KS11",   # KOSPI
+    "^MXX",    # IPC México
+    "^BVSP"    # IBOVESPA
+]
+
+
+start_date = "1995-01-01" #iniicio de la fecha de analisis
+end_date = "2001-12-31"  #fin del periodo de analisis
+
+#descarga de datos de yahoo finance
+data = yf.download(
+    tickers=tickers,
+    start=start_date,
+    end=end_date,
+    interval="1d",
+    auto_adjust=False,
+    group_by="ticker",
+    threads=True
+)
+
+#obtencion de precios de cierre
+close_prices = pd.DataFrame()
+
+available_tickers = data.columns.levels[0]
+
+for ticker in tickers:
+    if ticker in available_tickers:
+        close_prices[ticker] = data[ticker]["Close"]
+
+# Mantener días con información suficiente
+close_prices = close_prices.dropna(thresh=5)
+close_prices.index.name = "Fecha"
+
+log_returns = np.log(close_prices / close_prices.shift(1)).dropna() #calculo de retornos logaritmicos
+cumulative_returns = np.exp(log_returns.cumsum()) #retornos acumulados
+
+plt.figure(figsize=(14, 7)) #eleccion del tamaño de la grafica de serie de tiempo
+
+for column in cumulative_returns.columns:
+    plt.plot(cumulative_returns.index, cumulative_returns[column], label=column)
+
+plt.title("Serie de tiempo – Índices bursátiles internacionales (1995–2002)", fontsize=14)
+plt.xlabel("Fecha")
+plt.ylabel("Crecimiento relativo")
+plt.legend(loc="upper left", fontsize=8)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
+
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -124,5 +200,7 @@ plt.legend(loc="upper left", fontsize=8)
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+
 
 
