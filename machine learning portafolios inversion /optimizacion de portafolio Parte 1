@@ -43,7 +43,7 @@ tickers = [
 
 
 start_date = "2021-01-01" #iniicio de la fecha de analisis
-end_date = "2025-12-31"  #fin del periodo de analisis
+end_date = "2026-02-03"  #fin del periodo de analisis
 
 #descarga de datos de yahoo finance
 data = yf.download(
@@ -116,6 +116,49 @@ display(retornos_logaritmicos.describe().T) #breve resumen estadistico de los da
 
 
 
-#Ejercicio 2 Graficar los rendimientos diarios y los retornos contra los datos 3:45
+#Ejercicio 2 Graficar los rendimientos diarios 
 
+n = len(retornos_logaritmicos.columns)
+col = 4 #especificar el numero de columnas para la grafica
+row = int(np.ceil(n/col)) #especifica el numero de columnas
+fig_hei = row * 3 #plot height
+fig_wid = col * 4 #especifica el width
+
+ax = retornos_logaritmicos.plot(subplots=True, layout=(row, col), figsize=(fig_wid, fig_hei),
+                           sharey= True, sharex = True, #comparte el eje x, y en las sbgraficas
+                           title = "Rendimientos diarios de las acciones vs fechas")
+
+
+for i in range(col):
+    ax[0,i].xaxis.set_tick_params(which="both", top=True, labeltop= True, labelrotation=40)
+    
+    
+fig = ax[0,0].get_figure()
+fig.tight_layout()
+fig.subplots_adjust(top=0.93) #para ajustar indirectamente la locacion del titulo
+plt.show()
+
+#limpiar datos de la matriz de rendimientos
+retornos = retornos_logaritmicos.drop("SOFI", axis=1) #se le quita los rendimientos de SOFI al data frme
+retornos = retornos_logaritmicos.dropna() #se le quitan los na
+display(retornos)
+
+#Convertir los rendimientos diarios en semanales
+retornos_semanales = (retornos_logaritmicos+1).resample("W").prod() -1
+#remueve manualmente los retornso de los datos de la primera semana
+retornos_semanales = retornos_semanales.drop(retornos_semanales.index[[0]]) 
+#remueve manualmente los retornso de los datos de la ultima semana
+retornos_semanales = retornos_semanales.drop(retornos_semanales.index[[-1]])
+display(retornos_semanales)
+
+
+#Extraer los datos de un activo en concreto
+plata = retornos_semanales[["SLV"]]
+display(plata)
+
+#Excluir datos de la plata dentro del dataframe 
+retornos_semanales_sinplata = retornos_semanales.drop("SLV", axis = 1)
+
+#Ejercicio 3 Descargar los datos de los treasury de la FRED con la fecha igual a los de los activos
+8:03-9:19
 
