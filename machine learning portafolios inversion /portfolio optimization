@@ -1,0 +1,309 @@
+"""
+Portafolio Optimo con Python
+"""
+
+import csv
+import numpy as np
+import pandas as pd
+from IPython.display import display
+
+#librerias para graficar
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+
+#para checar los factores
+from factor_analyzer.factor_analyzer  import calculate_bartlett_sphericity
+from factor_analyzer.factor_analyzer import calculate_kmo
+
+#modulo para resolver problemas de optimizacion y regresion lineal
+from scipy.optimize import minimize #para resolver la optimizacion
+from sklearn.linear_model import LinearRegression
+
+
+#Ejercicio 1 Obtener una matriz de 12 activos con sus rendimientos logaritmicos, 
+# con un intervalo de periodo de 2021 a 2025.
+
+import yfinance as yf
+
+#securities:
+tickers = [
+    "NVDA",    # Nvidia
+    "SOXL",   # Bull 3X microchips
+    "SOXS",   #Bear 3X microchips
+    "SLV",   # Silver ETF
+    "IAU",   # Gold ETF
+    "NAFTRAC.MX",  # IPC-BMV ETF
+    "SPY",   # SP500 ETF
+    "INTC",   # Intel Corporation
+    "MSFT",   # Microsoft
+    "PFE",    # Pfizer Inc
+    "PYPL",    # Paypal Holdings Inc.
+    "TSLA",     #Tesla Inc.
+    "SAN",    #Banco Santander, S.A.
+]
+
+#Intervalo de tiempo
+start_date = "2021-01-01" #inicio de la fecha de analisis
+end_date = "2026-02-05"  #fin del periodo de analisis
+
+#descarga de datos de yahoo finance
+data = yf.download(
+    tickers=tickers,  #descargar la lista creada de tickers
+    start=start_date, #descargar desde el inicio de la fecha
+    end=end_date,    #hasta el final de la fecha 
+    interval="1d",  #intervalo de frecuencia de datos 1 dia
+    auto_adjust=False, 
+    group_by="ticker",
+    threads=True
+)
+
+#obtencion de precios de cierre
+close_prices = pd.DataFrame()   #crear un data frame vacio para los cierres de precio
+
+available_tickers = data.columns.levels[0]  #indexar los ticekers disponibles
+
+#se llena el data frame vacio anteriormente creado con los datos de cierre de precio de los tickers
+for ticker in tickers: 
+    if ticker in available_tickers:
+        close_prices[ticker] = data[ticker]["Close"] 
+
+
+# Mantener días con información suficiente
+close_prices = close_prices.dropna(thresh=5) #elimina filas que tengan menos de 5 valores no nulos
+close_prices.index.name = "Fecha"
+
+retornos_logaritmicos = np.log(close_prices / close_prices.shift(1)).dropna() #calculo de retornos logaritmicos
+cumulative_returns = np.exp(retornos_logaritmicos.cumsum()) #retornos acumulados
+
+
+#data frame de los rendimientos logaritmicos
+retornos_logaritmicos.info()
+retornos_logaritmicos.describe()
+retornos_logaritmicos.head(50)
+retornos_logaritmicos.tail(50)
+
+#conversion del dataframe index a tipo hora fecha de datetimeindex de pandas
+retornos_logaritmicos.index = pd.to_datetime(retornos_logaritmicos.index)
+
+"""
+utilidades del pd.to_datetime
+
+#1 filtrar por fechas:
+retornos_logaritmicos["2024-01-01":"2025-12-31"]  #este codigo filtra los rendimientos en un intervalo de tiempo
+
+#2 agrupar la frecuencia de datos bajo cierto periodo:
+retornos_logaritmicos.resample("Y").mean()   #agrupa por año los rendimientos  (cambiar "Y" por M,Q, 2Q, A)
+retornos_logaritmicos.groupby(retornos_logaritmicos.index.year).std()  #muestra la desviacion estandar
+
+#3 Grafica los datos 
+plt.plot(retornos_logaritmicos.index, retornos_logaritmicos["SPY"])  #grafica los datos correspondientes a SPY
+
+#4 Calcula estadisaticas temporales
+retornos_logaritmicos.index.year
+retornos_logaritmicos.index.month
+
+"""
+
+display(retornos_logaritmicos) #convierte el dataframe en una tabla interactiva
+
+retornos_logaritmicos
+
+#Propiedades del dataframe
+print("Hay un total de", len(retornos_logaritmicos.columns), "activos incluidos dentro de esta matriz")
+print("las acciones incluidas en este dataframe son:")
+for name in retornos_logaritmicos.columns: print(name)
+
+display(retornos_logaritmicos.describe().T) #breve resumen estadistico de los datos del data frame
+
+
+
+#Ejercicio 2 Graficar los rendimientos diarios 
+
+n = len(retornos_logaritmicos.columns)
+col = 4 #especificar el numero de columnas para la grafica
+row = int(np.ceil(n/col)) #especifica el numero de columnas
+fig_hei = row * 3 #plot height
+fig_wid = col * 4 #especifica el width
+
+ax = retornos_logaritmicos.plot(subplots=True, layout=(row, col), figsize=(fig_wid, fig_hei),
+                           sharey= True, sharex = True, #comparte el eje x, y en las sbgraficas
+                           title = "Rendimientos diarios de las acciones vs fechas")
+
+
+for i in range(col):
+    ax[0,i].xaxis.set_tick_params(which="both", top=True, labeltop= True, labelrotation=40)
+    
+    
+fig = ax[0,0].get_figure()
+fig.tight_layout()
+fig.subplots_adjust(top=0.93) #para ajustar indirectamente la locacion del titulo
+plt.show()
+
+"""
+Limpieza de Datos
+"""
+#limpiar datos de la matriz de rendimientos
+retornos = retornos_logaritmicos.drop("SPY", axis=1) #se le quita los rendimientos de SOFI al data frme
+retornos = retornos_logaritmicos.dropna() #se le quitan los na
+display(retornos)
+
+
+"""
+Conversion de datos
+"""
+#Convertir los rendimientos diarios en semanales / cambiar periodo por D,M,Q (diario, mensual, trimestral)
+retornos_semanales = (retornos_logaritmicos + 1).resample("D").prod() - 1
+#remueve manualmente los retornso de los datos de la primera semana
+retornos_semanales = retornos_semanales.drop(retornos_semanales.index[[0]]) 
+#remueve manualmente los retornso de los datos de la ultima semana
+retornos_semanales = retornos_semanales.drop(retornos_semanales.index[[-1]])
+display(retornos_semanales)
+
+
+"""
+Extraer los datos de un activo en concreto
+"""
+SP500 = retornos_semanales[["SPY"]]
+display(SP500)
+
+#Excluir datos de un activo dentro del dataframe 
+retornos_semanales_sin_SP500 = retornos_semanales.drop("SPY", axis = 1)
+
+
+#Extraer los datos del IPC Mexicano:
+IPC_BMV = retornos_semanales[["NAFTRAC.MX"]]
+display(IPC_BMV)
+
+retornos_semanales_sin_NAFTRAC = retornos_semanales.drop("NAFTRAC.MX", axis = 1)
+
+###############################################################################
+###############################################################################
+
+#Ejercicio 3 Descargar los datos de los treasury de la FRED con la fecha igual a los de los activos
+8:03 
+"Importante para calcular el sharpe ratio"
+
+
+###############################################################################
+###############################################################################
+
+"""
+Extraer datos de un activo del data frame en un periodo delimtado
+"""
+start_date = "2025-11-01"
+end_date = "2026-02-05"
+
+S&P500 = retornos_semanales[["SOXS"]]
+display(S&P500)
+
+index = (semiconductores.index >= start_date) & (semiconductores.index <= end_date)
+
+semiconductores = semiconductores.loc[index]
+display(semiconductores)
+
+semiconductores.plot() #graficar los retornos
+plt.show()
+
+
+
+
+#poner una vector de datos del SP500 que sirva como benchmark y otro del NAFTRAC
+
+
+
+
+
+###############################################################################
+
+#Evaluacion de Retornos anuales, volatilidad, sharpe ratio y max drawdown
+
+Freq = 52 #frecuencia de los datos dada por un factor de 52 semanas osea 1 año
+
+def retorno_anual(x):
+    return (x+1)**Freq-1
+
+def desviacionstd_anual(x):
+    return x*np.sqrt(Freq)
+    
+#Funcion para definir la media geometrica anualizada 
+def media_geometrica_anual(x):
+    n = len(x)
+    return np.exp(np.sum(np.log(1+x))*Freq/n)-1
+
+#Funcion para anualizar el sharpe ratio sin considerar la risk free ratio
+def sharpe_ratio(x):
+    media_periodo = x.mean()
+    std_periodo = x.std(ddof=0)
+    sharpe_anual = (media_periodo / std_periodo) * np.sqrt(Freq)
+    return sharpe_anual
+
+def sharpe_ratio_rf(x):
+    n = len(x)
+    ret_expected = np.sum(x-rf)/n
+    ret_avg = np.sum(x)/n
+    std_dev = np.sqrt(np.sum((x - ret_avg)**2)/n)
+    annu_ret_expected = (ret_expected+1)**Freq-1
+    annu_std_dev = std_dev * np.sqrt(Freq)
+    return annu_ret_expected/annu_std_dev
+    
+#Funcion para encontrar el drawdown maximo
+def max_drawdown(x):
+    wealth = (x+1).cumprod()
+    cummax = wealth.cummax()
+    drawdown = wealth/cummax - 1
+    return drawdown.min()
+
+#Mostrar los resultados de los calculos
+
+decimales = 2 #se muestran a 4 decimales
+
+#se crea un data frame vacio llamado  Datos
+Datos = pd.DataFrame(index = retornos_logaritmicos.columns)
+
+"""
+Nota todos los resultados seran mostrados anualmente
+"""
+
+#se crean las columnas
+Datos["Media Geometrica %"] =np.round(retornos_logaritmicos.apply(media_geometrica_anual) *100, decimales)
+Datos["Volatilidad %"] = np.round(desviacionstd_anual(retornos_logaritmicos.std())*100, decimales)
+Datos["Sharpe Ratio"] = np.round(retornos_logaritmicos.apply(sharpe_ratio), decimales)
+Datos["Max Drawdown %"]= np.round(retornos_logaritmicos.apply(max_drawdown)*100, decimales)
+display(Datos)
+
+
+#Calculo de valores alpha y beta (alfa es el exceso de rendimiento del mercado y beta es la sensibilidad)
+decimales = 3
+
+#Obtener los rendimientos de las acciopnes y del mercado
+    
+n = len()
+# Calculate and display beta for each stock (sin T-Bill)
+
+n_dec = 3  # número de decimales
+
+# Retornos del mercado (SP500) y de los activos
+mkt_ret = SP500
+asset_ret = data
+
+# Número de activos
+n = len(asset_ret.columns)
+
+# Vector para almacenar betas
+beta = np.zeros(n)
+
+# Cálculo de beta vía regresión lineal
+for i in range(n):
+    beta[i] = LinearRegression().fit(
+        mkt_ret.values.reshape(-1, 1),
+        asset_ret[asset_ret.columns[i]].values
+    ).coef_[0]
+
+# Mostrar resultados
+BetaDF = pd.DataFrame(index=asset_ret.columns)
+BetaDF['Beta'] = np.round(beta, n_dec)
+
+display(BetaDF)
+
+
+    
