@@ -1,0 +1,33 @@
+#Calcular el rendimiento de una accion y ver su nombre 
+
+
+class Accion:
+    def __init__(self, nombre, precio):
+        self.nombre = nombre
+        self.precio = precio
+
+    def calcular_rendimiento(self, precio_inicial):
+        return (self.precio / precio_inicial) - 1
+
+
+# Crear un objeto
+apple = Accion("Apple", 200)
+
+# Utilizar su método
+rendimiento = apple.calcular_rendimiento(180)
+
+print(apple.nombre)
+print(rendimiento)
+
+
+"""
+Programación tradicional: puedes tener variables y funciones independientes que realizan los cálculos.
+Programación orientada a objetos: agrupas los datos y las funciones relacionadas en objetos.
+
+La POO (Programacion Orientada a Objetos) resulta útil cuando desarrollas programas grandes porque permite:
+- Reutilizar código sin escribirlo desde cero.
+- Organizar proyectos complejos.
+- Mantener los datos y las operaciones relacionadas en una misma estructura.
+- Crear modelos de instrumentos financieros, portafolios, riesgos o estrategias de inversión.
+
+"""
