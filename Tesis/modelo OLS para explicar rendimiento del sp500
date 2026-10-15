@@ -1,0 +1,270 @@
+"""
+Investigacion de Factores: Aplicados a modelos de regression normalizada
+"""
+# Comunmente investigadores aplican el modelo OLS de regresion, 
+# para estimar la importancia de los factores (factor loadings)
+# en los retornos individuales de los activos o acciones.
+
+#sirve para estimar portafolios tanto con renta fija y renta variable. (interest rate / equity risks)
+
+#Para estimar dichos rendimientos de las acciones podemos utilizar Macrofactores y Microfactores.
+
+#Macrofactors: pueden ser usados para asset allocation, asset liability modeling 
+    #inflacion, tasa de interes, crecimiento pib, tipo de cambio, precio del petroleo, prima de riesgo de mercado
+    #diferencia entre tasas de interes de corto y largo plazo
+
+#Risk factors (se usan microfactores para determinar factores de riesgo de los portafolio)
+#Microfactores:
+    #tamaño de la empresa , valor de la empresa, margen de utilidad, book to market, volatildiad especifica
+    #liquidez de la accion, crecimiento de utilidades, rentabilidad, endeudamiento, crecimiento de utilidades.
+
+"""
+° Motivacionde los modelos de Factores °
+
+-Reducir la complejidad del modelado sobre movimiento de los  precios de activos
+#Un gran porcentaje de portafolios de equity bien diversificados puede ser explicado con solo 3 factores.
+#Reduce completamente el modelo de los retornos en un modelo lineal de facatores elegido por el usuario
+
+-Explicar los retornos de los activos hibridos
+# los hedge funds y real state son los mejores modelados con combinacion de factores.
+
+-Pronosticar el retorno esperado futuro de los activos
+#Dado un retorno esperado de los factores, podemos mapearlos en los retornos esperados de los activos
+"""
+
+#Tipos de modelos de factores: (buscan explicar los rendimientos de los activos a partir de varias variables)
+    
+    #Fama-FRENCH Modelo de 3 factores 
+    #Capm modelo de 1 solo factor el indice de mercado
+    
+    #the excess market return value - value factor (value stocks - growth stocks and size | small - large) 
+    
+
+"""
+° Harvard usa 5 factores para determinar los rendimientos °
+
+  global equity | long-term US govement bonds | high yield bonds | inflation hedging | currency hedging.
+  
+  global equity , govement bonds and high yield bonds se consideran para el asset pricing
+  -se relacionan con ganancias, la tasa libre de riesgo y la prima de riesgo
+  
+  -inlation heding and currency hedging estan dados por la importancia de las inversiones segun Harvard
+"""
+
+
+#Regresion OLS con penalizaciones para reducir los factor loadings o reducir la importancia que se encuentra
+
+"""
+#Factores a analizar al modelo 
+
+Wordl Equities Return
+10 Year US Treasury
+High Yield
+Inflation Protection
+Currency Protection
+
+Variable dependiente:  SP500 Index Returns
+
+"""
+
+#Data set check (bajar los datos del sp500 y graficar)
+
+ """
+ TESIS: Antecedente histórico – Crisis Financiera Puntocom
+ Análisis de portafolio internacional
+ """
+
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Activo
+ticker = "^GSPC"  # S&P 500
+
+# Periodo de análisis
+start_date = "2010-01-01"
+end_date = "2026-12-31"
+
+# Descarga de datos de Yahoo Finance
+data = yf.download(
+    ticker,
+    start=start_date,
+    end=end_date,
+    interval="1d",
+    auto_adjust=False
+)
+
+# Obtención del precio de cierre
+close_prices = data["Close"].dropna()
+close_prices.index.name = "Fecha"
+
+# Cálculo de retornos logarítmicos
+log_returns = np.log(close_prices / close_prices.shift(1)).dropna()
+
+# Retorno acumulado
+cumulative_returns = np.exp(log_returns.cumsum())
+
+# Gráfica
+plt.figure(figsize=(14, 7))
+
+plt.plot(
+    cumulative_returns.index,
+    cumulative_returns,
+    label=ticker
+)
+
+plt.title(
+    "Serie de tiempo – S&P 500 (2010–2026)",
+    fontsize=14
+)
+
+plt.xlabel("Fecha")
+plt.ylabel("Crecimiento relativo")
+plt.legend(loc="upper left")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+#trabajo con el dataset  
+pd.options.display.float_format = "{:,.3f}".format    #esto configura el display de los datos a 3 decimales
+all_data.sort_values("SP&500 Total Return").head(3)
+
+
+
+#Calcular la regresion con la paqueteria scikit-learn
+options = fm.create_options()
+options["name_of_reg"] = "sikit-learn OLS"
+fm.linear_regression(all_data, "SP500 Total Return", config.factorName, options)
+
+#Lectura de datos de la regresion.
+
+"""
+El intercepto de la regresion es un valor que representa el valor estimado de la variable
+dependiente cuando todas las variables explicadas son iguales a cero.
+Los efectos marignales de cada variable se representan a sus coeficientes los cuales estan asociados
+a la variable explicativa, indica cuanto cambian en promedio, conforme a un incremento unitario 
+"""
+
+#Libreria Scikit-learn 
+
+#es una libreria usada para analisis de datos y machine learning algorithms 
+
+
+#funcion para crear un modelo lineal de factores
+def linear_regression(data, dependentVar, factorNames, options):
+    """
+    linear regression takes in a dataset and returns the factor loadings using least squares regression
+    there are some imputs that we need to consider:
+        
+        data: pandas df, data matrix, (should constain the date column and all of the factor names columns)
+        dependentVar: string, name of dependent variable
+        factor Names: list of elements shoult be strings, names of dependient variables
+        options: dicctionary, should constain at least two elements, timeperiod, and date
+            timeperiod: string, if == all, means use entire dataframe, otherwise filter the df on this value
+            date: name of datecol
+            returnModel:bolean, if true, returns model
+            
+            
+    Outputs:
+        reg: regression object from scikitlearn
+        also prints what was desired 
+        
+    """
+
+    #fist filter down to the time period
+    if(options['timeperiod'] == 'all'):
+        newData = data.copy()
+    else:
+        newData = data.copy()
+        newData = newData.query(options['timeperiod'])
+        
+        
+      #perform the linear regression  / codigo importante para crear la regresion que incluya intercepto
+     linReg = LinearRegression(fit_intercept = True)
+     linReg.fit(newData[factorNames], newData[dependentVar]) #factor names variables independientes / dependent Var variable dependiente
+     
+     
+    if (options['printLoadings'] == True):
+        #Now print the results
+        print_timeperiod(newData, dependentVar, options)
+        #Now print the factor loadings
+        display_factor_loadings(linReg.intercept, linReg.coef_, factorNames, options)
+
+    if(options['returnmodel']):
+        return linReg        
+        
+
+#Problemas de la regresion
+
+# 1) hay incertidumbre en las cargas de los factores debido a que pueden estar altamente correlacionados
+# 2) asume que las cargas de los factores son constantes a lo largo del tiempo
+
+#verificacion de la 1a desventaja
+#en las siguientes lineas de codiga hacemos pruebas para verificar el modelo primero con un correlograma
+
+#para calcular la matriz de correlaciones de la la matriz de datos
+all_data[config.factorName].corr()
+
+
+#verificacion de la 2da desventaja
+#las cargas no son cosntantes a lo largo del tiempo.
+
+#primera regresion se calcula con los datos normales, y se filtran los datos a los meses donde
+#los retornos del sp500 son mayores a cero y se corre una regresion en solo esos datos (sp500 datos con ganancias)
+options = fm.create_options()
+normal_data = all_data[all_data["SP500 Total Return"] > 0].copy()
+options["name_of_reg"]= "OLS Normal"
+options["return_model"] = False
+fm.linear_regression(normal_data, "SP500 Total Return", config.factorName, options)
+"""
+en este caso se encontro un intercepto de 0.007 osea que por cada 7% que sube el sp500 desde 1995
+suben un 0.913% y los treasuries de 10 años suben un 0.201 al igual que el currency protection 
+con 0.388% mientras que por otro lado el high yield no es tan significativo con un  0.025%  
+al igual que la protecion de  la inflacion con un -0.003%
+"""
+
+#en la segunda regresion se hace lo mismo pero se cambian la base de datos a los datos con crash o crisis, y se
+#filtran los datos solo en los meses donde los rendimeintos del sp500 era igual o menor a cero (sp500 datos con perdidas)
+options = fm.create_options()
+normal_data = all_data[all_data["SP500 Total Return"] > 0].copy()
+options["name_of_reg"]= "OLS Crash"
+options["return_model"] = False
+fm.linear_regression(crash_data, "SP500 Total Return", config.factorName, options)
+
+"""
+en esta segunda regresion podemos ver que el intercepto es 0.009 negativo por lo que por cada 9% que baja el sp500
+en comparacion el world equities sube un 0.822% y los treasuries a 10 años suben 0.065% por otro lado los menos
+significantes son el high yield que baja un 0.004%, el inflation protection que sube un 0.159% 
+y el currency protection que sube un 0.229 aunque es mas significante que los dos mencionadso previamente
+"""
+
+#Conforme a lo anterior podemos ver que el factor de world equities es mucho menor en periodos de crisis que en
+# periodos normales de la economia.
+
+#el inflaction protection es mas significativo en periodos de crisis siendo mucho mayor 
+#currency protection en ambos es significativo pero es mas significativo en periodos normales 
+#US 10 year treasury es 5 veces mas significativo en peridos normales que en crisis.
+
+
+#Baselyne OLS Model
+#se definen dos bases de datos uno para entrenamiento y el otro para testeo
+#los datos de entrenamiento estan desde marzo de 1997 hasta diciembre de 2012
+#los datos de testeo estan determinados desde diciembre del 2012 en adelante
+
+train = all_data[(all_data["Date"] <= "2012-12-01") & (all_data["Date"] >= "1997-03-01")].copy()
+test = all_data[all_data["Date"] > "2012-12-01"].copy()
+
+options = fm.create_options()
+options["name:of:reg"] = "OLS full data"
+options["return_model"] = True
+ols_model_train = fm.linear_regression(train, "SP500 Total Return", config.factorName, options)
+
+#Se vuelve hacer un modelo OLS pero con los datos de entrenamiento 
+
+
+
+
+
+
