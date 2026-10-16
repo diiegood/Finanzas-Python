@@ -264,6 +264,232 @@ ols_model_train = fm.linear_regression(train, "SP500 Total Return", config.facto
 #Se vuelve hacer un modelo OLS pero con los datos de entrenamiento 
 
 
+###############################################################################
+###############################################################################
+###############################################################################
+
+            """ Tecnicas modernas de machine learning """
+
+
+#Regresion con penalizacion Lasso.
+"""
+La regresion lasso penaliza el tamaño de los coeficientes pero las variables pueden tener
+escalas y varianzas diferentes. Por eso es importante estandarizarlas antes de aplicar la
+penalizacion
+"""
+
+#el coeficiente grande no quiere decir que sea un factor mas importante sino esta determinado
+# en la magnitud de la escala con la que se mide esa variable
+
+#no se deben penalizar arbitrariamente los factores con pequeñas escalas o viceversa,
+#  para que la seleccion de  variables no dependa injustamente de las unidades de medicion.
+
+options = fm.create_options_lasso()
+options["lambda_hat"] = .00001
+options["print_loadings"] = True
+options["name_of_reg"] = "LASSO Regression with a small lambda"
+fm.lasso_regression(train, "SP500 Total Return", config.factorName, options)
+
+#Lectura de Datos
+
+"""
+Se tienen dos cargas de factores en cero:  High yield y Inflation Protection (ya no estan incluidos en el modelo)
+intercepto es cero
+wordl equities 0.990
+10 year us treasuries 0.063
+currency protection 0.308
+"""
+
+#Ahora si se tiene un gran valor alpha normal o alfa estimado
+#se le cambia el valor de alfa con 2 ceros y tiene una magnitud mayor
+
+options = fm.create_options_lasso()
+options["lambda_hat"] = .001  #input alpha value
+options["print_loadings"] = True
+options["name_of_reg"] = "LASSO Regression with a large lambda"
+fm.lasso_regression(train, "SP500 Total Return", config.factorName, options)
+
+"""
+se tiene un intercepto de 0.003
+world equities factor 0.551 (siendo el unico factor significativo)
+
+Conforme a lo anterior se observa que se tienen ahora mas cargas de factores con valor cero
+como lo son; 10-year us treasurie, inflation protection, high yield, currency protection
+
+"""
+
+# Pero al final lo realmente importante cuantos factores realmente deberia tener el modelo o que
+# variables realmente son significativas para estimar el comportamientod de los rendimientos del sp500
+
+
+"""
+Segun la forma en la determinamos el valor de lambda en sentido general es a traves del cross-validation o
+validacion cruzada.
+"""
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+##############################################################################
+
+              """  Cross Validation /  Validacion cruzada """
+              
+options = fm.create_options_cv_lasso()
+options["name_of_reg"] = "CV Lasso"
+options["max_lambda_hat"] = .001 #especifica el valor maximo de alpha testeado por cross validation
+options["return_model"] = True
+options["n_folds"] = 5 #number of folds (grupos de para validar)
+lasso_model_train = fm.cross_validated_lasso_regression(train, "SP500 Total Return", config.factorName, options)
+
+#Descripcion de los datos
+"""
+mejor lambda = 1.666795754742
+intercepto = 0.000
+world equities  0.977
+10 year us trearusire 0.036
+high yield 0.000
+inflation protection -0.000
+currency protection 0.272
+"""
+
+#el modelo final nos indica que se deberian ignorar tanto el fatcto de high yield como el de inflation protection
+
+
+###############################################################################
+                             """ Lasso Code """
+
+def cross_validated_lasso_regression (data, dependentVar, factorName, options):
+    """
+    La validacion cruzada para la regression lasso toma en un dataset y regresa las cargas del factor usando la
+    regresion lasso y la cross validation para la mejor eleccion del lambda.
+    
+    Inputs:
+        data: pandas df, data matrix, deberia contener la columna de datos y todos los nombres de la carga de los factores
+        dependentVar: string, nombre de la variable dependiente
+        factorNames: lista, elementos que deberian ser strings, nombres de las variables independientes 
+        options:diccionario, debereia contener al menos 2 elementos, periodo de tiempo y fecha
+        timeperiod: string, if = all, significa el uso entero de dataframe, fuktri dek df in este valor
+        date: nombre de la columna de fecha
+        returnsModel: boleano, if true, return model
+        printLoadings:bolean, if true, print los coeficentes
+        maxLambda: float, valor maximo de lambda permitido
+        nLambdas: int, numero de valores landa permitidos
+        randomState: integer, selecciona una semilla random
+        nFolds: numero de folds (grupos)
+    
+    Outputs:
+        reg: regresion con objeto 
+        
+    """
+    #test del tiempo de periodo
+    if(options("time_period") == "all"):
+        newData = data.copy()
+    else:
+        newData = data.copy()
+        newData = new.Data.query(options["time_period"])
+        
+#para la validacion cruzada / se definen el numero de lambdas que se van a usar
+    alphas = np.logspace(-12, np.log(options["max_lambda_hat"]), base = np.exp(1), num = options["n_lambda_hat"])
+    #alpahas = np.linspace(1e-12, alphaMax, options("nAlphas"))
+    if(options["random_state"] == "none"):
+        lassoTest = Lasso(fit_intercept = True)
+    else:
+        lassoTest = Lasso(random_state = options["random_state"], fit_intercept =True)
+    tuned_parameters = [{"alpha" : alphas}]
+    
+    clf = GridSearchCV(lassoTest, tuned_parameters, cv=options["n_folds"], refit =True)
+    clf.fit(newData[factorNames], newData[dependtVar])
+    lassoBest = clf.best_estimator_
+    
+    alphaBest = clf.best_params_["alpha"]        
+
+    if (options["print_loadings"] == True):
+        #para ver las graficas o los resultados
+        print_timeperiod(newData, dependentVar, options)
+        print("Best_lambda_hat =" + str(alphaBest))
+        #para ver las cargas de los factores
+        display_factor_loadings(lassoBest.intercept_, lassoBest.coef_, factorNames, options)
+        
+        
+    if(options["return_model"]):
+        return lassoBest
+    
+###############################################################################
+                          """ Elastic Net  """
+#es la combinacion de lasso y ridge
+    
+options = fm.create_options_cv_elastic_net()
+options["nameOfReg"] = "CV Elastic Net"
+options["maxAplha"] = .01
+options["nFolds"] = 5
+options["returnModel"] = True
+el_model_train = fm.cross_validated_elastic_net_regression(train, "SP500 Total Return", config.factorName, options)
+
+#Descripcion de los datos
+#el intervalo del ratio L1 es de 93.78% mejor alpha es de 1.7597  (es un ratio muy alto)
+#elimina los factores de high yield, inflation protection como no relevantes
+#ademas de que considera el factor mas relevante el de world equities y despues al de currency protection
+#el factor de 10 year us treasury no es tan relevante
+
+
+#funcion para la validacion cruzada de la regresion lasso
+def cross_validated_lasso_regression(data, dependentVar, factorNames, options):
+    '''cross_validated_lasso_regression takes in a dataset and returns the factor loadings using lasso regression 
+    and cross validating the choice of lambda
+    INPUTS:
+        data: pandas df, data matrix, should constain the date column and all of the factorNames columns
+        dependentVar: string, name of dependent variable
+        factorNames: list, elements should be strings, names of the independent variables
+        options: dictionary, should constain at least two elements, timeperiod, and date
+            timeperiod: string, if == all, means use entire dataframe, otherwise filter the df on this value
+            date: name of datecol
+            returnModel: boolean, if true, returns model
+            printLoadings: boolean, if true, prints the coeficients
+
+            maxLambda: float, max lambda value passed
+            nLambdas: int, number of lambda values to try
+            randomState: integer, sets random state seed
+            nFolds: number of folds
+            NOTE: SKLearn calles Lambda Alpha.  Also, it uses a scaled version of LASSO argument, so here I scale when converting lambda to alpha
+    Outputs:
+        reg: regression object from sikitlearn
+        also prints what was desired
+    '''
+    #Test timeperiod
+    if(options['timeperiod'] == 'all'):
+        newData = data.copy()
+    else:
+        newData = data.copy()
+        newData = newData.query(options['timeperiod'])
+
+    #Do CV Lasso
+    alphaMax = options['maxLambda'] / (2*newData.shape[0])
+    print('alphaMax = ' + str(alphaMax))
+    alphas = np.linspace(1e-6, alphaMax, options['nLambdas'])
+    if(options['randomState'] == 'none'):
+        lassoTest = Lasso(fit_intercept=True)
+    else:
+        lassoTest = Lasso(random_state = options['randomState'], fit_intercept=True)
+
+    tuned_parameters = [{'alpha': alphas}]
+
+    clf = GridSearchCV(lassoTest, tuned_parameters, cv=options['nFolds'], refit=True)
+    clf.fit(newData[factorNames],newData[dependentVar])
+    lassoBest = clf.best_estimator_
+    alphaBest = clf.best_params_['alpha']
+    print('Best Alpha')
+    print(clf.best_params_['alpha'])
+
+
+    if (options['printLoadings'] == True):
+        #Now print the results
+        print_timeperiod(newData, dependentVar, options)
+        print('best lambda = ' + str(alphaBest*2*newData.shape[0]))
+        #Now print the factor loadings
+        display_factor_loadings(lassoBest.intercept_, lassoBest.coef_, factorNames, options)
+
+    if(options['returnModel']):
+        return lassoBest
+    
+    
 
 
 
