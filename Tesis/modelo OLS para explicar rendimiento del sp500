@@ -489,7 +489,143 @@ def cross_validated_lasso_regression(data, dependentVar, factorNames, options):
     if(options['returnModel']):
         return lassoBest
     
+
+###############################################################################
+                 """ Regresiones con limitaciones """
+#regresion con max de variables no igual a cero de 2
+options = fm.create_options_best_subset()
+options["max_vars"] = 2
+options["name_of_reg"] #mejor subconjunto con maxvars de 2
+fm.best_subset_regresion(train, "SP500 Total Returns", config.factorName, options)
+
+#Descripcion
+"""
+intercepto 0.000
+world equities 0.992
+10 year us treasury 0.000
+high yield 0.000
+inflation protection 0.000
+currency protection 0.324
+"""
+
+#Se puede ver que en este caso las unicas cargas de factores significativas en esta regresion
+#con limitaciones son world equities y currency protection
+#ademas de lo anterior el resultado nos da el mejor subconjunto del modelo de regression 
+#por lo que solo hay dos cargas de factores diferentes de cero
     
+#regresion con max de variables no igual a cero de 3
+options = fm.create_options_best_subset()
+options["max_vars"] = 3
+options["name_of_reg"] #mejor subconjunto con maxvars de 3
+fm.best_subset_regresion(train, "SP500 Total Returns", config.factorName, options)    
+    
+#Descripcion
+
+"""
+intercepto -0.000
+world equities 1.009
+currency protection 0.363
+10 years of terasury 0.204
+"""
+#Se puede ver que en este caso las unicas cargas de factores significativas en esta regresion
+#con limitaciones son world equities, currency protection y 10 years treasury
+#ademas de lo anterior el resultado nos da el mejor subconjunto del modelo de regression 
+#por lo que solo hay dos cargas de factores diferentes de cero
+
+###############################################################################
+
+#Usando la CVXPY library para craer la funcion del mejor subconjunto, 
+#sirve para resolver problemas de optimizacion, para encontrar el mejor subconjunto
+
+
+def best_subset(x,y,1_0):
+    M = 1000
+    n_factor = x.shape[1]
+    z= cp.variable(n_factor, boolean = True) #variable
+    beta = cp.Variable(n_factor)  #variable
+    alpha = cp.Variable(1) #intercepto definido como variable
+    
+    def MIP_obj(x,y,b,a):
+        return cp.norm(y-cp.matmul(x,b)- a,2)
+    
+    best_subset_prob = cp.Problem(cp.Minimize(MIP_obj(x,y,beta,alpha)), #se definen los constrains / limitantes del problema de optimizacion
+                                  [cp.sum(z)<=1_0, beta+M*z>=0, M*z>=beta])  
+    best_subset_prob.solve(solver="ECOS_BB") #se usa solver para optimizar la ecuacion de la matriz
+    return alpha.value, beta.value    #que nos regrese los valores alfa y beta, siendo los valores de la solucion
+
+    
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+##############################################################################
+
+    """ Pronostico para determinar los retornos esperados futuros """
+
+#Se tienen 5 facatores para determinar los retornos esperados anualizados 
+
+"""
+World equities 5%
+Treasury Bonds 2%
+High Yield Bonds 5%
+Inflation Protection -3%
+Currency protection 0%
+"""
+
+#Testeo de diferetes modelos
+#En el siguiente codigo se testean diferentes modelos para ver cual es el que mejor se ajusta
+#y que variables son mas significativas con los diferentes modelos
+
+models = [ols_model_train, lasso_model_train, el_model_train, best_subset_prob]
+comparisson = pd.DataFrame(np.zeros((4,7)), columns=["Intercept"]+ config.factorName + 
+                           ["Implied Expected Return SP500 (Anual)"])
+expected_returns = pd.DataFrame(np.array([[.08/12, .02/12, .05/12, -.003/12, 0/12]]), columns = config.factorName)
+
+for i in range(len(models)):
+    model = models[i]
+    comparison.loc[i, "intercept"] = model.intercept
+    comparison.loc[i, config.factorName] = model.coef_
+    #se multiplica por 12 porque se usan datos en frecuencia mensual y asi se pasa a anual
+    comparison.loc[i, "Implied Expected Return SP500"] = 12 * model.predict(expected_returns) #se usa para anualizar los retornos
+    
+comprarison.index = ["OLS", "LASSO", "Elastic  Net", "Best Subset"]
+
+comparison
+
+"""
+se obtiene una matriz donde se obtiene diferentes modelos y cada modelo la carga de los diversos factores
+
+Todos tienen un intercepto de cero.
+
+En OLS, world equities, currency protection son los mas significativos pero tambien en menor medida 10 years treasury
+inlfation protection y high yield son poco signicativos, da el rentorno esperado mas bajo de los modelos con 7.8%
+
+En Lasso world equities, currency protection son mas significativos aunque en menor medida que en OLS normal, los
+menos significativos son 10 year us treasuries, high yield y inflation protection, 
+se tiene un retorno esperado de 8.2%
+
+En Elastic Net world equities, currency protection son ligeramente menos significativas que en lasso pero son
+los factores mas significativas  en este modelo, los demas no lo son se tiene un retorno igual a Lasso de 8.2%
+
+En el modelo best-subset World equities es significativo y tiene mayor significancia en este modelo que en los demas
+al igual que currency protection, mientras que las demas variables son cero exceptuando 10 year us treasuries que tiene una significancia muy baja
+menor que en el modelo OLS peor mayor que Lasso y Elastic Net en este modelo se espera un retorno de 8%
+
+"""
+
+predictions 
+
+"""
+Los valores de R cuadrada de cada modelo son:
+    
+OLS 0.856
+Lasso 0.858
+Elastic Net 0.858
+Best Subset 0.862
+
+Por lo que el modelo que mejor ajusta es el de Best subset, al haber un modelo con menos dimensiones
+es mas facil encontrar factores que sean significativos 
+"""
+
+
+
 
 
 
