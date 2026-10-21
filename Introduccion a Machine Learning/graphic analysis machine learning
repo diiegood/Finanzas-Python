@@ -1,0 +1,55 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import networkx as nx
+import matplotlib.pyplot as plt
+
+tickers = ["AAPL", "MSFT", "NVDA", "AMZN", "KO"]
+
+precios = yf.download(
+    tickers,
+    start="2022-01-01",
+    auto_adjust=True
+)["Close"]
+
+rendimientos = precios.pct_change().dropna()
+
+# Matriz de correlaciones
+corr = rendimientos.corr()
+
+# Crear red
+G = nx.Graph()
+
+for activo in tickers:
+    G.add_node(activo)
+
+# Conectar activos si la correlación absoluta supera 0.60
+for i in range(len(tickers)):
+    for j in range(i + 1, len(tickers)):
+        a = tickers[i]
+        b = tickers[j]
+
+        correlacion = corr.loc[a, b]
+
+        if abs(correlacion) > 0.60:
+            G.add_edge(
+                a, b,
+                weight=abs(correlacion),
+                correlacion=correlacion
+            )
+
+# Dibujar la red
+pos = nx.spring_layout(G, seed=42)
+
+nx.draw(
+    G, pos,
+    with_labels=True,
+    node_size=1500,
+    width=[
+        3 * G[u][v]["weight"]
+        for u, v in G.edges()
+    ]
+)
+
+plt.title("Red de relaciones entre activos")
+plt.show()
