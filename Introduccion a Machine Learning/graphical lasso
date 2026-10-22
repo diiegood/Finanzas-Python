@@ -1,0 +1,134 @@
+"""
+Ejemplo de estimacion de las relaciones condicionales entre los activos financieros mediante Graphical Lasso, el cual funciona para 
+poder identficiar cuales de las relaciones se mantienen despues de aplicar la penalizacion de Lasso, ademas de poder construir una red
+mas sencilla de interpretar, esto es util para estudiar la diversificacion y la estructura de riesgo de un portafolio.
+"""
+#Actividades a realizar:
+#Generar los datos de X simulando 200 observaciones de cuatro variables financieras.
+
+#Estimacion de la matriz de precision, con esta se puede estudiar las relaciones condicionales entre los rendimientos, bajo el supuesto gaussiano,un cero en la diagonal
+#indica la independencia condicional entre ese par de activos.
+
+#Comparar valores de aplha, crear un vector de valores alfa los cuales son los valores de penalizacion evaluados, mediante validacion cruzada 
+#esto ayuda a elegir uno dependiendo de su desempeño estadistico fuera de cada particion de entrenamiento
+
+#Contar los ceros, aproximar la dispersion de la matriz 
+
+"""
+Desde el punto de vista financiero esto es util para ver que activos tinen una conexion condicional, por lo que esto quiere decir que tienen informacion
+estadistica compartida entre sus rendimientos incluso despues de considerar los otros activos, en el caso de activos que no tienen una conexion en la red estimada, 
+quiere decir que la relacion condicional puede ser debil segun el modelo y el valor de la penalizacion utilizada
+
+Ejemplo: Si coca-cola tiene pocas conexiones con un grupo tecnologico[nvidia, microsoft, amd] podria ser un candidato coca-cola para poder
+actuar como diversificador en caso de que algo salga mal, al invertir en la industria tecnologica.
+"""
+
+#En el caso de una matriz de 4 activos su matriz de precision es de 4x4 recordando que la matriz de precision es la inversa de la matriz de covarianzas de los activos, 
+
+
+"""How to works Lasso in Graphical Network Model"""
+
+import numpy as np
+import pandas as pd
+from sklearn.covariance import GraphicalLassoCV
+from sklearn.covariance import GraphicalLasso
+
+true_cov = np.array([[0.8, 0.0, 0.2, 0.0],
+                     [0.0, 0.4, 0.0, 0.0],
+                     [0.2, 0.0, 0.3, 0.1],
+                     [0.0, 0.0, 0.1, 0.7]])
+
+# Set seed and generate X from multivaraite norm with specified covariance
+np.random.seed(0)
+X = np.random.multivariate_normal(mean=[0, 0, 0, 0], cov=true_cov, size=200)
+
+# True precision matrix calculated from the inverse of true covariance matrix
+true_prec = np.linalg.inv(true_cov)
+true_prec
+
+# Fit the GraphicalLassoCV model
+est = GraphicalLassoCV(max_iter = 1000).fit(X)
+
+# The estimated covariance matrix from GraphicalLassoCV
+np.around(est.covariance_, decimals=3)
+
+# The estimated precision matrix from GraphicalLassoCV
+np.around(est.precision_, decimals=3)
+
+# The list of lambdas used in cross validation
+est.cv_results_["alphas"]
+
+#lambda chosen by cross validation
+est.alpha_
+
+# The index of the chosen lambda in the list of lambdas
+ind_lambda = np.where(est.cv_results_["alphas"] == est.alpha_)[0][0]
+ind_lambda
+
+#grid_scores_ndarray of shape (n_alphas, n_folds): Log-likelihood score on left-out data across folds.
+grid_scores = np.array([
+    est.cv_results_[f"split{i}_test_score"]
+    for i in range(5)
+]).T
+
+np.round(grid_scores, 3)
+
+# Summary information 
+alphas = np.array(est.cv_results_["alphas"]).reshape(
+    len(est.cv_results_["alphas"]), 1)
+
+df_temp = pd.DataFrame(
+    np.concatenate((alphas, grid_scores), axis=1),
+    columns=[
+        "lambdas",
+        "score_fold1",
+        "score_fold2",
+        "score_fold3",
+        "score_fold4",
+        "score_fold5"])
+
+df_temp["Total_score"] = grid_scores.sum(axis=1)
+df_temp["Average_score"] = (grid_scores.sum(axis=1) / grid_scores.shape[1])
+df_temp
+
+
+# Find the precision matrix and number of zero entries in the matrix for each lambda
+prec_mx_list = []
+num_zeros_list = []
+
+for i in range(len(est.cv_results_["alphas"])):
+    est_lambda = GraphicalLasso(alpha=est.cv_results_["alphas"][i], max_iter=1000).fit(X)
+  
+    """
+    Encontrar los valores de cero a traves de esta funcion non_zero
+    para determinar si existen relaciones de independencia condicional
+    y en donde.
+    """
+  
+    prec_mx_list.append(est_lambda.precision_)
+    non_zero = (np.abs(est_lambda.precision_) > 0.02)
+    num_zeros = (non_zero.shape[0] * non_zero.shape[1]- np.sum(non_zero * 1))
+    num_zeros_list.append(num_zeros)
+
+    print("For lambda = ", est.cv_results_["alphas"][i])
+    print("Number of zero entries in the precision matrix is : ", num_zeros)  
+    
+# Add the number of zeros information to the summary information dataframe
+df_temp["Num_Zeros"] = np.array(num_zeros_list)
+df_temp
+
+# Estimated precision matrix for the first lambda
+prec_mx_list[0]
+
+# Estimated precision matrix for the second lambda
+prec_mx_list[1]
+
+# Estimated precision matrix for the chosen lambda
+prec_mx_list[ind_lambda]
+
+
+
+
+
+
+
